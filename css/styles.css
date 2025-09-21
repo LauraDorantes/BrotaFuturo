@@ -25,6 +25,7 @@ h2{
     margin: 1rem 1.5rem 1rem 1.5rem;
     border-bottom: 2px solid #ccc;
     padding-bottom: 0.5rem;
+    text-align: center;
 }
 
 h3{
@@ -58,13 +59,29 @@ p{
 }
 
 body{
+    background: linear-gradient(45deg,#fb6f92,#ffb3c6,#3b83bd,#191970);
+    background-size: 180% 180%;
+    animation: fondo-moviendose 10s ease infinite;
+
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url(./images/Fondo.jpg);
-    background-size: cover;
-    background-position: center;
+    /* background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url(./images/Fondo.jpg); */
+    /* background-size: cover; */
+    /* background-position: center; */
     background-attachment: fixed;
+}
+
+@keyframes fondo-moviendose {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /*Div flotante*/
@@ -80,6 +97,7 @@ body{
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 1.5rem;
     margin-top: 1rem;
+    border-radius: 30px;
 }
 
 /*Encabezado*/
@@ -87,13 +105,15 @@ nav{
     position: fixed;
     top: 0;
     width: 100%;
-    background-color: rgb(255, 255, 255);
+    /* background-color: rgb(255, 255, 255); */
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 10px 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    background-color: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    /* box-shadow: 0 2px 8px rgba(0,0,0,0.1); */
 }
 
 .logo{
