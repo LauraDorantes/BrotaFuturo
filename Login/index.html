@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="icon" href="img/icono.png">
+
+    <link rel="stylesheet" href="css/styles_login.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
+
+    <title>ProFuturo</title>
+</head>
+<body>
+    <div class="contenedor" id="contenedor">
+        <div class="contenedor-form registro" id="registroForm">
+            <form class="formulario" id="formulario">
+                <div id="visible" style="width: 100%; text-align: center;">
+                    <h3>Datos Personales</h3>
+                    <span>Por favor complete el siguiente formulario</span>
+
+                    <!-- Boleta -->
+                    <div class="formulario__grupo" id="grupo__boleta">
+                        <input type="text" name="boleta" placeholder="No. de Boleta" maxlength="10">
+                        <p class="formulario__input-error">Verifique su boleta</p>
+                    </div>
+
+                    <!-- Nombre -->
+                    <div class="formulario__grupo" id="grupo__nombre">
+                        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo">
+                        <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                    </div>
+                    
+                    <!-- Sexo -->
+                    <div class="formulario__grupo" id="grupo__sexo">
+                        <select name="sexo">
+                            <option disabled selected>Sexo</option>
+                            <option value="masculino">Masculino</option>
+                            <option value="femenino">Femenino</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <!-- CURP -->
+                    <div class="formulario__grupo" id="grupo__curp">
+                        <input type="text" name="curp" placeholder="CURP" maxlength="18">
+                        <p class="formulario__input-error">Verifique su CURP por favor</p>
+                    </div>
+
+                    <!-- Telefono -->
+                    <div class="formulario__grupo" id="grupo__telefono">
+                        <input type="tel" name="telefono" placeholder="Teléfono" maxlength="10">
+                        <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; width: 100%;">
+                        <select id="semestre" name="semestre">
+                            <option disabled selected>Semestre</option>
+                            <option value="uno">1</option>
+                            <option value="dos">2</option>
+                            <option value="tres">3</option>
+                            <option value="cuatro">4</option>
+                            <option value="cinco">5</option>
+                            <option value="tres">6</option>
+                            <option value="tres">7</option>
+                            <option value="tres">8</option>
+                        </select>
+
+                        <select id="carrera" name="carrera">
+                            <option disabled selected>Carrera</option>
+                            <option value="ISC">ISC</option>
+                            <option value="IIA">IIA</option>
+                            <option value="LCD">LCD</option>
+                        </select>
+                    </div>
+
+                    <select id="concurso" name="concurso" required>
+                        <option disabled selected>Concurso</option>
+                        <option value="cuno">Concurso 1</option>
+                        <option value="cdos">Concurso 2</option>
+                        <option value="ctres">Concurso 3</option>
+                    </select>            
+
+
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <button onclick="ocultarMostrar();">Siguiente</button>
+                        <button type="reset" onclick="editar();">Limpiar</button>
+                    </div>
+                </div>
+
+                <div id="oculto" style="text-align: center;">
+                    <h3>Datos de Cuenta</h3>
+
+                    <div class="formulario__grupo" id="grupo__correo">
+                        <input type="email" name="correo" placeholder="Correo">
+                        <p class="formulario__input-error">El correo debe ser el institucional (@laumno.ipn.mx)</p>
+                    </div>
+
+                    <div class="formulario__grupo" id="grupo__contrasena">
+                        <input type="text" name="contrasena" placeholder="Contraseña">
+                        <p class="formulario__input-error">La contraseña debe tener mínimo 6 caracteres, que incluya una
+                        mayúscula, un dígito y un carácter especial.</p>
+                    </div>
+
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <button onclick="ocultarMostrar();">Atrás</button>
+                        <button type="reset" onclick="editar();">Limpiar</button>
+                        <button onclick="confirmar();">Enviar</button>
+                    </div>
+
+                    <div class="oculto" id="confirmacion">
+                        <p id="datos"></p>
+                        <button type="submit">Sí</button>
+                        <button onclick="ocultarMostrar(); editar();">Editar</button>
+                    </div>
+
+                    <p class="oculto" id="mensaje_error" style="color: red;"></p>
+                </div>
+
+                <div class="btn-toogle-form" id="btn-toogle-form">
+                    <p>¿Ya tienes una cuenta?</p>
+                    <button type="button" onclick="mostrarInicio()">Iniciar Sesión</button>
+                </div>
+            </form>
+        </div> <!-- .registro -->
+
+        <div class="contenedor-form acceder" id="loginForm">
+            <form>
+                <h1>Iniciar Sesión</h1>
+
+                <span>Ingresar con Correo y Contraseña</span><br>
+
+                <input type="email" placeholder="Ingrese su Correo">
+                <input type="text" placeholder="Ingrese su Contraseña">
+                <a href="#">Cambiar Contraseña</a>
+
+                <button>Iniciar Sesión</button>
+
+                <div class="btn-toogle-form">
+                    <p>¿No tienes una cuenta?</p>
+                    <button type="button" onclick="mostrarRegistro()">Registrarse</button>
+                </div>
+            </form>
+        </div> <!-- .acceder -->
+
+        <div class="contenedor-toggle">
+            <div class="toggle">
+                <div class="toggle-panel toggle-izq">
+                    <h1>¿Ya tienes una cuenta?<br></h1>
+                    <p>Inicia sesión con Correo y Contraseña</p>
+                    <button class="hidden" id="acceder">Iniciar Sesión</button>
+                </div>
+
+                <div class="toggle-panel toggle-der">
+                    <h1>¿No tienes una cuenta?</h1>
+                    <p>Regístrate aquí</p>
+                    <button class="hidden" id="registro">Registrarse</button>
+                </div>
+            </div> <!-- .toggle -->
+        </div> <!-- .contenedor-toggle -->
+    </div> <!-- .contenedor -->
+
+    <script src="js/scripts.js"></script>
+</body>
+</html>
