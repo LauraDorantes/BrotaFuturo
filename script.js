@@ -1,34 +1,3 @@
-new Swiper('.card-wrapper', {
-  loop: true,
-  spaceBetween: 30,
-
-  // Pagination bullets
-  pagination: {
-    el: '.swiper-pagination',
-    clickable : true,
-    dymanicBullets: true,
-  },
-
-  // Navigation arrows
-  navigation: {
-    nextEl: '.swiper-button-next',
-    prevEl: '.swiper-button-prev',
-  },
-
-  breakpoints: {
-    0:{
-        slidesPerView: 1
-    },
-    768:{
-        slidesPerView: 2
-    },
-    1024:{
-        slidesPerView: 3
-    },
-
-  }
-});
-
 window.addEventListener('DOMContentLoaded', () => {
         const navHeight = document.querySelector('nav').offsetHeight;
         document.querySelector('.contenedorgeneral').style.marginTop = `${navHeight}px`;
@@ -44,10 +13,18 @@ document.querySelectorAll('nav a[data-target]').forEach(link => {
             div.style.display = 'none';
         });
 
-        // Muestra el contenedor correspondiente
-        const targetDiv = document.getElementById(targetId);
-        if (targetDiv) {
-            targetDiv.style.display = 'block';
+        // Muestra lod div con id inicio
+        if (targetId === 'inicio') {
+            // Si es la sección de "Inicio", muestra todos los divs con id="inicio"
+            document.querySelectorAll('.contenedor1[id="inicio"]').forEach(div => {
+                div.style.display = 'flex';
+            });
+        } else {
+            // muestras los div de las otras secciones
+            const targetDiv = document.getElementById(targetId);
+            if (targetDiv) {
+                targetDiv.style.display = 'flex';
+            }
         }
     });
 });
