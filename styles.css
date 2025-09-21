@@ -210,7 +210,7 @@ tbody tr:hover {
     }
 }
 
-/*Empresas Y Universidades*/
+/*Aliados y recursos*/
 .cards_wrapper{
     display: flex;
     justify-content: center;
@@ -223,26 +223,34 @@ tbody tr:hover {
     margin: 3% 4%;
     border-radius: 4px;
     overflow: hidden;
-    height: 45vh;
+    height: auto;
     min-width: 20%;
     max-width: 250px;
     cursor: pointer;
     box-shadow: 10px 30px 40px -13px black;
+    text-decoration: none; /* quita subrayado a todo el card */
 }
 
 .cards_wrapper .card h5{
     font-size: 1.4rem;
     text-align: center;
-    padding: 3%;
+    padding: 6px 8px 6px;
     letter-spacing: 1px;
-    margin: 0;
+    margin: 25px 0 0;
     background: white;
 }
 
 .cards_wrapper .card img{
     height: 100%;
     width: 100%;
-    object-fit: fill;
+    object-fit: cover;      /* no deforma, recorta exceso */
+    margin: 0;
+    width: 100%;
+    height: auto;
+    object-fit: contain;   /* muestra completa */
+    background: #fff;      /* relleno si sobra espacio */
+    display: block;
+    margin-top: -4px;
 }
 
 .cards_wrapper .card .card_desc{
@@ -267,10 +275,37 @@ tbody tr:hover {
     padding: 8%;
     color: white;
     font-family: "Edu SA Hand";
+    text-align: center;  
 }
 
 .cards_wrapper .card:hover .card_desc{
     height: 100%;
+}
+
+.cards_wrapper .card h5 a {
+    text-decoration: none;   /* quita el subrayado */
+    color: #0056b3;          /* azul sobrio */
+    font-weight: bold;
+    display: inline-block;   /* opcional, para que sea más limpio */
+}
+
+.cards_wrapper .card h5 a:hover {
+    color: #002d62;          /* azul más oscuro al hover */
+    text-decoration: underline; /* subrayado solo al pasar */
+}
+
+.cards_wrapper .card_media{
+    height: 250px;           /* ajustable */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+.cards_wrapper .card_media img{
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 /*Contacto*/
