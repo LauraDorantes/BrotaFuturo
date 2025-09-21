@@ -28,3 +28,18 @@ document.querySelectorAll('nav a[data-target]').forEach(link => {
         }
     });
 });
+
+//EmailJS
+emailjs.init("zNZztQejzII9E9d1V");
+document.getElementById("formContacto").addEventListener("submit", function(e){
+    e.preventDefault();
+    emailjs.sendForm("service_aqnbmhc", "template_sceiohr", this)
+        .then(() => {
+            alert("Mensaje enviado con éxito!");
+            this.reset();
+        })
+        .catch(err => {
+            console.error("Error al enviar:", err);
+            alert("Error al enviar el mesanje. Intente de nuevo.");
+        });
+});

@@ -250,15 +250,15 @@
         <div class="contenedor1" id="contacto" style="display:none;">
             <div class="contacto">
                 <div class="contacto-container">
-                    <form>
+                    <form id="formContacto">
                         <div class="form-group">
                             <label for="nombre">Nombre completo</label>
                             <input type="text" id="nombre" name="nombre" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="asunto">Asunto</label>
-                            <input type="text" id="asunto" name="asunto" required>
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
                         </div>
 
                         <div class="form-group">
@@ -280,6 +280,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
