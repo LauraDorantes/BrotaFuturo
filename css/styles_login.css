@@ -1,0 +1,304 @@
+:root {
+    --primario: #4c2882;
+    --secundario: #572364;
+}
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Montserrat", sans-serif;
+}
+
+body{
+    background: linear-gradient(45deg,#fb6f92,#ffb3c6,#3b83bd,#191970);
+    background-size: 180% 180%;
+    animation: fondo-moviendose 10s ease infinite;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 100vh;
+}
+
+@keyframes fondo-moviendose {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.contenedor{
+    background-color: #fff;
+    border-radius: 30px;
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.35);
+    position: relative;
+    overflow: hidden;
+    width: 768px; /* Ancho del formulario */
+    max-width: 100%;
+    /*min-height: 480px;*/ /* Alto del formulaio */
+    height: 550px;
+}
+
+.contenedor p{
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.3px;
+    margin: 20px 0;
+}
+
+.contenedor span{
+    font-size: 12px;
+}
+
+.contenedor a{
+    color: #333;
+    font-size: 13px;
+    text-decoration: none;
+    margin: 15px 0 10px;
+}
+
+.contenedor button{
+    background-color: var(--secundario);
+    color: #fff;
+    font-size: 12px;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+.contenedor button.hidden{
+    background-color: transparent;
+    border-color: #fff;
+}
+
+.contenedor form{
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 40px;
+    height: 100%;
+}
+
+.contenedor input, select{
+    background-color: #eee;
+    border: none;
+    margin: 8px 0;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 8px;
+    width: 100%;
+    outline: none;
+    /* appearance: none; */
+}
+
+.contenedor-form{
+    position: absolute;
+    top: 0;
+    height: 100%;
+    transition: all 0.6s ease-in-out; /* Animacion para mover la parte blanca */
+}
+
+.acceder{
+    left: 0;
+    width: 50%;
+    z-index: 2;
+}
+
+.contenedor.activo .acceder{
+    transform: translateX(100%);
+}
+
+.registro{
+    left: 0;
+    width: 50%;
+    opacity: 0;
+    z-index: 1;
+}
+
+.contenedor.activo .registro{
+    transform: translateX(100%);
+    opacity: 1;
+    z-index: 5;
+    /* animation: mover 0.6s; */
+}
+
+@keyframes mover{
+    0%, 49.99%{
+        opacity: 0;
+        z-index: 1;
+    }
+    50%, 100%{
+        opacity: 1;
+        z-index: 5;
+    }
+}
+
+.iconos-redes{
+    margin: 20px 0;
+}
+
+.contenedor-toggle{
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+    transition: all 0.6s ease-in-out; /* Animacion para mover la parte morada */
+    border-radius: 20px;
+    z-index: 1000;
+}
+
+.contenedor.activo .contenedor-toggle{
+    transform: translateX(-100%);
+    border-radius: 20px;
+}
+
+.toggle{
+    background-color: var(--primario);
+    height: 100%;
+    color: #fff;
+    position: relative;
+    left: -100%;
+    height: 100%;
+    width: 200%;
+    transform: translateX(0);
+    /* Animacion para texto registro */
+    transition: all 0.5s ease;
+}
+
+.contenedor.activo .toggle{
+    transform: translateX(50%);
+}
+
+.toggle-panel{
+    position: absolute;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 0 30px;
+    text-align: center;
+    top: 0;
+    transform: translateX(0);
+    /* Animacion  para texto iniciar sesion */
+    transition: all 0.6s ease;
+}
+
+.toggle-izq{
+    transform: translateX(-200%);
+}
+
+.contenedor.activo .toggle-izq{
+    transform: translateX(0);
+}
+
+.toggle-der{
+    right: 0;
+    transform: translateX(0);
+}
+
+.formulario p{
+    margin: 0;
+    text-align: justify;
+    font-size: 13px;
+}
+
+.formulario__grupo-incorrecto input{
+    border: 3px solid #bb2929;
+}
+
+/* Estilos para mostrar los mensajes de error */
+.formulario__input-error, .oculto, #oculto{
+    display: none;
+}
+
+.formulario__input-error-activo, .visible{
+    display: block;
+}
+
+.contenedor-form.registro{
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-toogle-form{
+    display: none;
+    font-size: 18px;
+}
+
+/* Para que se vea en celulares */
+/* Se muestra incorrecto cuando se pasa de celular a PC, ver como solucionarlo */
+@media(max-width: 768px) {
+    .contenedor {
+        width: 85%;
+        min-height: 80%;
+        height: auto;
+        padding: 15px 0;
+        /* max-height: 600px; */
+        overflow-y: auto;
+    }
+
+    .contenedor-toggle {
+        display: none;
+    }
+
+    .contenedor-form {
+        width: 100%;
+        position: static;
+    }
+
+    .registro, .acceder {
+        opacity: 1 !important;
+        transform: translateX(0) !important;
+        position: relative !important;
+        width: 100% !important;
+        z-index: 2 !important;
+    }
+
+    .contenedor input, .contenedor select{
+        padding: 10px;
+    }
+
+    /* #loginForm{
+        height: 500px;
+    } */
+
+    #registroForm {
+        display: none;
+    }
+
+    .btn-toogle-form {
+        font-size: 14px;
+        margin-top: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .btn-toogle-form p{
+        margin: 0;
+        text-align: center;
+        font-size: 14px;
+    }
+
+    .btn-toogle-form button {
+        margin: 0;
+    }
+}
