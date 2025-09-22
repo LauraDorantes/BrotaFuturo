@@ -5,6 +5,31 @@ const accederBtn = document.getElementById('acceder');
 const formulario = document.getElementById('formulario');
 const inputs = document.querySelectorAll('#formulario input');
 
+// Función para mostrar/ocultar 
+function mostrarMenu() {
+    const menu = document.getElementById('userTypeMenu');
+    menu.classList.toggle('show');
+}
+
+// Función para seleccionar un tipo de usuario
+function tipoUsuario(type) {
+    document.getElementById('selected-user-type').textContent = type;
+    mostrarMenu(); 
+    
+    // Aquí puedes agregar lógica adicional según el tipo de usuario seleccionado
+    console.log('Tipo de usuario seleccionado:', type);
+}
+
+// Cerrar el menú si se hace clic fuera de él
+window.onclick = function(event) {
+    if (!event.target.matches('.dropdown-toggle') && !event.target.matches('.dropdown-toggle *')) {
+        const menu = document.getElementById('userTypeMenu');
+        if (menu.classList.contains('show')) {
+            menu.classList.remove('show');
+        }
+    }
+}
+
 const campos =
 {
     boleta: false,

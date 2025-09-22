@@ -43,7 +43,15 @@ body{
     width: 768px; /* Ancho del formulario */
     max-width: 100%;
     /*min-height: 480px;*/ /* Alto del formulaio */
-    height: 550px;
+    height: 600px;
+}
+
+.contenedor_menu{
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    position: relative;
+    top: -30px; 
 }
 
 .contenedor p{
