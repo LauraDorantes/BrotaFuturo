@@ -35,11 +35,38 @@ document.getElementById("formContacto").addEventListener("submit", function(e){
     e.preventDefault();
     emailjs.sendForm("service_aqnbmhc", "template_sceiohr", this)
         .then(() => {
-            alert("Mensaje enviado con éxito!");
+            Swal.fire({
+                title: "Mensaje enviado",
+                html: `
+                        <video autoplay loop muted playsinline style="width:200px; border-radius:10px;">
+                            <source src="./images/MensajeV.mp4" type="video/mp4">
+                            Tu navegador no soporta.
+                        </video>
+                        <p style="margin-top:15px; font-size:16px; text-align:center;">Gracias por contactarnos, te responderemos pronto.</p>
+                        `,
+                showConfirmButton: true,
+                confirmButtonColor: "#059224ff",
+                confirmButtonText: "Aceptar",
+                width: 500
+            });
             this.reset();
         })
         .catch(err => {
+            Swal.fire({
+                title: "Oops...",
+                text: "",
+                html: `
+                        <video autoplay loop muted playsinline style="width:200px; border-radius:10px;">
+                            <source src="./images/ErrorV.mp4" type="video/mp4">
+                            Tu navegador no soporta.
+                        </video>
+                        <p style="margin-top:15px; font-size:16px; text-align:center;">Hubo un error al enviar el mensaje. Intenta de nuevo.</p>
+                        `,
+                showConfirmButton: true,
+                confirmButtonColor: "#d33",
+                confirmButtonText: "Reintentar",
+                width: 500
+            });
             console.error("Error al enviar:", err);
-            alert("Error al enviar el mesanje. Intente de nuevo.");
         });
 });
