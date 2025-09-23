@@ -158,6 +158,18 @@ button:hover{
 }
 
 /*Seccion1*/
+.NuestroLogo .nuestrologo {
+    display: flex;
+    align-items: center;
+    gap: 4.5rem; /* espacio entre párrafo e imagen */
+    margin: 2rem 1.5rem 2rem 1.5rem;
+}
+
+.NuestroLogo img {
+  max-width: 400px;
+  height: auto;
+}
+
 .Nosotros .vision {
     display: flex;
     align-items: center;
