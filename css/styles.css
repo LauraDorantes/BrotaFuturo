@@ -158,6 +158,30 @@ button:hover{
 }
 
 /*Seccion1*/
+.contenedor-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.contenedordiv {
+  display: flex;
+  flex: 1 1 45%;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  margin-top: 1rem;
+  border-radius: 30px;
+}
+
+
 .NuestroLogo .nuestrologo {
     display: flex;
     align-items: center;
