@@ -355,3 +355,20 @@ body{
         padding: 50px 20px 20px 20px; /* Padding optimizado para móvil */
     }
 }
+
+.boton-casita {
+  display: inline-flex;
+  align-items: center;
+  background-color: #ffffff;
+  color: var(--secundario);
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.boton-casita:hover {
+  transform: scale(1.5);
+}
+

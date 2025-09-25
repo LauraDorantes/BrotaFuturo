@@ -4,30 +4,30 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 document.querySelectorAll('nav a[data-target]').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('data-target');
+  link.addEventListener('click', function(e) {
+    e.preventDefault();
+    const targetId = this.getAttribute('data-target');
 
-        // Oculta todos los contenedores
-        document.querySelectorAll('.contenedor1').forEach(div => {
-            div.style.display = 'none';
-        });
-
-        // Muestra lod div con id inicio
-        if (targetId === 'inicio') {
-            // Si es la sección de "Inicio", muestra todos los divs con id="inicio"
-            document.querySelectorAll('.contenedor1[id="inicio"]').forEach(div => {
-                div.style.display = 'flex';
-            });
-        } else {
-            // muestras los div de las otras secciones
-            const targetDiv = document.getElementById(targetId);
-            if (targetDiv) {
-                targetDiv.style.display = 'flex';
-            }
-        }
+    // Oculta todos los contenedores
+    document.querySelectorAll('.contenedor1, .contenedor-columnas').forEach(div => {
+      div.style.display = 'none';
     });
+
+    // Muestra los div con id="inicio"
+    if (targetId === 'inicio') {
+      document.querySelectorAll('[id="inicio"]').forEach(div => {
+        div.style.display = 'flex';
+      });
+    } else {
+      // Muestra el div de la sección seleccionada
+      const targetDiv = document.getElementById(targetId);
+      if (targetDiv) {
+        targetDiv.style.display = 'flex';
+      }
+    }
+  });
 });
+
 
 //EmailJS
 emailjs.init("zNZztQejzII9E9d1V");
