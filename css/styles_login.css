@@ -40,18 +40,36 @@ body{
     box-shadow: 0 5px 15px rgba(255, 255, 255, 0.35);
     position: relative;
     overflow: hidden;
-    width: 768px; /* Ancho del formulario */
+    width: 900px; 
     max-width: 100%;
-    /*min-height: 480px;*/ /* Alto del formulaio */
-    height: 600px;
+    height: 650px; 
 }
 
 .contenedor_menu{
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    position: relative;
-    top: -30px; 
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 45%; 
+    z-index: 9999;
+    border-radius: 10px;
+    padding: 8px;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+}
+
+.contenedor.activo .contenedor_menu {
+    opacity: 1;
+    left: 55%;
+    width: 40%;
+    transition-delay: 0.6s;
+}
+
+.contenedor_menu .dropdown-menu {
+    z-index: 10000 !important;
+}
+
+.contenedor_menu .btn {
+    z-index: 9999 !important;
 }
 
 .contenedor p{
@@ -97,27 +115,32 @@ body{
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    padding: 0 40px;
+    padding: 50px 40px 20px 40px; 
     height: 100%;
 }
 
 .contenedor input, select{
     background-color: #eee;
     border: none;
-    margin: 8px 0;
+    margin: 6px 0;
     padding: 10px 15px;
     font-size: 14px;
     border-radius: 8px;
     width: 100%;
     outline: none;
-    /* appearance: none; */
 }
 
+/* CONTENEDORES DE FORMULARIOS */
 .contenedor-form{
     position: absolute;
     top: 0;
     height: 100%;
-    transition: all 0.6s ease-in-out; /* Animacion para mover la parte blanca */
+    width: 50%;
+    transition: all 0.6s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50; 
 }
 
 .acceder{
@@ -126,39 +149,54 @@ body{
     z-index: 2;
 }
 
-.contenedor.activo .acceder{
-    transform: translateX(100%);
-}
-
 .registro{
-    left: 0;
+    left: 100%; 
     width: 50%;
-    opacity: 0;
     z-index: 1;
 }
 
+
+.contenedor.activo .acceder{
+    transform: translateX(-100%);
+}
+
 .contenedor.activo .registro{
-    transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
-    /* animation: mover 0.6s; */
+    transform: translateX(-100%); 
+    z-index: 2;
 }
 
-@keyframes mover{
-    0%, 49.99%{
-        opacity: 0;
-        z-index: 1;
-    }
-    50%, 100%{
-        opacity: 1;
-        z-index: 5;
-    }
+.formulario-registro {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Por defecto ocultos */
+    align-items: center;
+    justify-content: center;
 }
 
-.iconos-redes{
-    margin: 20px 0;
+#registroForm {
+    display: none !important;
 }
 
+#registroProfe {
+    display: none !important;
+}
+
+#registroForm.activo {
+    display: flex !important;
+}
+
+#registroProfe.activo {
+    display: flex !important;
+}
+
+.contenedor.activo #loginForm {
+    display: none !important;
+}
+
+/* (parte morada) */
 .contenedor-toggle{
     position: absolute;
     top: 0;
@@ -166,14 +204,13 @@ body{
     width: 50%;
     height: 100%;
     overflow: hidden;
-    transition: all 0.6s ease-in-out; /* Animacion para mover la parte morada */
+    transition: all 0.6s ease-in-out;
     border-radius: 20px;
-    z-index: 1000;
+    z-index: 100; 
 }
 
 .contenedor.activo .contenedor-toggle{
     transform: translateX(-100%);
-    border-radius: 20px;
 }
 
 .toggle{
@@ -185,8 +222,7 @@ body{
     height: 100%;
     width: 200%;
     transform: translateX(0);
-    /* Animacion para texto registro */
-    transition: all 0.5s ease;
+    transition: all 0.6s ease-in-out;
 }
 
 .contenedor.activo .toggle{
@@ -204,12 +240,11 @@ body{
     padding: 0 30px;
     text-align: center;
     top: 0;
-    transform: translateX(0);
-    /* Animacion  para texto iniciar sesion */
-    transition: all 0.6s ease;
+    transition: all 0.6s ease-in-out;
 }
 
 .toggle-izq{
+    left: 0;
     transform: translateX(-200%);
 }
 
@@ -222,45 +257,56 @@ body{
     transform: translateX(0);
 }
 
+.contenedor.activo .toggle-der{
+    transform: translateX(200%);
+}
+
+/* ESTILOS DE FORMULARIOS */
 .formulario p{
     margin: 0;
     text-align: justify;
     font-size: 13px;
 }
 
+.formulario__grupo {
+    width: 100%;
+    margin-bottom: 10px; 
+}
+
 .formulario__grupo-incorrecto input{
     border: 3px solid #bb2929;
 }
 
-/* Estilos para mostrar los mensajes de error */
-.formulario__input-error, .oculto, #oculto{
+.formulario__input-error {
     display: none;
+    color: #bb2929;
+    font-size: 12px;
+    margin-top: 5px;
 }
 
-.formulario__input-error-activo, .visible{
+.formulario__input-error-activo{
     display: block;
 }
 
-.contenedor-form.registro{
-    position: relative;
-    overflow: hidden;
+.oculto, #oculto{
+    display: none;
+}
+
+.visible{
+    display: block;
 }
 
 .btn-toogle-form{
     display: none;
-    font-size: 18px;
 }
 
-/* Para que se vea en celulares */
-/* Se muestra incorrecto cuando se pasa de celular a PC, ver como solucionarlo */
-@media(max-width: 768px) {
+/* MÓVILES */
+@media screen and (max-width: 767px) {
     .contenedor {
-        width: 85%;
-        min-height: 80%;
+        width: 95%;
         height: auto;
+        min-height: 500px;
         padding: 15px 0;
-        /* max-height: 600px; */
-        overflow-y: auto;
     }
 
     .contenedor-toggle {
@@ -268,45 +314,44 @@ body{
     }
 
     .contenedor-form {
-        width: 100%;
-        position: static;
-    }
-
-    .registro, .acceder {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
         position: relative !important;
         width: 100% !important;
-        z-index: 2 !important;
+        height: auto !important;
+        left: 0 !important;
+        transform: none !important;
+        opacity: 1 !important;
     }
 
-    .contenedor input, .contenedor select{
-        padding: 10px;
+    .acceder, .registro {
+        position: relative !important;
+        width: 100% !important;
+        left: 0 !important;
+        transform: none !important;
     }
 
-    /* #loginForm{
-        height: 500px;
-    } */
-
-    #registroForm {
-        display: none;
+    .contenedor.activo .acceder,
+    .contenedor.activo .registro {
+        transform: none !important;
     }
 
     .btn-toogle-form {
-        font-size: 14px;
-        margin-top: 15px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
-    }
-
-    .btn-toogle-form p{
-        margin: 0;
-        text-align: center;
+        gap: 10px;
+        margin-top: 20px;
         font-size: 14px;
     }
 
-    .btn-toogle-form button {
-        margin: 0;
+    .contenedor_menu {
+        position: relative;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 10px auto;
+        width: 90%;
+    }
+
+    .contenedor form{
+        padding: 50px 20px 20px 20px; /* Padding optimizado para móvil */
     }
 }
