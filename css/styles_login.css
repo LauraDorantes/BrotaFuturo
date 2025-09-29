@@ -45,23 +45,48 @@ body{
     height: 650px; 
 }
 
+.modal {
+    z-index: 10000 !important;
+}
+
+.modal-backdrop {
+    z-index: 9999 !important;
+}
+
+body.modal-open .contenedor_menu {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.modal-content {
+    z-index: 10001 !important;
+}
+
+body.modal-open .dropdown-menu,
+body.modal-open .btn {
+    display: none !important;
+}
+
 .contenedor_menu{
     position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 45%; 
+    top: 20px;
+    right: -100%;
+    width: 40%; 
     z-index: 9999;
     border-radius: 10px;
     padding: 8px;
     opacity: 0;
-    transition: opacity 0.4s ease-in-out;
+    pointer-events: none;
+    transition: all 0.6s ease-in-out;
 }
 
 .contenedor.activo .contenedor_menu {
     opacity: 1;
-    left: 55%;
-    width: 40%;
-    transition-delay: 0.6s;
+    pointer-events: auto;
+    right: 40px;
+    transition-delay: 0.2s;
 }
 
 .contenedor_menu .dropdown-menu {
@@ -155,7 +180,6 @@ body{
     z-index: 1;
 }
 
-
 .contenedor.activo .acceder{
     transform: translateX(-100%);
 }
@@ -176,6 +200,7 @@ body{
     justify-content: center;
 }
 
+/* REGLAS PARA CADA FORMULARIO */
 #registroForm {
     display: none !important;
 }
@@ -184,6 +209,11 @@ body{
     display: none !important;
 }
 
+#registroInstitucion {
+    display: none !important;
+}
+
+/* MOSTRAR FORMULARIOS ACTIVOS */
 #registroForm.activo {
     display: flex !important;
 }
@@ -192,6 +222,11 @@ body{
     display: flex !important;
 }
 
+#registroInstitucion.activo {
+    display: flex !important;
+}
+
+/* OCULTAR LOGIN CUANDO EL CONTENEDOR ESTÁ ACTIVO */
 .contenedor.activo #loginForm {
     display: none !important;
 }
@@ -273,7 +308,8 @@ body{
     margin-bottom: 10px; 
 }
 
-.formulario__grupo-incorrecto input{
+.formulario__grupo-incorrecto input,
+.formulario__grupo-incorrecto select{
     border: 3px solid #bb2929;
 }
 
@@ -349,6 +385,7 @@ body{
         right: 0;
         margin: 10px auto;
         width: 90%;
+        opacity: 1 !important;
     }
 
     .contenedor form{
@@ -371,4 +408,3 @@ body{
 .boton-casita:hover {
   transform: scale(1.5);
 }
-
