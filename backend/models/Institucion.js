@@ -46,6 +46,10 @@ const institucionSchema = new mongoose.Schema({
         required: true,
         enum: ['Publica', 'Privada'],
     },
+    alumnosAsociados : [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Alumno',
+    }]
 });
 
 module.exports = mongoose.model('Institucion', institucionSchema);

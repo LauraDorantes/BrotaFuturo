@@ -9,7 +9,11 @@ const alumnoSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    apellidos: {
+    apellidoPaterno: {
+        type: String,
+        required: true,
+    },
+    apellidoMaterno: {
         type: String,
         required: true,
     },
@@ -42,17 +46,20 @@ const alumnoSchema = new mongoose.Schema({
         required: true,
         enum: ['Maculino', 'Femenino'],
     },
-    semestre: {
+    creditos: {
         type: Number,
         required: true,
-        min: 5,
-        max: 8,
     },
     carrera: {
         type: String,
         required: true,
         enum: ['ISC', 'IIA', 'LCD'],
     },
+    cvID: {
+        type: String,
+        default: null,
+        required: false,
+    }
 });
 
 module.exports = mongoose.model('Alumno', alumnoSchema);

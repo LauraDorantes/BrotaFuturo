@@ -7,3 +7,6 @@ package-lock.json
 
 # Scripts (de Windows)
 *.bat
+
+# Credenciales de Google
+credenciales-google.json

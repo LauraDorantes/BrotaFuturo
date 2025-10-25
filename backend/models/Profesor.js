@@ -9,7 +9,11 @@ const profesorSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    apellidos: {
+    apellidoPaterno: {
+        type: String,
+        required: true,
+    },
+    apellidoMaterno: {
         type: String,
         required: true,
     },
@@ -46,4 +50,8 @@ const profesorSchema = new mongoose.Schema({
         required: true,
         enum: ['Masculino', 'Femenino'],
     },
+    alumnosAsociados : [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Alumno',
+    }]
 });
