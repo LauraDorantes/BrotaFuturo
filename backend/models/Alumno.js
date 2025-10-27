@@ -44,7 +44,7 @@ const alumnoSchema = new mongoose.Schema({
     sexo: {
         type: String,
         required: true,
-        enum: ['Maculino', 'Femenino'],
+        enum: ['Masculino', 'Femenino'],
     },
     creditos: {
         type: Number,

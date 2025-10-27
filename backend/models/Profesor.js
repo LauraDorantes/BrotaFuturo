@@ -23,8 +23,8 @@ const profesorSchema = new mongoose.Schema({
         unique: true,
     },
     password: {
-        trype: String,
-        required: trye,
+        type: String,
+        required: true,
     },
     departamento: {
         type: String,
@@ -55,3 +55,5 @@ const profesorSchema = new mongoose.Schema({
         ref: 'Alumno',
     }]
 });
+
+module.exports = mongoose.model('Profesor', profesorSchema);
