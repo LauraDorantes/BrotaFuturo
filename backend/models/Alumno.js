@@ -1,7 +1,3 @@
-/*
-Modelo de datos para un alumno en MongoDB usando Mongoose.
-Contiene campos como nombres, apellidos, correo, password, boleta, curp, telefono, sexo, semestre y carrera.
-*/
 const mongoose = require('mongoose');
 
 const alumnoSchema = new mongoose.Schema({
@@ -60,6 +56,12 @@ const alumnoSchema = new mongoose.Schema({
         default: null,
         required: false,
     }
-});
+}, { timestamps: true });
+
+// Índices para optimizar consultas
+alumnoSchema.index({ correo: 1 }, { unique: true });
+alumnoSchema.index({ boleta: 1 }, { unique: true });
+alumnoSchema.index({ createdAt: -1 });
+alumnoSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 
 module.exports = mongoose.model('Alumno', alumnoSchema);

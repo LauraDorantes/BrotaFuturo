@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const vacanteSchema = new mongoose.Schema({
@@ -19,21 +18,26 @@ const vacanteSchema = new mongoose.Schema({
         default: Date.now,
         required: true,
     },
-    institucion: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Institucion',
-        default: null,
-    },
-    profesor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Profesor',
-        default: null,
-    },
     salario: {
         type: Number,
         default: 0,
         required: false,
     },
-});
+    propietarioTipo: {
+        type: String,
+        required: true,
+        enum: ['Institucion', 'Profesor'],
+    },
+    propietario: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: 'propietarioTipo',
+        required: true,
+    }
+}, { timestamps: true });
+
+// Indices para optimizar consultas
+vacanteSchema.index({ titulo: 'text', descripcion: 'text', requisitos: 'text' });
+vacanteSchema.index({ fechaPublicacion: -1 });
+vacanteSchema.index({ propietario: 1, propietarioTipo: 1, fechaPublicacion: -1 });
 
 module.exports = mongoose.model('Vacante', vacanteSchema);

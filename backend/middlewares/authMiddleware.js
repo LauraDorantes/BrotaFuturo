@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken');
 
+/*
+  Middleware para proteger rutas y requerir autenticación JWT.
+  Verifica el token en el encabezado Authorization.
+  Si es válido, agrega los datos del usuario decodificados a req.user.
+  Si no, responde con 401 No autorizado.
+*/
 exports.requireAuth = (req, res, next) => {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;

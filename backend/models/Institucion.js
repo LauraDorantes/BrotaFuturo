@@ -1,7 +1,3 @@
-/*
-Modelo de Institucion en MongoDB usando Mongoose.
-Contiene campos como nombre, nombreRepresentante, apellidosRepresentante, correo, password, rfc, telefono, direccion y tipo.
-*/
 const mongoose = require('mongoose');
 
 const institucionSchema = new mongoose.Schema({
@@ -50,6 +46,11 @@ const institucionSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Alumno',
     }]
-});
+}, { timestamps: true });
+
+// Índices para optimizar consultas
+institucionSchema.index({ correo: 1 }, { unique: true });
+institucionSchema.index({ createdAt: -1 });
+institucionSchema.index({ nombre: 'text', nombreRepresentante: 'text', apellidosRepresentante: 'text' });
 
 module.exports = mongoose.model('Institucion', institucionSchema);

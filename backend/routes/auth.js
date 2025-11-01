@@ -1,12 +1,12 @@
 const express = require('express');
 const { register, login, refresh, me } = require('../controllers/authController');
-const { requireAuth } = require('../middlewares/auth');
+const { requireAuth } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
 // Registro/Login por rol
-router.post('/:tipo/register', register); // /api/auth/alumno/register
-router.post('/:tipo/login', login); // /api/auth/profesor/login
+router.post('/:tipo/register', register);
+router.post('/:tipo/login', login);
 
 // Refresh token
 router.post('/refresh', refresh);

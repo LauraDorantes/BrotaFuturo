@@ -1,7 +1,3 @@
-/*
-Modelo de datos para Profesores en MongoDB usando Mongoose.
-Contiene campos como nombres, apellidos, correo, password, departamento, rfc, curp, telefono y sexo.
-*/
 const mongoose = require('mongoose');
 
 const profesorSchema = new mongoose.Schema({
@@ -54,6 +50,11 @@ const profesorSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Alumno',
     }]
-});
+}, { timestamps: true });
+
+// Índices para optimizar consultas
+profesorSchema.index({ correo: 1 }, { unique: true });
+profesorSchema.index({ createdAt: -1 });
+profesorSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 
 module.exports = mongoose.model('Profesor', profesorSchema);
