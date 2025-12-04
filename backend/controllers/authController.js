@@ -68,7 +68,7 @@ const emailExistsInAnyModel = async (correo, onlyModel) => {
 
 // Endpoints de autenticación
 /*
-  Registro de usuario
+  register
   Endpoint para registrar un nuevo usuario en el sistema.
   @param {string} req.params.tipo - Tipo de usuario: 'alumno', 'profesor', 'institucion'
   @param {string} req.body.correo - Correo electrónico del usuario
@@ -93,7 +93,7 @@ exports.register = async (req, res) => {
     // Generar tokens JWT
     const tokens = signTokens(user, key);
     return res.status(201).json({
-      user: { id: user._id, correo: user.correo, role: key },
+      user: { _id: user._id, correo: user.correo, role: key },
       ...tokens,
     });
   } catch (err) {
@@ -104,7 +104,7 @@ exports.register = async (req, res) => {
 
 
 /*
-  Login de usuario
+  login
   Endpoint para autenticar a un usuario y obtener tokens JWT.
   @param {string} req.params.tipo - Tipo de usuario: 'alumno', 'profesor', 'institucion'
   @param {string} req.body.correo - Correo electrónico del usuario
@@ -127,7 +127,7 @@ exports.login = async (req, res) => {
 
     // Generar tokens JWT
     const tokens = signTokens(user, key);
-    return res.json({ user: { id: user._id, correo: user.correo, role: key }, ...tokens });
+    return res.json({ user: { _id: user._id, correo: user.correo, role: key }, ...tokens });
   } catch (err) {
     const status = err.status || 400;
     return res.status(status).json({ message: err.message || 'Error al iniciar sesión' });
@@ -136,7 +136,7 @@ exports.login = async (req, res) => {
 
 
 /*
-  Refresh de token
+  refresh
   Endpoint para obtener un nuevo token de acceso usando un token de refresh.
   @param {string} req.body.token - Token de refresh JWT
   @return {Object} - Nuevo token de acceso JWT
@@ -167,15 +167,15 @@ exports.refresh = async (req, res) => {
 
 
 /*
-  Obtener perfil del usuario autenticado
-  Endpoint para obtener los datos del usuario autenticado.
+  me
+  Endpoint para obtener los datos del usuario autenticado sin incluir la contraseña.
   Requiere que el middleware de autenticación haya agregado req.user.
   @return {Object} - Datos del usuario autenticado
 */
 exports.me = async (req, res) => {
   try {
     // Esperar que el middleware de autenticación haya agregado req.user
-    const { id, role } = req.user || {};
+    const { id, role } = req.user;
     // Verificar que id y role estén presentes
     if (!id || !role) return res.status(401).json({ message: 'No autorizado' });
     // Obtener el modelo correspondiente
@@ -186,5 +186,36 @@ exports.me = async (req, res) => {
     return res.json({ user });
   } catch (err) {
     return res.status(400).json({ message: 'Error al obtener perfil' });
+  }
+};
+
+/*
+  cambiarPassword
+  Endpoint para que un usuario autenticado cambie su contraseña.
+  Requiere que el middleware de autenticación haya agregado req.user.
+  @param {string} req.body.currentPassword - Contraseña actual
+  @param {string} req.body.newPassword - Nueva contraseña
+  @return {Object} - Mensaje de éxito o error
+*/
+exports.cambiarPassword = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    const { currentPassword, newPassword } = req.body || {};
+
+    // Obtener el modelo correspondiente
+    const { Model } = getModel(role);
+    // Buscar el usuario por id
+    const user = await Model.findById(id);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+    // Verificar la contraseña actual
+    const ok = await bcrypt.compare(currentPassword, user.password);
+    if (!ok) return res.status(401).json({ message: 'Contraseña actual incorrecta' });
+    // Hashear la nueva contraseña y actualizar
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    await user.save();
+    return res.json({ message: 'Contraseña cambiada exitosamente' });
+  } catch (err) {
+    return res.status(400).json({ message: 'Error al cambiar contraseña' });
   }
 };

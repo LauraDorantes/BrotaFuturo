@@ -55,6 +55,7 @@ const alumnoSchema = new mongoose.Schema({
         type: String,
         default: null,
         required: false,
+        trim: true,
     }
 }, { timestamps: true });
 
