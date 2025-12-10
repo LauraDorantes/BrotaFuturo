@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./images/Logo.png">
+    <title>Profesor Inicio</title>
+    <link rel="stylesheet" href="./css/styles_prof.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <ul>
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="glasses-outline"></ion-icon></span>
+                        <span class="title">Profesores - BrotaFuturo</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item" data-section="perfil-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="person-circle-outline"></ion-icon></span>
+                        <span class="title">Perfil</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="alumnos-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="school-outline"></ion-icon></span>
+                        <span class="title">Alumnos</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="publicaciones-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="megaphone-outline"></ion-icon></span>
+                        <span class="title">Publicaciones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="notificaciones-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="notifications-circle-outline"></ion-icon></span>
+                        <span class="title">Notificaciones</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="help-circle-outline"></ion-icon></span>
+                        <span class="title">Ayuda</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
+                        <span class="title">Log out</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </div>
+
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search here">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+                <div class="user">
+                    <img src="./images/userejemplo.png" alt="" width="50px">
+                </div>
+            </div>
+            
+            <!-- MI PERFIL -->
+            <section id="Perfil" class="perfil-section hidden">
+                <h2 class="titulo-seccion">Mi Perfil</h2>
+                <div class="perfil-wrap">
+                    <!-- IZQUIERDA -->
+                    <aside class="perfil-card">
+                        <div class="avatar-wrapper">
+                            <img id="perfilAvatar" src="./images/userejemplo.png" alt="Avatar" width="50px">
+                            <label class="avatar-edit">
+                                <input id="avatarInput" type="file" accept="image/*">
+                                <ion-icon name="pencil-outline"></ion-icon>
+                            </label>
+                        </div>
+
+                        <h2 id="displayName">Nombre Apellido</h2>
+
+                        <div class="profile-actions">
+                            <button id="editBtn" class="btn">Editar</button>
+                        </div>
+                    </aside>
+
+                    <!-- DERECHA -->
+                    <main class="perfil-details">
+                        <!-- FORMULARIO -->
+                        <form id="perfilForm" class="hidden">
+
+                            <div class="row">
+                                <label>Nombre
+                                    <input id="nombreInput" type="text" placeholder="Nombre" required>
+                                </label>
+
+                                <label>Apellido Paterno
+                                    <input id="aPaternoInput" type="text" placeholder="Apellido Paterno" required>
+                                </label>
+
+                                <label>Apellido Materno
+                                    <input id="aMaternoInput" type="text" placeholder="Apellido Materno">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Correo electrónico
+                                    <input id="emailInput" type="email" placeholder="tu@ipn.mx" required>
+                                </label>
+
+                                <label>Teléfono
+                                    <input id="phoneInput" type="tel" placeholder="55 0000 0000">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Departamento
+                                    <input id="deptInput" type="text" placeholder="Departamento o área">
+                                </label>
+
+                                <label>Sexo
+                                    <select id="sexoInput">
+                                        <option value="">Seleccione...</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>RFC
+                                    <input id="rfcInput" type="text" placeholder="Ej: DOLJ930521ABC" maxlength="13">
+                                </label>
+
+                                <label>CURP (PDF o imagen)
+                                    <input id="curpInput" type="file" accept=".pdf, image/*">
+                                </label>
+                            </div>
+
+                            <label>Password
+                                <input id="passInput" type="password" placeholder="********" required>
+                            </label>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn">Guardar</button>
+                                <button id="cancelBtn" type="button" class="btn outline">Cancelar</button>
+                            </div>
+
+                        </form>
+
+                        <!-- LECTURA -->
+                        <section id="perfilReadOnly" class="perfil-readonly">
+                            <h3>Datos personales</h3>
+                            <p><strong>Nombre:</strong> <span id="ro_nombre">-</span></p>
+                            <p><strong>Apellido Paterno:</strong> <span id="ro_aPaterno">-</span></p>
+                            <p><strong>Apellido Materno:</strong> <span id="ro_aMaterno">-</span></p>
+                            <p><strong>Sexo:</strong> <span id="ro_sexo">-</span></p>
+
+                            <h3>Contacto</h3>
+                            <p><strong>Correo:</strong> <span id="ro_email">-</span></p>
+                            <p><strong>Teléfono:</strong> <span id="ro_phone">-</span></p>
+
+                            <h3>Laboral</h3>
+                            <p><strong>Departamento:</strong> <span id="ro_dept">-</span></p>
+
+                            <h3>Documentos</h3>
+                            <p><strong>RFC:</strong> <span id="ro_rfc">-</span></p>
+                            <p><strong>CURP:</strong> <span id="ro_curp">No subido</span></p>
+                        </section>
+
+                    </main>
+                </div>
+            </section>
+
+            <!--ALUMNOS-->
+            <section class="alumnos-section hidden">
+                <h2 class="titulo-seccion">Mis Alumnos de Servicio Social</h2>
+                <div class="tabla-container">
+                    <table class="tabla-alumnos">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Boleta</th>
+                                <th>Nombre Completo</th>
+                                <th>Correo</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyAlumnos">
+                            <tr class="fila-alumno" data-id="1">
+                                <td>1</td>
+                                <td>2024630264</td>
+                                <td>Alan Gonzalez</td>
+                                <td>alan@alumno.ipn.mx</td>
+                                <td>2025-12-01</td>
+                            </tr>
+
+                            <tr class="fila-alumno" data-id="2">
+                                <td>2</td>
+                                <td>20240002</td>
+                                <td>Isaac Rojas</td>
+                                <td>issac@alumno.ipn.mx</td>
+                                <td>2025-12-02</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="modalAlumno" class="modal hidden">
+                    <div class="modal-content">
+                        <span id="cerrarModalAlum" class="close">&times;</span>
+
+                        <h3 class="modal-datos">Información del Alumno</h3>
+                        <div class="modal-datos">
+                            <p><strong>Nombre Completo:</strong> <span id="m_nombre"> </span></p>
+                            <p><strong>Correo:</strong> <span id="m_correo"> </span></p>
+                            <p><strong>Teléfono:</strong> <span id="m_telefono"> </span></p>
+                            <p><strong>Boleta:</strong> <span id="m_boleta"> </span></p>
+                            <p><strong>Carrera:</strong> <span id="m_carrera"> </span></p>
+                            <p><strong>Créditos:</strong> <span id="m_creditos"> </span></p>
+                            <p><strong>Publicación asociada:</strong> <span id="m_publicacion"> </span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="notificaciones-section">
+                <h2 class="titulo-seccion">Notificaciones</h2>
+                <div class="notificaciones-card" id="noti1" data-id="1">
+                    El Alumno <strong>_________</strong> está interesado en tu publicación <strong>________</strong>
+                </div>
+
+                <div id="modalNotificacion" class="modal hidden">
+                    <div class="modal-content">
+                        <span id="cerrarModalNoti" class="close">&times;</span>
+                        <h3>Datos del Alumno</h3>
+                        <div class="modal-datos">
+                            <p><strong>Nombre Completo:</strong> <span id="n_nombre"> </span></p>
+                            <p><strong>Créditos:</strong> <span id="n_creditos"> </span></p>
+                            <p><strong>Correo:</strong> <span id="n_correo"> </span></p>
+                            <p><strong>Carrera:</strong> <span id="n_carrera"> </span></p>
+                        </div>
+                        <div class="modal-actions">
+                            <button id="btnAceptar" class="btn aceptar">Aceptar</button>
+                            <button id="btnRechazar" class="btn rechazar">Rechazar</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </div>
+
+    <script src="./js/scripts_prof.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>
