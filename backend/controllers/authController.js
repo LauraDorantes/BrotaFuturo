@@ -93,7 +93,7 @@ exports.register = async (req, res) => {
     // Generar tokens JWT
     const tokens = signTokens(user, key);
     return res.status(201).json({
-      user: { _id: user._id, correo: user.correo, role: key },
+      user: { id: user._id, correo: user.correo, role: key },
       ...tokens,
     });
   } catch (err) {
@@ -127,7 +127,7 @@ exports.login = async (req, res) => {
 
     // Generar tokens JWT
     const tokens = signTokens(user, key);
-    return res.json({ user: { _id: user._id, correo: user.correo, role: key }, ...tokens });
+    return res.json({ user: { id: user._id, correo: user.correo, role: key }, ...tokens });
   } catch (err) {
     const status = err.status || 400;
     return res.status(status).json({ message: err.message || 'Error al iniciar sesión' });

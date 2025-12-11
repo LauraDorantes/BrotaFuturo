@@ -25,7 +25,7 @@ const normalizeRequisitos = (val) => {
 exports.crearVacante = async (req, res) => {
     try {
         // Obtener datos de la vacante del cuerpo de la solicitud
-        const { titulo, descripcion, requisitos, salario } = req.body;
+        let { titulo, descripcion, requisitos, salario } = req.body;
         if (!titulo || !descripcion || !requisitos) {
             return res.status(400).json({ message: 'Faltan campos requeridos' });
         }
@@ -34,6 +34,7 @@ exports.crearVacante = async (req, res) => {
         if (requisitos.length === 0) {
             return res.status(400).json({ message: 'Requisitos no válidos' });
         }
+        console.log('Creando vacante con datos:', { titulo, descripcion, requisitos, salario, propietario: req.user._id });
         // Crear la vacante
         const vacante = await Vacante.create({
             titulo,
@@ -41,7 +42,7 @@ exports.crearVacante = async (req, res) => {
             requisitos,
             salario,
             propietarioTipo: req.user.role.toLowerCase() === 'institucion' ? 'Institucion' : 'Profesor',
-            propietario: req.user._id,
+            propietario: req.user.id,
         });
         // Retornar la vacante creada
         return res.status(201).json(vacante);
@@ -80,7 +81,7 @@ exports.actualizarVacante = async (req, res) => {
         const vacante = req.vacanteIdData;
 
         // Verificar que el usuario autenticado es el propietario de la vacante
-        if (!(vacante.propietario.toString() === String(req.user._id))) {
+        if (!(vacante.propietario.toString() === String(req.user.id))) {
             return res.status(403).json({ message: 'No autorizado para actualizar esta vacante' });
         }
 
@@ -117,7 +118,7 @@ exports.eliminarVacante = async (req, res) => {
         const vacante = req.vacanteIdData;
 
         // Verificar que el usuario autenticado es el propietario de la vacante
-        if (!(vacante.propietario.toString() === String(req.user._id))) {
+        if (!(vacante.propietario.toString() === String(req.user.id))) {
             return res.status(403).json({ message: 'No autorizado para eliminar esta vacante' });
         }
 

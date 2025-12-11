@@ -5,6 +5,8 @@ const cors = require('cors');
 
 // Rutas
 const authRoutes = require('./routes/auth');
+const alumnosRoutes = require('./routes/alumnos');
+const vacantesRoutes = require('./routes/vacantes');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,6 +22,8 @@ app.get('/', (req, res) => {
 
 // Importar rutas
 app.use('/api/auth', authRoutes);
+app.use('/api/alumnos', alumnosRoutes);
+app.use('/api/vacantes', vacantesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

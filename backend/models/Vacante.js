@@ -40,4 +40,4 @@ vacanteSchema.index({ titulo: 'text', descripcion: 'text', requisitos: 'text' })
 vacanteSchema.index({ fechaPublicacion: -1 });
 vacanteSchema.index({ propietario: 1, propietarioTipo: 1, fechaPublicacion: -1 });
 
-module.exports = mongoose.model('Vacante', vacanteSchema);
+module.exports = mongoose.model('Vacante', vacanteSchema, 'vacantes');

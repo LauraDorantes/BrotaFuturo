@@ -65,4 +65,4 @@ alumnoSchema.index({ boleta: 1 }, { unique: true });
 alumnoSchema.index({ createdAt: -1 });
 alumnoSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 
-module.exports = mongoose.model('Alumno', alumnoSchema);
+module.exports = mongoose.model('Alumno', alumnoSchema, 'alumnos');

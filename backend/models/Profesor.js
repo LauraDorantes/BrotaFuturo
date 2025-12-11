@@ -57,4 +57,4 @@ profesorSchema.index({ correo: 1 }, { unique: true });
 profesorSchema.index({ createdAt: -1 });
 profesorSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 
-module.exports = mongoose.model('Profesor', profesorSchema);
+module.exports = mongoose.model('Profesor', profesorSchema, 'profesores');

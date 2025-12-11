@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 /*
     Middleware para validar ObjectID de MongoDB en rutas.
     Valida que el ID proporcionado en los parámetros de la ruta es un ObjectID válido.

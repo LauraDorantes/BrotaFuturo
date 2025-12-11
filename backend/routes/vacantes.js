@@ -8,6 +8,7 @@ const {
 const { requireAuth } = require('../middlewares/authMiddleware');
 const { requireRoles } = require('../middlewares/rolesMiddleware');
 const { validarObjectId } = require('../middlewares/validarObjectId');
+const Vacante = require('../models/Vacante');
 
 const router = express.Router();
 

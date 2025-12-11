@@ -38,3 +38,5 @@ router.put(
     upload.single('cvFile'),
     actualizarCV
 );
+
+module.exports = router;

@@ -5,7 +5,6 @@ const {
     login,
     refresh,
     me,
-    actualizarPerfil,
     cambiarPassword,
 } = require('../controllers/authController');
 // Middlewares

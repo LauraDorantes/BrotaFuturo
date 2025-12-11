@@ -53,4 +53,4 @@ institucionSchema.index({ correo: 1 }, { unique: true });
 institucionSchema.index({ createdAt: -1 });
 institucionSchema.index({ nombre: 'text', nombreRepresentante: 'text', apellidosRepresentante: 'text' });
 
-module.exports = mongoose.model('Institucion', institucionSchema);
+module.exports = mongoose.model('Institucion', institucionSchema, 'instituciones');

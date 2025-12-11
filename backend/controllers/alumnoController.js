@@ -45,7 +45,7 @@ exports.subirCV = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No se ha proporcionado ningún archivo' });
         }
-        const alumno = await Alumno.findById(req.user._id);
+        const alumno = await Alumno.findById(req.user.id);
         if (!alumno) {
             return res.status(404).json({ message: 'Alumno no encontrado' });
         }
@@ -72,7 +72,7 @@ exports.actualizarCV = async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ message: 'No se ha proporcionado ningún archivo' });
         }
-        const alumno = await Alumno.findById(req.user._id);
+        const alumno = await Alumno.findById(req.user.id);
         if (!alumno) {
             return res.status(404).json({ message: 'Alumno no encontrado' });
         }
