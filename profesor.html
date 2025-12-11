@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <title>Profesor Inicio</title>
     <link rel="stylesheet" href="./css/styles_prof.css">
 </head>
+
 <body>
     <div class="container">
         <div class="navigation">
@@ -17,7 +19,7 @@
                         <span class="title">Profesores - BrotaFuturo</span>
                     </a>
                 </li>
-                
+
                 <li class="nav-item" data-section="perfil-section">
                     <a href="#">
                         <span class="icon"><ion-icon name="person-circle-outline"></ion-icon></span>
@@ -78,7 +80,7 @@
                     <img src="./images/userejemplo.png" alt="" width="50px">
                 </div>
             </div>
-            
+
             <!-- MI PERFIL -->
             <section id="Perfil" class="perfil-section hidden">
                 <h2 class="titulo-seccion">Mi Perfil</h2>
@@ -241,6 +243,271 @@
                 </div>
             </section>
 
+            
+            <!-- PUBLICACIONES -->
+            <section id="publicaciones-section" class="publicaciones-section hidden">
+                <div class="publicaciones-header">
+                    <h2 class="titulo-seccion">Mis Publicaciones de Servicio Social</h2>
+                    <button id="crearPublicacionBtn" class="btn btn-primary">
+                        <ion-icon name="add-circle-outline"></ion-icon> Crear Nueva Publicación
+                    </button>
+                </div>
+
+                <!-- Lista de publicaciones existentes -->
+                <div class="publicaciones-lista" id="listaPublicaciones">
+                    <div class="publicacion-card">
+                        <div class="publicacion-header">
+                            <h3>Desarrollo de aplicación web para gestión escolar</h3>
+                            <span class="publicacion-estado activa">Activa</span>
+                        </div>
+                        <div class="publicacion-info">
+                            <p><strong>Área:</strong> Desarrollo de Software</p>
+                            <p><strong>Vacantes:</strong> 2/3</p>
+                            <p><strong>Fecha límite:</strong> 15 de diciembre 2025</p>
+                        </div>
+                        <div class="publicacion-actions">
+                            <button class="btn btn-small ver-postulantes">
+                                <ion-icon name="people-outline"></ion-icon> Ver postulantes (5)
+                            </button>
+                            <button class="btn btn-small outline editar-publicacion">
+                                <ion-icon name="pencil-outline"></ion-icon> Editar
+                            </button>
+                            <button class="btn btn-small outline eliminar-publicacion">
+                                <ion-icon name="trash-outline"></ion-icon> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modalPublicacion" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalPub" class="close">&times;</span>
+
+                        <h3 id="modalTitulo">Crear Nueva Publicación</h3>
+
+                        <form id="formPublicacion">
+                            <!-- Información Básica -->
+                            <div class="form-section">
+                                <h4>Información Básica</h4>
+                                <div class="row">
+                                    <label>Título de la publicación
+                                        <input type="text" id="tituloPub"
+                                            placeholder="Ej: Desarrollo de X" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Área
+                                        <select id="areaPub" required>
+                                            <option value="">Seleccionar área</option>
+
+                                            <option value="fundamentos-programacion">Fundamentos de Programación
+                                            </option>
+                                            <option value="paradigmas-programacion">Paradigmas de Programación</option>
+                                            <option value="algoritmos-estructuras-datos">Algoritmos y Estructuras de
+                                                Datos</option>
+                                            <option value="analisis-diseno-algoritmos">Análisis y Diseño de Algoritmos
+                                            </option>
+                                            <option value="ingenieria-software">Ingeniería de Software</option>
+                                            <option value="analisis-diseno-sistemas">Análisis y Diseño de Sistemas
+                                            </option>
+                                            <option value="desarrollo-aplicaciones-moviles">Desarrollo de Aplicaciones
+                                                Móviles</option>
+                                            <option value="desarrollo-software">Desarrollo de Software</option>
+                                            <option value="procesamiento-digital-software">Procesamiento Digital de
+                                                Software</option>
+
+                                            <option value="sistemas-operativos">Sistemas Operativos</option>
+                                            <option value="sistemas-distribuidos">Sistemas Distribuidos</option>
+                                            <option value="administracion-servicios-red">Administración de Servicios en
+                                                Red</option>
+                                            <option value="redes-computadoras">Redes de Computadoras</option>
+                                            <option value="sistemas-chip">Sistemas en Chip</option>
+
+                                            <option value="bases-datos">Bases de Datos</option>
+
+                                            <option value="inteligencia-artificial">Inteligencia Artificial</option>
+
+                                            <option value="teoria-computacion">Teoría de la Computación</option>
+                                            <option value="compiladores">Compiladores</option>
+
+                                            <option value="algebra-lineal">Álgebra Lineal</option>
+                                            <option value="calculo-aplicado">Cálculo Aplicado</option>
+                                            <option value="matematicas-ingenieria">Matemáticas para la Ingeniería
+                                            </option>
+                                            <option value="probabilidad-estadistica">Probabilidad y Estadística</option>
+
+                                            <option value="ingenieria-etica-sociedad">Ingeniería, Ética y Sociedad
+                                            </option>
+                                            <option value="comunicacion-oral-escrita">Comunicación Oral y Escrita
+                                            </option>
+                                            <option value="fundamentos-economicos">Fundamentos Económicos</option>
+
+                                            <option value="mecanica-electromagnetismo">Mecánica y Electromagnetismo
+                                            </option>
+
+                                            <option value="metodos-numericos">Métodos Numéricos</option>
+                                            <option value="sistemas-embebidos">Sistemas Embebidos</option>
+                                            <option value="seguridad-informatica">Seguridad Informática</option>
+                                            <option value="computo-nube">Computación en la Nube</option>
+                                            <option value="mineria-datos">Minería de Datos</option>
+
+                                            <option value="otro">Otra área no listada</option>
+                                        </select>
+                                    </label>
+
+                                    <label>Número de vacantes
+                                        <input type="number" id="vacantesPub" min="1" max="10" value="1" required>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="form-section">
+                                <h4>Descripción del Proyecto</h4>
+                                <label>Objetivos del servicio social
+                                    <textarea id="objetivosPub" rows="3"
+                                        placeholder="Describe los objetivos principales del proyecto..."
+                                        required></textarea>
+                                </label>
+
+                                <label>Actividades a realizar
+                                    <textarea id="actividadesPub" rows="3"
+                                        placeholder="Detalla las actividades que realizará el alumno..."
+                                        required></textarea>
+                                </label>
+
+                                <label>Requerimientos específicos
+                                    <textarea id="requerimientosPub" rows="2"
+                                        placeholder="Equipo especial, software específico, etc."></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Requisitos del Alumno -->
+                            <div class="form-section">
+                                <h4>Requisitos para el Alumno</h4>
+                                <div class="row">
+                                    <label>Carrera(s) requerida(s)
+                                        <select id="carrerasPub" multiple>
+                                            <option value="sistemas">Ingeniería en Sistemas Computacionales</option>
+                                            <option value="inteligencia-artificial">Ingeniería en Inteligencia
+                                                Artificial</option>
+                                            <option value="ciencia-datos">Licenciatura en Ciencia de Datos</option>
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Semestre mínimo
+                                        <input type="number" id="semestrePub" min="4" max="12" placeholder="6">
+                                    </label>
+
+                                    <label>Créditos mínimos
+                                        <input type="number" id="creditosPub" min="0" placeholder="120">
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Conocimientos técnicos requeridos
+                                        <input type="text" id="conocimientosPub"
+                                            placeholder="Ej: Java, Python, C">
+                                    </label>
+                                </div>
+
+                                <label>Habilidades deseables
+                                    <textarea id="habilidadesPub" rows="2"
+                                        placeholder="Trabajo en equipo, liderazgo, investigación..."></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Información Logística -->
+                            <div class="form-section">
+                                <h4>Información Logística</h4>
+                                <div class="row">
+                                    <label>Modalidad*
+                                        <select id="modalidadPub" required>
+                                            <option value="">Seleccionar modalidad</option>
+                                            <option value="presencial">Presencial</option>
+                                            <option value="remoto">Remoto</option>
+                                            <option value="hibrido">Híbrido</option>
+                                        </select>
+                                    </label>
+
+                                    <label>Horario estimado (horas semanales)
+                                        <input type="number" id="horasPub" min="1" max="40" value="10" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Fecha de inicio
+                                        <input type="date" id="fechaInicioPub" required>
+                                    </label>
+
+                                    <label>Fecha límite de postulación
+                                        <input type="date" id="fechaLimitePub" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Duración estimada (meses)
+                                        <input type="number" id="duracionPub" min="1" max="12" value="6" required>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Beneficios para el Alumno -->
+                            <div class="form-section">
+                                <h4>Beneficios para el Alumno</h4>
+                                <div class="beneficios-grid">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="certificacion">
+                                        <span>Certificación al término</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="cartarecomendacion">
+                                        <span>Carta de recomendación</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="experiencialaboral">
+                                        <span>Experiencia laboral comprobable</span>
+                                    </label>
+                                </div>
+
+                                <label>Otros beneficios
+                                    <textarea id="otrosBeneficiosPub" rows="2"
+                                        placeholder="Especificar otros beneficios no listados..."></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Contacto -->
+                            <div class="form-section">
+                                <h4>Contacto e Información Adicional</h4>
+                                <div class="row">
+                                    <label>Correo para consultas
+                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required>
+                                    </label>
+
+                                    <label>Teléfono de contacto
+                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000">
+                                    </label>
+                                </div>
+
+                                <label>Información adicional
+                                    <textarea id="infoAdicionalPub" rows="3"
+                                        placeholder="Información complementaria, observaciones, etc."></textarea>
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Publicar</button>
+                                <button type="button" id="cancelarPublicacionBtn" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!--NOTIFICACIONES-->
             <section class="notificaciones-section">
                 <h2 class="titulo-seccion">Notificaciones</h2>
                 <div class="notificaciones-card" id="noti1" data-id="1">
