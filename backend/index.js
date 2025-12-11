@@ -7,6 +7,9 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const alumnosRoutes = require('./routes/alumnos');
 const vacantesRoutes = require('./routes/vacantes');
+// Nuevas rutas para estudiantes
+const postulacionesRoutes = require('./routes/postulaciones');
+const mensajesRoutes = require('./routes/mensajes');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -24,6 +27,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/alumnos', alumnosRoutes);
 app.use('/api/vacantes', vacantesRoutes);
+// Nuevas rutas para estudiantes
+app.use('/api/postulaciones', postulacionesRoutes);
+app.use('/api/mensajes', mensajesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

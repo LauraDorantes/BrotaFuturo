@@ -13,7 +13,7 @@ const auth = new google.auth.GoogleAuth({
 const drive = google.drive({ version: 'v3', auth });
 
 // Funcion para subir CVs
-async function subirADrive(file, alumno){
+async function subirADrive(file, alumno, req){
     const bufferStream = new stream.PassThrough();
     bufferStream.end(file.buffer);
 
@@ -21,12 +21,12 @@ async function subirADrive(file, alumno){
         media: {
             mimeType: file.mimetype,
             body: bufferStream,
-            requestBody: {
-                name: `cv-${alumno.boleta}${path.extname(req.file.originalname)}`,
-                parents: ['1jFxeX3MDK510qOP_8WjvNWjlup6eDIDQ'], // Carpeta específica en Google Drive
-            },
-            fields: 'id',
-        }
+        },
+        requestBody: {
+            name: `cv-${alumno.boleta}${path.extname(req.file.originalname)}`,
+            parents: ['1jFxeX3MDK510qOP_8WjvNWjlup6eDIDQ'], // Carpeta específica en Google Drive
+        },
+        fields: 'id',
     });
 
     return data.id;
@@ -50,7 +50,7 @@ exports.subirCV = async (req, res) => {
             return res.status(404).json({ message: 'Alumno no encontrado' });
         }
         // Subir y guardar el CV a Google Drive
-        alumno.cvID = await subirADrive(req.file, alumno);
+        alumno.cvID = await subirADrive(req.file, alumno, req);
         
         await alumno.save();
         return res.json({ message: 'CV subido/actualizado correctamente', data: { cvID: alumno.cvID, cvURL: `https://drive.google.com/uc?id=${alumno.cvID}` } });
@@ -86,7 +86,7 @@ exports.actualizarCV = async (req, res) => {
             }
         }
         // Subir y guardar el nuevo CV a Google Drive
-        alumno.cvID = await subirADrive(req.file, alumno);
+        alumno.cvID = await subirADrive(req.file, alumno, req);
 
         await alumno.save();
         return res.json({ message: 'CV actualizado correctamente', data: { cvID: alumno.cvID, cvURL: `https://drive.google.com/uc?id=${alumno.cvID}` } });

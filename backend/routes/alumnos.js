@@ -2,6 +2,7 @@ const express = require('express');
 const {
     subirCV,
     actualizarCV,
+    actualizarPerfil,
 } = require('../controllers/alumnoController');
 const { requireAuth } = require('../middlewares/authMiddleware');
 const router = express.Router();
@@ -37,6 +38,19 @@ router.put(
     requireAuth,
     upload.single('cvFile'),
     actualizarCV
+);
+
+/*
+    PUT actualizarPerfil
+    Endpoint para que un estudiante actualice su información personal.
+    @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
+    @param {Object} req.body - Datos a actualizar (nombres, apellidoPaterno, apellidoMaterno, telefono, sexo, carrera, creditos)
+    @return {Object} - Datos del alumno actualizados o error en caso de fallo.
+*/
+router.put(
+    '/perfil',
+    requireAuth,
+    actualizarPerfil
 );
 
 module.exports = router;

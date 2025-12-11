@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./images/Logo.png">
+    <title>Estudiante - BrotaFuturo</title>
+    <link rel="stylesheet" href="./css/styles_estudiante.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Navegación lateral -->
+        <div class="navigation">
+            <ul>
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="school-outline"></ion-icon></span>
+                        <span class="title">Estudiante - BrotaFuturo</span>
+                    </a>
+                </li>
+
+                <li class="nav-item active" data-section="perfil-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="person-circle-outline"></ion-icon></span>
+                        <span class="title">Mi Perfil</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="vacantes-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="briefcase-outline"></ion-icon></span>
+                        <span class="title">Vacantes Disponibles</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="postulaciones-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="document-text-outline"></ion-icon></span>
+                        <span class="title">Mis Postulaciones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="mensajes-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="mail-outline"></ion-icon></span>
+                        <span class="title">Mensajes</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="help-circle-outline"></ion-icon></span>
+                        <span class="title">Ayuda</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#" id="logoutBtn">
+                        <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
+                        <span class="title">Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </div>
+
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Buscar...">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+                <div class="user">
+                    <img id="userAvatar" src="./images/userejemplo.png" alt="" width="50px">
+                </div>
+            </div>
+
+            <!-- SECCIÓN: MI PERFIL -->
+            <section id="perfil-section" class="perfil-section">
+                <h2 class="titulo-seccion">Mi Perfil</h2>
+                <div class="perfil-wrap">
+                    <!-- Panel izquierdo: Avatar e información básica -->
+                    <aside class="perfil-card">
+                        <div class="avatar-wrapper">
+                            <img id="perfilAvatar" src="./images/userejemplo.png" alt="Avatar" width="50px">
+                        </div>
+
+                        <h2 id="displayName">Nombre Apellido</h2>
+                        <p id="displayBoleta" class="boleta-display">Boleta: -</p>
+                        <p id="displayCarrera" class="carrera-display">Carrera: -</p>
+
+                        <div class="profile-actions">
+                            <button id="editBtn" class="btn">Editar Perfil</button>
+                        </div>
+
+                        <!-- Sección de CV -->
+                        <div class="cv-section">
+                            <h3>Mi Curriculum Vitae</h3>
+                            <div id="cvStatus" class="cv-status">
+                                <p id="cvMessage">No hay CV cargado</p>
+                                <a id="cvDownloadLink" href="#" target="_blank" class="btn btn-small hidden">Ver CV</a>
+                            </div>
+                            <label class="btn btn-outline btn-cv-upload">
+                                <input id="cvInput" type="file" accept=".pdf,.doc,.docx" style="display: none;">
+                                <ion-icon name="cloud-upload-outline"></ion-icon>
+                                <span id="cvUploadText">Subir CV</span>
+                            </label>
+                            <p class="cv-help">Formatos permitidos: PDF, DOC, DOCX</p>
+                        </div>
+                    </aside>
+
+                    <!-- Panel derecho: Formulario y datos -->
+                    <main class="perfil-details">
+                        <!-- Formulario de edición (oculto por defecto) -->
+                        <form id="perfilForm" class="hidden">
+                            <div class="row">
+                                <label>Nombres
+                                    <input id="nombreInput" type="text" placeholder="Nombres" required>
+                                </label>
+
+                                <label>Apellido Paterno
+                                    <input id="aPaternoInput" type="text" placeholder="Apellido Paterno" required>
+                                </label>
+
+                                <label>Apellido Materno
+                                    <input id="aMaternoInput" type="text" placeholder="Apellido Materno">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Correo electrónico
+                                    <input id="emailInput" type="email" placeholder="tu@alumno.ipn.mx" required>
+                                </label>
+
+                                <label>Teléfono
+                                    <input id="phoneInput" type="tel" placeholder="55 0000 0000" required>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Boleta
+                                    <input id="boletaInput" type="text" placeholder="2024000000" readonly>
+                                </label>
+
+                                <label>Sexo
+                                    <select id="sexoInput">
+                                        <option value="">Seleccione...</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Carrera
+                                    <select id="carreraInput">
+                                        <option value="">Seleccione...</option>
+                                        <option value="ISC">ISC - Ingeniería en Sistemas Computacionales</option>
+                                        <option value="IIA">IIA - Ingeniería en Inteligencia Artificial</option>
+                                        <option value="LCD">LCD - Licenciatura en Ciencia de Datos</option>
+                                    </select>
+                                </label>
+
+                                <label>Créditos
+                                    <input id="creditosInput" type="number" placeholder="120" required>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>CURP
+                                    <input id="curpInput" type="text" placeholder="CURP" readonly>
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                <button id="cancelBtn" type="button" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
+
+                        <!-- Vista de solo lectura (visible por defecto) -->
+                        <section id="perfilReadOnly" class="perfil-readonly">
+                            <h3>Datos Personales</h3>
+                            <p><strong>Nombre completo:</strong> <span id="ro_nombre">-</span></p>
+                            <p><strong>Sexo:</strong> <span id="ro_sexo">-</span></p>
+                            <p><strong>CURP:</strong> <span id="ro_curp">-</span></p>
+
+                            <h3>Información de Contacto</h3>
+                            <p><strong>Correo:</strong> <span id="ro_email">-</span></p>
+                            <p><strong>Teléfono:</strong> <span id="ro_phone">-</span></p>
+
+                            <h3>Información Académica</h3>
+                            <p><strong>Carrera:</strong> <span id="ro_carrera">-</span></p>
+                            <p><strong>Créditos:</strong> <span id="ro_creditos">-</span></p>
+                        </section>
+                    </main>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: VACANTES DISPONIBLES -->
+            <section id="vacantes-section" class="vacantes-section hidden">
+                <div class="vacantes-header">
+                    <h2 class="titulo-seccion">Vacantes Disponibles</h2>
+                    <div class="filtros">
+                        <select id="filtroTipo" class="filtro-select">
+                            <option value="">Todos los tipos</option>
+                            <option value="Profesor">Vacantes de Profesores</option>
+                            <option value="Institucion">Vacantes de Empresas/Instituciones</option>
+                        </select>
+                        <input type="text" id="buscarVacante" class="buscar-input" placeholder="Buscar por título o descripción...">
+                    </div>
+                </div>
+
+                <!-- Lista de vacantes -->
+                <div class="vacantes-lista" id="listaVacantes">
+                    <!-- Las vacantes se cargarán dinámicamente aquí -->
+                    <div class="loading-message">Cargando vacantes...</div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: MIS POSTULACIONES -->
+            <section id="postulaciones-section" class="postulaciones-section hidden">
+                <div class="postulaciones-header">
+                    <h2 class="titulo-seccion">Mis Postulaciones</h2>
+                    <div class="filtros">
+                        <select id="filtroEstadoPostulacion" class="filtro-select">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">Pendientes</option>
+                            <option value="aceptada">Aceptadas</option>
+                            <option value="rechazada">Rechazadas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Lista de postulaciones -->
+                <div class="postulaciones-lista" id="listaPostulaciones">
+                    <!-- Las postulaciones se cargarán dinámicamente aquí -->
+                    <div class="loading-message">Cargando postulaciones...</div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: MENSAJES -->
+            <section id="mensajes-section" class="mensajes-section hidden">
+                <div class="mensajes-header">
+                    <h2 class="titulo-seccion">Mensajes</h2>
+                    <button id="nuevoMensajeBtn" class="btn btn-primary">
+                        <ion-icon name="add-circle-outline"></ion-icon> Nuevo Mensaje
+                    </button>
+                </div>
+
+                <div class="mensajes-container">
+                    <!-- Panel izquierdo: Lista de mensajes -->
+                    <aside class="mensajes-sidebar">
+                        <div class="mensajes-tabs">
+                            <button class="tab-btn active" data-tab="recibidos">Recibidos</button>
+                            <button class="tab-btn" data-tab="enviados">Enviados</button>
+                        </div>
+                        <div class="mensajes-lista" id="listaMensajes">
+                            <!-- Los mensajes se cargarán dinámicamente aquí -->
+                            <div class="loading-message">Cargando mensajes...</div>
+                        </div>
+                    </aside>
+
+                    <!-- Panel derecho: Vista de mensaje -->
+                    <main class="mensaje-detalle" id="mensajeDetalle">
+                        <div class="mensaje-vacio">
+                            <ion-icon name="mail-open-outline"></ion-icon>
+                            <p>Selecciona un mensaje para ver su contenido</p>
+                        </div>
+                    </main>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- MODAL: POSTULARSE A VACANTE -->
+    <div id="modalPostulacion" class="modal hidden">
+        <div class="modal-content">
+            <span id="cerrarModalPostulacion" class="close">&times;</span>
+            <h3>Postularse a Vacante</h3>
+            <form id="formPostulacion">
+                <div id="vacanteInfoModal" class="vacante-info-modal"></div>
+                <label>Mensaje (opcional)
+                    <textarea id="mensajePostulacion" rows="4" placeholder="Escribe un mensaje para acompañar tu postulación..."></textarea>
+                </label>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enviar Postulación</button>
+                    <button type="button" id="cancelarPostulacionBtn" class="btn outline">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: NUEVO MENSAJE -->
+    <div id="modalNuevoMensaje" class="modal hidden">
+        <div class="modal-content modal-lg">
+            <span id="cerrarModalMensaje" class="close">&times;</span>
+            <h3>Nuevo Mensaje</h3>
+            <form id="formNuevoMensaje">
+                <div class="form-section">
+                    <label>Tipo de Destinatario
+                        <select id="destinatarioTipo" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="Profesor">Profesor</option>
+                            <option value="Institucion">Empresa/Institución</option>
+                        </select>
+                        <small>Selecciona desde una vacante o postulación para prellenar estos campos</small>
+                    </label>
+                    <label>ID del Destinatario
+                        <input type="text" id="destinatarioId" placeholder="ID del destinatario" required>
+                        <small>Este campo se completa automáticamente al seleccionar desde una vacante o postulación</small>
+                    </label>
+                    <label>Asunto
+                        <input type="text" id="mensajeAsunto" placeholder="Asunto del mensaje" required>
+                    </label>
+                    <label>Contenido
+                        <textarea id="mensajeContenido" rows="6" placeholder="Escribe tu mensaje..." required></textarea>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                    <button type="button" id="cancelarMensajeBtn" class="btn outline">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALLE DE POSTULACIÓN -->
+    <div id="modalDetallePostulacion" class="modal hidden">
+        <div class="modal-content modal-lg">
+            <span id="cerrarModalDetallePost" class="close">&times;</span>
+            <h3>Detalle de Postulación</h3>
+            <div id="detallePostulacionContent"></div>
+        </div>
+    </div>
+
+    <script src="./js/scripts_estudiante.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>
+
