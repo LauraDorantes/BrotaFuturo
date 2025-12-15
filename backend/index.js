@@ -31,7 +31,7 @@ app.use('/api/vacantes', vacantesRoutes);
 app.use('/api/postulaciones', postulacionesRoutes);
 app.use('/api/mensajes', mensajesRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });

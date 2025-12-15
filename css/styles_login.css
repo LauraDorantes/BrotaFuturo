@@ -144,6 +144,16 @@ body.modal-open .btn {
     height: 100%;
 }
 
+/* Evita que el menú absoluto cubra el título del registro */
+.contenedor.activo .formulario-registro form {
+    padding-top: 90px;
+}
+
+/* Reduce el espacio entre los últimos campos y los botones (Alumno) */
+#formularioAlumno #visibleAlumno .d-flex.gap-2 button {
+    margin-top: 0;
+}
+
 .contenedor input, select{
     background-color: #eee;
     border: none;

@@ -5,13 +5,15 @@ const accederBtn = document.getElementById('acceder');
 const campos = {
     boleta: false,
     nombre: false,
+    apellidoPaterno: false,
+    apellidoMaterno: false,
     telefono: false,
     curp: false,
     correo: false,
     contrasena: false,
     sexo: false,
     carrera: false,
-    semestre: false,
+    creditos: false,
     rfc: false,
     representante: false,
     direccion: false,
@@ -99,8 +101,9 @@ function mostrarFormularioInstitucion() {
 // Función para validar si todos los campos requeridos están completos
 function validarFormularioCompleto(tipo) {
     if (tipo === 'Alumno') {
-        return campos.boleta && campos.nombre && campos.telefono && campos.curp && 
-               campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.semestre;
+        return campos.boleta && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && 
+               campos.telefono && campos.curp && 
+               campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.creditos;
     } else if (tipo === 'Profesor') {
         return campos.rfc && campos.nombre && campos.telefono && campos.curp && 
                campos.correo && campos.contrasena && campos.sexo && campos.carrera;
@@ -236,6 +239,10 @@ function mostrarRegistroForm() {
     }
 }
 
+function mostrarRegistro() {
+    tipoUsuario('Alumno');
+}
+
 // Event listeners para los botones del toggle
 function inicializarEventListeners() {
     if (registroBtn) {
@@ -333,13 +340,15 @@ function resetearEstadoCampos(tipo) {
     if (tipo === 'Alumno') {
         campos.boleta = false;
         campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
         campos.telefono = false;
         campos.curp = false;
         campos.correo = false;
         campos.contrasena = false;
         campos.sexo = false;
         campos.carrera = false;
-        campos.semestre = false;
+        campos.creditos = false;
     } else if (tipo === 'Profesor') {
         campos.rfc = false;
         campos.nombre = false;
@@ -461,7 +470,7 @@ function generarContenidoAlumno(formulario) {
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Boleta:</strong> ${formulario.boleta.value}</p>
-                <p><strong>Nombre:</strong> ${formulario.nombre.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
                 <p><strong>CURP:</strong> ${formulario.curp.value}</p>
                 <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
             </div>
@@ -469,7 +478,7 @@ function generarContenidoAlumno(formulario) {
                 <p><strong>Correo:</strong> ${formulario.correo.value}</p>
                 <p><strong>Sexo:</strong> ${formulario.sexo.options[formulario.sexo.selectedIndex].text}</p>
                 <p><strong>Carrera:</strong> ${formulario.carrera.options[formulario.carrera.selectedIndex].text}</p>
-                <p><strong>Semestre:</strong> ${formulario.semestre.options[formulario.semestre.selectedIndex].text}</p>
+                <p><strong>Créditos:</strong> ${formulario.creditos.value}</p>
             </div>
         </div>
     `;
@@ -587,7 +596,6 @@ function mostrarMensajeExito(tipo) {
 // Resto del código permanece igual...
 const validarFormulario = (e) => {
     const campo = e.target.name;
-    const valor = e.target.value;
     
     switch(campo) {
         case "boleta":
@@ -595,6 +603,15 @@ const validarFormulario = (e) => {
             break;
         case "nombre":
             validarCampo(expresiones.nombre, e.target, 'nombre');
+            break;
+        case "apellidoPaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoPaterno');
+            break;
+        case "apellidoMaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoMaterno');
+            break;
+        case "creditos":
+            validarCreditos(e.target);
             break;
         case "curp":
             validarCampo(expresiones.curp, e.target, 'curp');
@@ -624,6 +641,7 @@ const validarFormulario = (e) => {
         case "direccion":
             // Para dirección, solo validamos que no esté vacía
             const grupoDireccion = e.target.closest('.formulario__grupo');
+            if (!grupoDireccion) return;
             const errorElementDireccion = grupoDireccion.querySelector('.formulario__input-error');
             
             if (e.target.value.trim() !== '') {
@@ -661,6 +679,26 @@ const validarCampo = (expresion, input, campo) => {
             errorElement.classList.add('formulario__input-error-activo');
         }
         campos[campo] = false;
+    }
+}
+
+const validarCreditos = (input) => {
+    const valor = parseInt(input.value);
+    const grupo = input.closest('.formulario__grupo');
+    if (!grupo) return;
+    
+    const errorElement = grupo.querySelector('.formulario__input-error');
+    
+    if (!isNaN(valor) && valor >= 0 && valor <= 387) {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        grupo.classList.add('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.remove('formulario__input-error-activo');
+        campos['creditos'] = true;
+    } else {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        grupo.classList.remove('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.add('formulario__input-error-activo');
+        campos['creditos'] = false;
     }
 }
 
@@ -710,42 +748,43 @@ function inicializarValidacionFormularios() {
 function validarSelects(tipo) {
     if (tipo === 'Alumno') {
         const formulario = document.getElementById('formularioAlumno');
-        if (formulario) {
-            const sexoValido = formulario.sexo.value !== "Sexo";
-            const semestreValido = formulario.semestre.value !== "Semestre";
-            const carreraValida = formulario.carrera.value !== "Carrera";
-            
-            campos.sexo = sexoValido;
-            campos.semestre = semestreValido;
-            campos.carrera = carreraValida;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.sexo, sexoValido);
-            actualizarEstiloSelect(formulario.semestre, semestreValido);
-            actualizarEstiloSelect(formulario.carrera, carreraValida);
-        }
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
     } else if (tipo === 'Profesor') {
         const formulario = document.getElementById('formularioProfesor');
-        if (formulario) {
-            const sexoValido = formulario.sexo.value !== "Sexo";
-            const carreraValida = formulario.carrera.value !== "Área o Departamento";
-            
-            campos.sexo = sexoValido;
-            campos.carrera = carreraValida;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.sexo, sexoValido);
-            actualizarEstiloSelect(formulario.carrera, carreraValida);
-        }
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
     } else if (tipo === 'Institucion') {
         const formulario = document.getElementById('formularioInstitucion');
-        if (formulario) {
-            const tipoValido = formulario.querySelector("[name='tipo']").value !== "Tipo de Institución";
-            campos.tipo = tipoValido;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.querySelector("[name='tipo']"), tipoValido);
-        }
+        if (!formulario) return;
+
+        const tipoSelect = formulario.querySelector("select[name='tipo']");
+        const tipoValido = !!tipoSelect && tipoSelect.selectedIndex > 0;
+
+        campos.tipo = tipoValido;
+        if (tipoSelect) actualizarEstiloSelect(tipoSelect, tipoValido);
     }
 }
 
