@@ -12,7 +12,6 @@ const mongoose = require('mongoose');
  * - password: Contraseña encriptada del profesor (requerido)
  * - departamento: Departamento al que pertenece el profesor (requerido)
  * - rfc: RFC único del profesor (requerido, único)
- * - curp: CURP del profesor (requerido, único)
  * - telefono: Número de teléfono del profesor (requerido, único)
  * - sexo: Sexo del profesor (Masculino/Femenino) (requerido)
  * - alumnosAsociados: Lista de alumnos que el profesor supervisa o ha supervisado

@@ -78,6 +78,33 @@ function normalizeAlumnoPayload(formulario) {
     };
 }
 
+function normalizeProfesorPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    const departamentoSelect = formulario.querySelector("select[name='carrera']");
+    const departamentoValue = String(fd.get('carrera') || '').trim();
+    const departamentoLabel =
+        departamentoSelect && departamentoSelect.selectedIndex > 0
+            ? String(departamentoSelect.options[departamentoSelect.selectedIndex].text || '').trim()
+            : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        departamento: (departamentoLabel || departamentoValue),
+        rfc: String(fd.get('rfc') || '').trim().toUpperCase(),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+    };
+}
+
 async function postJson(url, body) {
     const res = await fetch(url, {
         method: 'POST',
@@ -111,6 +138,8 @@ const campos = {
     creditos: false,
     rfc: false,
     representante: false,
+    representanteNombre: false,
+    representanteApellidos: false,
     direccion: false,
     tipo: false
 }
@@ -200,10 +229,10 @@ function validarFormularioCompleto(tipo) {
                campos.telefono && campos.curp && 
                campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.creditos;
     } else if (tipo === 'Profesor') {
-        return campos.rfc && campos.nombre && campos.telefono && campos.curp && 
+        return campos.rfc && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && campos.telefono && campos.curp && 
                campos.correo && campos.contrasena && campos.sexo && campos.carrera;
     } else if (tipo === 'Institucion') {
-        return campos.nombre && campos.rfc && campos.representante && campos.telefono && 
+        return campos.nombre && campos.rfc && campos.representanteNombre && campos.representanteApellidos && campos.telefono && 
                campos.correo && campos.contrasena && campos.tipo && campos.direccion;
     }
     return false;
@@ -447,6 +476,8 @@ function resetearEstadoCampos(tipo) {
     } else if (tipo === 'Profesor') {
         campos.rfc = false;
         campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
         campos.telefono = false;
         campos.curp = false;
         campos.correo = false;
@@ -457,6 +488,8 @@ function resetearEstadoCampos(tipo) {
         campos.nombre = false;
         campos.rfc = false;
         campos.representante = false;
+        campos.representanteNombre = false;
+        campos.representanteApellidos = false;
         campos.telefono = false;
         campos.correo = false;
         campos.contrasena = false;
@@ -557,6 +590,12 @@ function mostrarModalConfirmacion(tipo, formulario) {
                     mensajeError.textContent = message;
                     mensajeError.style.display = 'block';
                 }
+            } else if (tipo === 'Profesor') {
+                const mensajeError = document.getElementById('mensaje_errorProfe');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
             }
             console.error(e);
         } finally {
@@ -602,7 +641,7 @@ function generarContenidoProfesor(formulario) {
         <div class="row">
             <div class="col-md-6">
                 <p><strong>RFC:</strong> ${formulario.rfc.value}</p>
-                <p><strong>Nombre:</strong> ${formulario.nombre.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
                 <p><strong>CURP:</strong> ${formulario.curp.value}</p>
                 <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
             </div>
@@ -619,7 +658,8 @@ function generarContenidoProfesor(formulario) {
 function generarContenidoInstitucion(formulario) {
     const nombre = formulario.querySelector("[name='nombre']");
     const rfc = formulario.querySelector("[name='rfc']");
-    const representante = formulario.querySelector("[name='representante']");
+    const representanteNombre = formulario.querySelector("[name='representanteNombre']");
+    const representanteApellidos = formulario.querySelector("[name='representanteApellidos']");
     const telefono = formulario.querySelector("[name='telefono']");
     const correo = formulario.querySelector("[name='correo']");
     const direccion = formulario.querySelector("[name='direccion']");
@@ -633,7 +673,7 @@ function generarContenidoInstitucion(formulario) {
             <div class="col-md-6">
                 <p><strong>Nombre de la Institución:</strong> ${nombre.value}</p>
                 <p><strong>RFC:</strong> ${rfc.value}</p>
-                <p><strong>Representante:</strong> ${representante.value}</p>
+                <p><strong>Representante:</strong> ${representanteNombre.value} ${representanteApellidos.value}</p>
                 <p><strong>Teléfono:</strong> ${telefono.value}</p>
             </div>
             <div class="col-md-6">
@@ -649,24 +689,51 @@ function generarContenidoInstitucion(formulario) {
 async function enviarFormulario(tipo, formulario) {
     console.log(`Enviando formulario de ${tipo}:`, formulario);
 
-    if (tipo !== 'Alumno') {
-        throw new Error('Por ahora solo está conectado el registro de Alumno');
-    }
-    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_ALUMNO) {
-        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    if (tipo === 'Alumno') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_ALUMNO) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeAlumnoPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_ALUMNO, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'alumno');
+        return;
     }
 
-    const payload = normalizeAlumnoPayload(formulario);
-    if (!payload.sexo) {
-        throw new Error('Seleccione Masculino o Femenino');
-    }
-    if (!payload.correo || !payload.password) {
-        throw new Error('Correo y contraseña son obligatorios');
+    if (tipo === 'Profesor') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_PROFESOR) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeProfesorPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.departamento) {
+            throw new Error('Seleccione un Área o Departamento');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+        if (!payload.nombres || !payload.apellidoPaterno || !payload.apellidoMaterno) {
+            throw new Error('Nombre y apellidos son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_PROFESOR, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'profesor');
+        return;
     }
 
-    const auth = await postJson(AUTH_ENDPOINTS.REGISTER_ALUMNO, payload);
-    saveAuthToStorage(auth);
-    redirectAfterAuth(auth?.user?.role || 'alumno');
+    throw new Error('Tipo de registro no soportado');
 }
 
 async function loginAlumno(correo, password) {
@@ -676,6 +743,51 @@ async function loginAlumno(correo, password) {
     const auth = await postJson(AUTH_ENDPOINTS.LOGIN_ALUMNO, { correo, password });
     saveAuthToStorage(auth);
     redirectAfterAuth(auth?.user?.role || 'alumno');
+}
+
+async function loginProfesor(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_PROFESOR) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_PROFESOR, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'profesor');
+}
+
+async function loginInstitucion(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_INSTITUCION) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_INSTITUCION, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'institucion');
+}
+
+async function loginByRoleAuto(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined') {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+
+    const attempts = [
+        { name: 'alumno', url: AUTH_ENDPOINTS.LOGIN_ALUMNO },
+        { name: 'profesor', url: AUTH_ENDPOINTS.LOGIN_PROFESOR },
+        { name: 'institucion', url: AUTH_ENDPOINTS.LOGIN_INSTITUCION },
+    ].filter((x) => !!x.url);
+
+    for (const attempt of attempts) {
+        try {
+            const auth = await postJson(attempt.url, { correo, password });
+            saveAuthToStorage(auth);
+            redirectAfterAuth(auth?.user?.role || attempt.name);
+            return;
+        } catch (err) {
+            // Si es 401, probamos con el siguiente tipo.
+            if (err?.status === 401) continue;
+            throw err;
+        }
+    }
+
+    throw new Error('Credenciales inválidas');
 }
 
 // Función para mostrar mensaje de éxito
@@ -770,8 +882,11 @@ const validarFormulario = (e) => {
         case "rfc":
             validarCampo(expresiones.rfc, e.target, 'rfc');
             break;
-        case "representante":
-            validarCampo(expresiones.nombre, e.target, 'representante');
+        case "representanteNombre":
+            validarCampo(expresiones.nombre, e.target, 'representanteNombre');
+            break;
+        case "representanteApellidos":
+            validarCampo(expresiones.nombre, e.target, 'representanteApellidos');
             break;
         case "direccion":
             // Para dirección, solo validamos que no esté vacía
@@ -977,13 +1092,6 @@ function inicializarLogin() {
         e.preventDefault();
         showInlineLoginError('');
 
-        const selectedType = getSelectedUserType();
-        const isNoSelection = !selectedType || selectedType.toLowerCase().includes('seleccione');
-        if (!isNoSelection && selectedType !== 'Alumno') {
-            showInlineLoginError('Por ahora solo está conectado el login de Alumno');
-            return;
-        }
-
         const correo = String(document.getElementById('loginCorreo')?.value || '').trim();
         const password = String(document.getElementById('loginPassword')?.value || '');
 
@@ -995,7 +1103,7 @@ function inicializarLogin() {
         const submitBtn = formLogin.querySelector("button[type='submit']");
         if (submitBtn) submitBtn.disabled = true;
         try {
-            await loginAlumno(correo, password);
+            await loginByRoleAuto(correo, password);
         } catch (err) {
             showInlineLoginError(err?.message || 'Credenciales inválidas');
         } finally {

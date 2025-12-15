@@ -197,10 +197,26 @@
                             <p class="formulario__input-error">Verifique su RFC</p>
                         </div>
 
-                        <!-- Nombre -->
+                        <!-- Nombre(s) -->
                         <div class="formulario__grupo" id="grupo__nombreProfe">
-                            <input type="text" class="form-control" id="nombreProfe" name="nombre" placeholder="Nombre completo">
+                            <input type="text" class="form-control" id="nombreProfe" name="nombre" placeholder="Nombre(s)">
                             <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoPaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoPaterno" placeholder="Apellido Paterno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoMaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoMaterno" placeholder="Apellido Materno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Sexo -->
@@ -308,22 +324,33 @@
                             <p class="formulario__input-error">Ingrese un nombre válido</p>
                         </div>
 
-                        <!-- RFC -->
-                        <div class="formulario__grupo" id="grupo__rfcInstitucion">
-                            <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
-                            <p class="formulario__input-error">Verifique su RFC</p>
-                        </div>
-
                         <!-- Representante Legal -->
-                        <div class="formulario__grupo" id="grupo__representante">
-                            <input type="text" class="form-control" name="representante" placeholder="Nombre del Representante Legal">
+                        <div class="formulario__grupo" id="grupo__representanteNombre">
+                            <input type="text" class="form-control" name="representanteNombre" placeholder="Nombre(s) del Representante">
                             <p class="formulario__input-error">El nombre solo puede contener letras</p>
                         </div>
 
-                        <!-- Teléfono -->
-                        <div class="formulario__grupo" id="grupo__telefonoInstitucion">
-                            <input type="tel" class="form-control" name="telefono" placeholder="Teléfono de contacto" maxlength="10">
-                            <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                        <div class="formulario__grupo" id="grupo__representanteApellidos">
+                            <input type="text" class="form-control" name="representanteApellidos" placeholder="Apellidos del Representante">
+                            <p class="formulario__input-error">Los apellidos solo pueden contener letras</p>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <!-- RFC -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__rfcInstitucion">
+                                    <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
+                                    <p class="formulario__input-error">Verifique su RFC</p>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__telefonoInstitucion">
+                                    <input type="tel" class="form-control" name="telefono" placeholder="Teléfono de contacto" maxlength="10">
+                                    <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Dirección -->

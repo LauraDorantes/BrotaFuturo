@@ -19,13 +19,76 @@
  * URL base de la API
  * Cambiar según el entorno (desarrollo/producción)
  */
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL_ESTUDIANTE = 'http://localhost:5000/api';
 
 /**
  * Almacenamiento del token de autenticación y datos del usuario
  */
-let authToken = localStorage.getItem('authToken');
-let refreshToken = localStorage.getItem('refreshToken');
+function storageGet(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function storageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // noop
+    }
+}
+
+function storageRemove(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        // noop
+    }
+}
+
+// Compatibilidad: si existe js/config.js, usamos STORAGE_KEYS; si no, usamos strings.
+function getAccessToken() {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    return storageGet(key);
+}
+
+function setAccessToken(token) {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    if (!token) {
+        storageRemove(key);
+        return;
+    }
+    storageSet(key, token);
+}
+
+function getRefreshToken() {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.REFRESH_TOKEN) ? STORAGE_KEYS.REFRESH_TOKEN : 'refreshToken';
+    return storageGet(key);
+}
+
+function clearAuthStorage() {
+    const accessKey = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    const refreshKey = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.REFRESH_TOKEN) ? STORAGE_KEYS.REFRESH_TOKEN : 'refreshToken';
+    storageRemove(accessKey);
+    storageRemove(refreshKey);
+    // Limpieza extra por si quedaron llaves antiguas
+    storageRemove('authToken');
+    storageRemove('refreshToken');
+    if (typeof STORAGE_KEYS !== 'undefined') {
+        if (STORAGE_KEYS.USER_ROLE) storageRemove(STORAGE_KEYS.USER_ROLE);
+        if (STORAGE_KEYS.USER_ID) storageRemove(STORAGE_KEYS.USER_ID);
+        if (STORAGE_KEYS.USER_EMAIL) storageRemove(STORAGE_KEYS.USER_EMAIL);
+    } else {
+        storageRemove('userRole');
+        storageRemove('userId');
+        storageRemove('userEmail');
+    }
+}
+
+let authToken = getAccessToken();
+let refreshToken = getRefreshToken();
 let currentUser = null;
 
 // ============================================
@@ -44,13 +107,17 @@ async function fetchAPI(url, options = {}) {
         ...options.headers
     };
 
+    // Sin token, no hay sesión: redirigir al login.
+    authToken = getAccessToken();
+    refreshToken = getRefreshToken();
+
     // Agregar token de autenticación si está disponible
     if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
+        const response = await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, {
             ...options,
             headers
         });
@@ -60,9 +127,17 @@ async function fetchAPI(url, options = {}) {
             const newToken = await refreshAuthToken();
             if (newToken) {
                 headers['Authorization'] = `Bearer ${newToken}`;
-                return await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+                const retryResponse = await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, { ...options, headers });
+
+                if (!retryResponse.ok) {
+                    const retryErrorData = await retryResponse.json().catch(() => ({ message: 'Error en la petición' }));
+                    throw new Error(retryErrorData.message || `Error ${retryResponse.status}: ${retryResponse.statusText}`);
+                }
+
+                return await retryResponse.json();
             } else {
                 // Si no se puede refrescar, redirigir al login
+                clearAuthStorage();
                 window.location.href = 'login.html';
                 return;
             }
@@ -86,7 +161,7 @@ async function fetchAPI(url, options = {}) {
  */
 async function refreshAuthToken() {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        const response = await fetch(`${API_BASE_URL_ESTUDIANTE}/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: refreshToken })
@@ -95,7 +170,7 @@ async function refreshAuthToken() {
         if (response.ok) {
             const data = await response.json();
             authToken = data.accessToken;
-            localStorage.setItem('authToken', authToken);
+            setAccessToken(authToken);
             return authToken;
         }
     } catch (error) {
@@ -128,6 +203,14 @@ function showSuccess(message) {
  * Configurar navegación lateral y toggle
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // Si no hay tokens, no hay sesión.
+    authToken = getAccessToken();
+    refreshToken = getRefreshToken();
+    if (!authToken && !refreshToken) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     // Navegación hover
     let list = document.querySelectorAll(".navigation li");
     
@@ -197,8 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
             if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('refreshToken');
+                clearAuthStorage();
                 window.location.href = 'login.html';
             }
         });
@@ -323,7 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón editar
     if (editBtn) {
-        editBtn.addEventListener('click', () => {
+        editBtn.addEventListener('click', async () => {
+            // Asegura que el formulario tenga los datos más recientes
+            if (!currentUser) {
+                await cargarPerfil();
+            } else {
+                mostrarPerfil(currentUser);
+            }
             perfilForm.classList.remove('hidden');
             perfilReadOnly.classList.add('hidden');
         });
@@ -346,14 +434,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // TODO: Implementar actualización de perfil cuando exista el endpoint
             // Por ahora solo guardamos en localStorage como ejemplo
             const formData = {
-                nombres: document.getElementById('nombreInput').value,
-                apellidoPaterno: document.getElementById('aPaternoInput').value,
-                apellidoMaterno: document.getElementById('aMaternoInput').value,
-                correo: document.getElementById('emailInput').value,
-                telefono: document.getElementById('phoneInput').value,
-                sexo: document.getElementById('sexoInput').value,
-                carrera: document.getElementById('carreraInput').value,
-                creditos: parseInt(document.getElementById('creditosInput').value)
+                nombres: String(document.getElementById('nombreInput').value || '').trim(),
+                apellidoPaterno: String(document.getElementById('aPaternoInput').value || '').trim(),
+                apellidoMaterno: String(document.getElementById('aMaternoInput').value || '').trim(),
+                telefono: Number(String(document.getElementById('phoneInput').value || '').replace(/\D/g, '')),
+                boleta: Number(String(document.getElementById('boletaInput').value || '').replace(/\D/g, '')),
+                sexo: String(document.getElementById('sexoInput').value || '').trim(),
+                carrera: String(document.getElementById('carreraInput').value || '').trim(),
+                creditos: Number(document.getElementById('creditosInput').value),
+                curp: String(document.getElementById('curpInput').value || '').trim(),
             };
 
             try {
@@ -362,13 +451,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     method: 'PUT', 
                     body: JSON.stringify(formData) 
                 });
-                
-                if (response.user) {
-                    currentUser = response.user;
+
+                const updatedUser = response?.data || response?.user;
+                if (updatedUser) {
+                    currentUser = updatedUser;
                     showSuccess('Perfil actualizado correctamente');
                     perfilForm.classList.add('hidden');
                     perfilReadOnly.classList.remove('hidden');
-                    mostrarPerfil(response.user);
+                    mostrarPerfil(updatedUser);
                 }
             } catch (error) {
                 showError(error.message || 'Error al actualizar el perfil');
@@ -420,13 +510,37 @@ async function subirCV(file) {
             ? '/alumnos/actualizarCV' 
             : '/alumnos/subirCV';
 
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            method: url.includes('actualizar') ? 'PUT' : 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: formData
-        });
+        const method = url.includes('actualizar') ? 'PUT' : 'POST';
+
+        // Siempre toma el token más reciente (por si hubo refresh)
+        authToken = getAccessToken();
+        refreshToken = getRefreshToken();
+
+        const doUpload = async (token) => {
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, {
+                method,
+                headers,
+                body: formData,
+            });
+        };
+
+        let response = await doUpload(authToken);
+
+        // Si expira el accessToken, refrescar y reintentar una vez
+        if (response.status === 401 && refreshToken) {
+            const newToken = await refreshAuthToken();
+            if (newToken) {
+                response = await doUpload(newToken);
+            }
+        }
+
+        if (response.status === 401) {
+            clearAuthStorage();
+            window.location.href = 'login.html';
+            return;
+        }
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Error al subir CV' }));

@@ -10,6 +10,7 @@ const vacantesRoutes = require('./routes/vacantes');
 // Nuevas rutas para estudiantes
 const postulacionesRoutes = require('./routes/postulaciones');
 const mensajesRoutes = require('./routes/mensajes');
+const driveRoutes = require('./routes/drive');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -30,8 +31,9 @@ app.use('/api/vacantes', vacantesRoutes);
 // Nuevas rutas para estudiantes
 app.use('/api/postulaciones', postulacionesRoutes);
 app.use('/api/mensajes', mensajesRoutes);
+app.use('/api/drive', driveRoutes);
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
