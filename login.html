@@ -49,16 +49,17 @@
         </div>
 
          <div class="contenedor-form acceder" id="loginForm">
-            <form>
+            <form id="formLogin">
                 <h1>Iniciar Sesión</h1>
 
                 <span>Ingresar con Correo y Contraseña</span><br>
 
-                <input type="email" placeholder="Ingrese su Correo">
-                <input type="text" placeholder="Ingrese su Contraseña">
+                <input id="loginCorreo" name="correo" type="email" placeholder="Ingrese su Correo" autocomplete="username">
+                <input id="loginPassword" name="password" type="password" placeholder="Ingrese su Contraseña" autocomplete="current-password">
+                <p id="loginError" class="text-danger mt-2" style="display:none;"></p>
                 <a href="#">Cambiar Contraseña</a>
 
-                <button>Iniciar Sesión</button>
+                <button type="submit">Iniciar Sesión</button>
 
                 <div class="btn-toogle-form">
                     <p>¿No tienes una cuenta?</p>
@@ -107,9 +108,8 @@
                         <div class="formulario__grupo" id="grupo__sexoAlumno">
                             <select name="sexo" class="form-select">
                                 <option disabled selected>Sexo</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="femenino">Femenino</option>
-                                <option value="otro">Otro</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
                             </select>
                         </div>
 
@@ -207,9 +207,8 @@
                         <div class="formulario__grupo" id="grupo__sexoProfe">
                             <select name="sexo" class="form-select">
                                 <option disabled selected>Sexo</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="femenino">Femenino</option>
-                                <option value="otro">Otro</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
                             </select>
                         </div>
 
@@ -406,6 +405,7 @@
             <i class="fas fa-home"></i>
         </a>
     </div>
+    <script src="js/config.js"></script>
     <script src="js/scripts_login.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

@@ -2,6 +2,101 @@ const contenedor = document.getElementById('contenedor');
 const registroBtn = document.getElementById('registro');
 const accederBtn = document.getElementById('acceder');
 
+// Helpers de autenticación (requiere que js/config.js se cargue antes)
+function getSelectedUserType() {
+    const el = document.getElementById('selected-user-type');
+    return el ? String(el.textContent || '').trim() : '';
+}
+
+function showInlineLoginError(message) {
+    const el = document.getElementById('loginError');
+    if (!el) return;
+    if (!message) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+    }
+    el.textContent = message;
+    el.style.display = 'block';
+}
+
+async function safeReadJson(response) {
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
+function saveAuthToStorage(authResponse) {
+    if (!authResponse) return;
+    const { accessToken, refreshToken, user } = authResponse;
+    if (typeof STORAGE_KEYS !== 'undefined') {
+        if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        if (user?.role) localStorage.setItem(STORAGE_KEYS.USER_ROLE, user.role);
+        if (user?.id) localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+        if (user?.correo) localStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.correo);
+    } else {
+        // Fallback si config.js no estuviera cargado por alguna razón
+        if (accessToken) localStorage.setItem('accessToken', accessToken);
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+        if (user?.role) localStorage.setItem('userRole', user.role);
+        if (user?.id) localStorage.setItem('userId', user.id);
+        if (user?.correo) localStorage.setItem('userEmail', user.correo);
+    }
+}
+
+function redirectAfterAuth(role) {
+    const roleKey = String(role || '').toLowerCase();
+    if (typeof REDIRECT_PAGES !== 'undefined' && REDIRECT_PAGES[roleKey]) {
+        window.location.href = REDIRECT_PAGES[roleKey];
+        return;
+    }
+    // Fallback
+    if (roleKey === 'alumno') window.location.href = 'estudiante.html';
+}
+
+function normalizeAlumnoPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        boleta: Number(fd.get('boleta')),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+        creditos: Number(fd.get('creditos')),
+        carrera: String(fd.get('carrera') || '').trim(),
+    };
+}
+
+async function postJson(url, body) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await safeReadJson(res);
+    if (!res.ok) {
+        const message = data?.message || `Error HTTP ${res.status}`;
+        const err = new Error(message);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
 const campos = {
     boleta: false,
     nombre: false,
@@ -444,16 +539,30 @@ function mostrarModalConfirmacion(tipo, formulario) {
 
     // Configurar el evento del botón de confirmar
     const btnConfirmar = document.getElementById('btnConfirmarEnvio');
-    btnConfirmar.onclick = function() {
-        // Aquí puedes agregar la lógica para enviar los datos al servidor
-        enviarFormulario(tipo, formulario);
-        
-        // Cerrar el modal
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        modalInstance.hide();
-        
-        // Mostrar mensaje de éxito
-        mostrarMensajeExito(tipo);
+    btnConfirmar.onclick = async function() {
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Enviando...';
+        try {
+            await enviarFormulario(tipo, formulario);
+            // Cerrar el modal
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            modalInstance.hide();
+            // Mostrar mensaje de éxito
+            mostrarMensajeExito(tipo);
+        } catch (e) {
+            const message = e?.message || 'No se pudo completar el registro';
+            if (tipo === 'Alumno') {
+                const mensajeError = document.getElementById('mensaje_errorAlumno');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            }
+            console.error(e);
+        } finally {
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'Confirmar y Enviar';
+        }
     };
 
     // Mostrar el modal
@@ -537,10 +646,36 @@ function generarContenidoInstitucion(formulario) {
 }
 
 // Función para enviar el formulario (simulación)
-function enviarFormulario(tipo, formulario) {
+async function enviarFormulario(tipo, formulario) {
     console.log(`Enviando formulario de ${tipo}:`, formulario);
-    // Aquí iría la lógica real para enviar los datos al servidor
-    // Por ejemplo: fetch('/api/registro', { method: 'POST', body: new FormData(formulario) })
+
+    if (tipo !== 'Alumno') {
+        throw new Error('Por ahora solo está conectado el registro de Alumno');
+    }
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_ALUMNO) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+
+    const payload = normalizeAlumnoPayload(formulario);
+    if (!payload.sexo) {
+        throw new Error('Seleccione Masculino o Femenino');
+    }
+    if (!payload.correo || !payload.password) {
+        throw new Error('Correo y contraseña son obligatorios');
+    }
+
+    const auth = await postJson(AUTH_ENDPOINTS.REGISTER_ALUMNO, payload);
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'alumno');
+}
+
+async function loginAlumno(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_ALUMNO) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_ALUMNO, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'alumno');
 }
 
 // Función para mostrar mensaje de éxito
@@ -834,6 +969,41 @@ function inicializarEnvioFormularios() {
     }
 }
 
+function inicializarLogin() {
+    const formLogin = document.getElementById('formLogin');
+    if (!formLogin) return;
+
+    formLogin.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        showInlineLoginError('');
+
+        const selectedType = getSelectedUserType();
+        const isNoSelection = !selectedType || selectedType.toLowerCase().includes('seleccione');
+        if (!isNoSelection && selectedType !== 'Alumno') {
+            showInlineLoginError('Por ahora solo está conectado el login de Alumno');
+            return;
+        }
+
+        const correo = String(document.getElementById('loginCorreo')?.value || '').trim();
+        const password = String(document.getElementById('loginPassword')?.value || '');
+
+        if (!correo || !password) {
+            showInlineLoginError('Ingrese correo y contraseña');
+            return;
+        }
+
+        const submitBtn = formLogin.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+            await loginAlumno(correo, password);
+        } catch (err) {
+            showInlineLoginError(err?.message || 'Credenciales inválidas');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM cargado - inicializando formularios');
     
@@ -846,4 +1016,5 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarEventListeners();
     inicializarValidacionFormularios();
     inicializarEnvioFormularios();
+    inicializarLogin();
 });

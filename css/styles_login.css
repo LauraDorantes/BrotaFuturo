@@ -64,9 +64,15 @@ body.modal-open .contenedor_menu {
     z-index: 10001 !important;
 }
 
-body.modal-open .dropdown-menu,
-body.modal-open .btn {
-    display: none !important;
+/*
+    IMPORTANTE:
+    No ocultar todos los .btn cuando hay un modal abierto,
+    porque también desaparecen los botones del modal (Confirmar/Editar).
+    Solo se oculta el menú (dropdown) superior.
+*/
+body.modal-open .contenedor_menu .dropdown-menu,
+body.modal-open .contenedor_menu .btn {
+        display: none !important;
 }
 
 .contenedor_menu{
