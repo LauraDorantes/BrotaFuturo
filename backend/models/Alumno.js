@@ -1,5 +1,24 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modelo de Alumno
+ * Representa un estudiante del sistema que puede postularse a vacantes de servicio social
+ * 
+ * Campos:
+ * - nombres: Nombre(s) del alumno (requerido)
+ * - apellidoPaterno: Apellido paterno del alumno (requerido)
+ * - apellidoMaterno: Apellido materno del alumno (requerido)
+ * - correo: Email único del alumno (requerido, único)
+ * - password: Contraseña encriptada del alumno (requerido)
+ * - boleta: Número de boleta única del alumno (requerido, único)
+ * - curp: CURP del alumno (requerido, único)
+ * - telefono: Número de teléfono del alumno (requerido, único)
+ * - sexo: Sexo del alumno (Masculino/Femenino) (requerido)
+ * - creditos: Número de créditos del alumno (requerido)
+ * - carrera: Carrera del alumno (ISC/IIA/LCD) (requerido)
+ * - cvID: ID del CV almacenado en la nube (opcional)
+ */
+
 const alumnoSchema = new mongoose.Schema({
     nombres: {
         type: String,
@@ -60,8 +79,6 @@ const alumnoSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Índices para optimizar consultas
-alumnoSchema.index({ correo: 1 }, { unique: true });
-alumnoSchema.index({ boleta: 1 }, { unique: true });
 alumnoSchema.index({ createdAt: -1 });
 alumnoSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 

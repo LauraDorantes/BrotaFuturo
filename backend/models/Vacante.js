@@ -1,5 +1,19 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modelo de Vacante
+ * Representa una vacante de servicio social publicada por un profesor o institución
+ * 
+ * Campos:
+ * - titulo: Título de la vacante (requerido)
+ * - descripcion: Descripción detallada de la vacante (requerido)
+ * - requisitos: Lista de requisitos necesarios para la vacante (requerido)
+ * - fechaPublicacion: Fecha de publicación de la vacante (automático)
+ * - salario: Salario o compensación económica (opcional, por defecto 0)
+ * - propietarioTipo: Tipo de propietario (Institucion/Profesor) (requerido)
+ * - propietario: Referencia al profesor o institución que publica la vacante (requerido)
+ */
+
 const vacanteSchema = new mongoose.Schema({
     titulo: {
         type: String,
