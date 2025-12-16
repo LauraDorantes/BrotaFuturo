@@ -1,6 +1,6 @@
 :root {
-    --primario: #4c2882;
-    --secundario: #572364;
+    --primario: #a782e0;
+    --secundario: #c7a9f4;
 }
 
 *{
@@ -11,7 +11,7 @@
 }
 
 body{
-    background: linear-gradient(45deg,#fb6f92,#ffb3c6,#3b83bd,#191970);
+    background: linear-gradient(45deg,#f68ea8,#ffb3c6,#6cade2,#c47fe9);
     background-size: 180% 180%;
     animation: fondo-moviendose 10s ease infinite;
 
