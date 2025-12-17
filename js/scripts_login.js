@@ -31,30 +31,25 @@ async function safeReadJson(response) {
 function saveAuthToStorage(authResponse) {
     if (!authResponse) return;
     const { accessToken, refreshToken, user } = authResponse;
-    if (typeof STORAGE_KEYS !== 'undefined') {
-        if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-        if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-        if (user?.role) localStorage.setItem(STORAGE_KEYS.USER_ROLE, user.role);
-        if (user?.id) localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
-        if (user?.correo) localStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.correo);
-    } else {
-        // Fallback si config.js no estuviera cargado por alguna razón
-        if (accessToken) localStorage.setItem('accessToken', accessToken);
-        if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
-        if (user?.role) localStorage.setItem('userRole', user.role);
-        if (user?.id) localStorage.setItem('userId', user.id);
-        if (user?.correo) localStorage.setItem('userEmail', user.correo);
+    if (typeof STORAGE_KEYS === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: STORAGE_KEYS. Revisa que se cargue js/config.js antes de este script.');
     }
+    if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    if (user?.role) localStorage.setItem(STORAGE_KEYS.USER_ROLE, user.role);
+    if (user?.id) localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+    if (user?.correo) localStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.correo);
 }
 
 function redirectAfterAuth(role) {
     const roleKey = String(role || '').toLowerCase();
-    if (typeof REDIRECT_PAGES !== 'undefined' && REDIRECT_PAGES[roleKey]) {
+    if (typeof REDIRECT_PAGES === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: REDIRECT_PAGES. Revisa que se cargue js/config.js antes de este script.');
+    }
+    if (REDIRECT_PAGES[roleKey]) {
         window.location.href = REDIRECT_PAGES[roleKey];
         return;
     }
-    // Fallback
-    if (roleKey === 'alumno') window.location.href = 'estudiante.html';
 }
 
 function normalizeAlumnoPayload(formulario) {

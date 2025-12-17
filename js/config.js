@@ -28,6 +28,11 @@ const STUDENT_ENDPOINTS = {
     GET_STUDENT: `${API_BASE_URL}/alumnos/:id`,
     UPDATE_STUDENT: `${API_BASE_URL}/alumnos/:id`,
     DELETE_STUDENT: `${API_BASE_URL}/alumnos/:id`,
+
+    // Endpoints usados por la vista de estudiante
+    PROFILE: `${API_BASE_URL}/alumnos/perfil`,
+    UPLOAD_CV: `${API_BASE_URL}/alumnos/subirCV`,
+    UPDATE_CV: `${API_BASE_URL}/alumnos/actualizarCV`,
 };
 
 // Rutas de vacantes
@@ -46,6 +51,9 @@ const APPLICATION_ENDPOINTS = {
     CREATE_APPLICATION: `${API_BASE_URL}/postulaciones`,
     UPDATE_APPLICATION: `${API_BASE_URL}/postulaciones/:id`,
     DELETE_APPLICATION: `${API_BASE_URL}/postulaciones/:id`,
+
+    // Endpoints usados por la vista de estudiante
+    MY_APPLICATIONS: `${API_BASE_URL}/postulaciones/mis-postulaciones`,
 };
 
 // Rutas de mensajes
@@ -55,6 +63,10 @@ const MESSAGE_ENDPOINTS = {
     CREATE_MESSAGE: `${API_BASE_URL}/mensajes`,
     UPDATE_MESSAGE: `${API_BASE_URL}/mensajes/:id`,
     DELETE_MESSAGE: `${API_BASE_URL}/mensajes/:id`,
+
+    // Endpoints usados por la vista de estudiante
+    INBOX: `${API_BASE_URL}/mensajes/recibidos`,
+    SENT: `${API_BASE_URL}/mensajes/enviados`,
 };
 
 // Páginas de redirección después del login
@@ -77,4 +89,8 @@ const STORAGE_KEYS = {
     USER_ROLE: 'userRole',
     USER_ID: 'userId',
     USER_EMAIL: 'userEmail',
+
+    // Claves usadas por vistas actuales (compatibles con valores existentes)
+    PROFESOR_PROFILE: 'perfilData',
+    PROFESOR_PUBLICACIONES: 'publicaciones',
 };

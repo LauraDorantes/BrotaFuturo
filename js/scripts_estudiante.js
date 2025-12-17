@@ -19,7 +19,32 @@
  * URL base de la API
  * Cambiar según el entorno (desarrollo/producción)
  */
-const API_BASE_URL_ESTUDIANTE = 'http://localhost:5000/api';
+// Si existe js/config.js, usa API_BASE_URL; si no, usa el fallback.
+const API_BASE_URL_ESTUDIANTE = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL)
+    ? API_BASE_URL
+    : 'http://localhost:5000/api';
+
+function resolveEndpoint(template, params = {}) {
+    if (typeof template !== 'string') return template;
+    return template.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, key) => {
+        const value = params[key];
+        return value !== undefined && value !== null ? encodeURIComponent(String(value)) : `:${key}`;
+    });
+}
+
+function withQuery(url, query = {}) {
+    const entries = Object.entries(query).filter(([, v]) => v !== undefined && v !== null && String(v) !== '');
+    if (entries.length === 0) return url;
+    const qs = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+    return `${url}${url.includes('?') ? '&' : '?'}${qs}`;
+}
+
+function requireConfigValue(objectName, obj, prop) {
+    if (!obj || typeof obj[prop] !== 'string' || !obj[prop]) {
+        throw new Error(`Falta configuraci\u00f3n: ${objectName}.${prop}. Revisa que se cargue js/config.js antes de este script.`);
+    }
+    return obj[prop];
+}
 
 /**
  * Almacenamiento del token de autenticación y datos del usuario
@@ -117,7 +142,11 @@ async function fetchAPI(url, options = {}) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, {
+        const requestUrl = (typeof url === 'string' && /^https?:\/\//i.test(url))
+            ? url
+            : `${API_BASE_URL_ESTUDIANTE}${url}`;
+
+        const response = await fetch(requestUrl, {
             ...options,
             headers
         });
@@ -127,7 +156,7 @@ async function fetchAPI(url, options = {}) {
             const newToken = await refreshAuthToken();
             if (newToken) {
                 headers['Authorization'] = `Bearer ${newToken}`;
-                const retryResponse = await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, { ...options, headers });
+                const retryResponse = await fetch(requestUrl, { ...options, headers });
 
                 if (!retryResponse.ok) {
                     const retryErrorData = await retryResponse.json().catch(() => ({ message: 'Error en la petición' }));
@@ -161,7 +190,9 @@ async function fetchAPI(url, options = {}) {
  */
 async function refreshAuthToken() {
     try {
-        const response = await fetch(`${API_BASE_URL_ESTUDIANTE}/auth/refresh`, {
+        const refreshUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'REFRESH_TOKEN');
+
+        const response = await fetch(refreshUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: refreshToken })
@@ -334,7 +365,9 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 async function cargarPerfil() {
     try {
-        const data = await fetchAPI('/auth/me');
+        const meUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'GET_USER');
+
+        const data = await fetchAPI(meUrl);
         
         if (data.user) {
             currentUser = data.user;
@@ -447,7 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 // Llamada a la API para actualizar el perfil
-                const response = await fetchAPI('/alumnos/perfil', { 
+                const profileUrl = requireConfigValue('STUDENT_ENDPOINTS', (typeof STUDENT_ENDPOINTS !== 'undefined' ? STUDENT_ENDPOINTS : null), 'PROFILE');
+
+                const response = await fetchAPI(profileUrl, { 
                     method: 'PUT', 
                     body: JSON.stringify(formData) 
                 });
@@ -506,11 +541,13 @@ async function subirCV(file) {
         const formData = new FormData();
         formData.append('cvFile', file);
 
-        const url = currentUser && currentUser.cvID 
-            ? '/alumnos/actualizarCV' 
-            : '/alumnos/subirCV';
+        const studentEndpoints = (typeof STUDENT_ENDPOINTS !== 'undefined') ? STUDENT_ENDPOINTS : null;
+        const isUpdate = Boolean(currentUser && currentUser.cvID);
+        const url = isUpdate
+            ? requireConfigValue('STUDENT_ENDPOINTS', studentEndpoints, 'UPDATE_CV')
+            : requireConfigValue('STUDENT_ENDPOINTS', studentEndpoints, 'UPLOAD_CV');
 
-        const method = url.includes('actualizar') ? 'PUT' : 'POST';
+        const method = isUpdate ? 'PUT' : 'POST';
 
         // Siempre toma el token más reciente (por si hubo refresh)
         authToken = getAccessToken();
@@ -519,7 +556,7 @@ async function subirCV(file) {
         const doUpload = async (token) => {
             const headers = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
-            return await fetch(`${API_BASE_URL_ESTUDIANTE}${url}`, {
+            return await fetch(url, {
                 method,
                 headers,
                 body: formData,
@@ -581,7 +618,8 @@ async function cargarVacantes() {
     listaVacantes.innerHTML = '<div class="loading-message">Cargando vacantes...</div>';
 
     try {
-        const vacantes = await fetchAPI('/vacantes');
+        const vacantesUrl = requireConfigValue('VACANCY_ENDPOINTS', (typeof VACANCY_ENDPOINTS !== 'undefined' ? VACANCY_ENDPOINTS : null), 'GET_VACANCIES');
+        const vacantes = await fetchAPI(vacantesUrl);
         
         if (!vacantes || vacantes.length === 0) {
             listaVacantes.innerHTML = '<div class="no-publicaciones"><p>No hay vacantes disponibles en este momento</p></div>';
@@ -764,7 +802,8 @@ function abrirModalPostulacion(vacante) {
  */
 async function crearPostulacion(vacanteId, mensaje = '') {
     try {
-        const data = await fetchAPI('/postulaciones', {
+        const createUrl = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'CREATE_APPLICATION');
+        const data = await fetchAPI(createUrl, {
             method: 'POST',
             body: JSON.stringify({
                 vacanteId,
@@ -794,7 +833,8 @@ async function cargarPostulaciones() {
 
     try {
         const estadoFiltro = document.getElementById('filtroEstadoPostulacion')?.value || '';
-        const url = estadoFiltro ? `/postulaciones/mis-postulaciones?estado=${estadoFiltro}` : '/postulaciones/mis-postulaciones';
+        const baseUrl = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'MY_APPLICATIONS');
+        const url = withQuery(baseUrl, { estado: estadoFiltro });
         
         const postulaciones = await fetchAPI(url);
 
@@ -939,7 +979,9 @@ function mostrarDetallePostulacion(postulacion) {
  */
 async function cancelarPostulacion(postulacionId) {
     try {
-        await fetchAPI(`/postulaciones/${postulacionId}`, {
+        const template = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'DELETE_APPLICATION');
+        const url = resolveEndpoint(template, { id: postulacionId });
+        await fetchAPI(url, {
             method: 'DELETE'
         });
     } catch (error) {
@@ -996,7 +1038,8 @@ async function cargarMensajesRecibidos() {
     listaMensajes.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
 
     try {
-        const data = await fetchAPI('/mensajes/recibidos?limit=50');
+        const inboxBase = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'INBOX');
+        const data = await fetchAPI(withQuery(inboxBase, { limit: 50 }));
         const mensajes = data.mensajes || [];
 
         if (mensajes.length === 0) {
@@ -1024,7 +1067,8 @@ async function cargarMensajesEnviados() {
     listaMensajes.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
 
     try {
-        const data = await fetchAPI('/mensajes/enviados?limit=50');
+        const sentBase = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'SENT');
+        const data = await fetchAPI(withQuery(sentBase, { limit: 50 }));
         const mensajes = data.mensajes || [];
 
         if (mensajes.length === 0) {
@@ -1080,7 +1124,9 @@ function crearItemMensaje(mensaje, tipo) {
  */
 async function mostrarDetalleMensaje(mensajeId) {
     try {
-        const mensaje = await fetchAPI(`/mensajes/${mensajeId}`);
+        const template = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'GET_MESSAGE');
+        const url = resolveEndpoint(template, { id: mensajeId });
+        const mensaje = await fetchAPI(url);
         const detalle = document.getElementById('mensajeDetalle');
 
         if (!detalle) return;
@@ -1225,7 +1271,8 @@ async function enviarMensaje(datosMensaje) {
             body.relacionadoConId = datosMensaje.relacionadoConId;
         }
 
-        await fetchAPI('/mensajes', {
+        const createUrl = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'CREATE_MESSAGE');
+        await fetchAPI(createUrl, {
             method: 'POST',
             body: JSON.stringify(body)
         });

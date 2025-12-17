@@ -1,5 +1,14 @@
 let list = document.querySelectorAll(".navigation li");
 
+// Preferir claves centralizadas (definidas en js/config.js)
+const PROFESOR_PROFILE_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PROFILE)
+    ? STORAGE_KEYS.PROFESOR_PROFILE
+    : 'perfilData';
+
+const PROFESOR_PUBLICACIONES_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PUBLICACIONES)
+    ? STORAGE_KEYS.PROFESOR_PUBLICACIONES
+    : 'publicaciones';
+
 function activeLink() {
     list.forEach((item) => {
         item.classList.remove("hovered");
@@ -73,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const displayName = document.getElementById("displayName");
 
     function loadPerfil() {
-        const data = JSON.parse(localStorage.getItem("perfilData")) || {};
+        const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
 
         if (data.avatar) perfilAvatar.src = data.avatar;
 
@@ -148,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
             curpNombre: curpFile ? curpFile.name : ro_curp.textContent
         };
 
-        localStorage.setItem("perfilData", JSON.stringify(perfilData));
+        localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
 
         delete perfilAvatar.dataset.tmp;
 
@@ -162,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // SISTEMA DE PUBLICACIONES
 class SistemaPublicaciones {
     constructor() {
-        this.publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
+        this.publicaciones = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY)) || [];
         this.init();
     }
 
@@ -211,7 +220,7 @@ class SistemaPublicaciones {
         this.otrosBeneficiosPub = document.getElementById('otrosBeneficiosPub');
 
         // Datos del profesor
-        this.perfilData = JSON.parse(localStorage.getItem('perfilData')) || {};
+        this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
         this.edicionId = null;
     }
 
@@ -418,7 +427,7 @@ guardarPublicacion(e) {
         this.publicaciones.unshift(publicacion);
     }
 
-    localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
+    localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
 
     this.mostrarPublicaciones();
     this.actualizarEstadisticas();
@@ -521,7 +530,7 @@ guardarPublicacion(e) {
 
     eliminarPublicacion(id) {
         this.publicaciones = this.publicaciones.filter(p => p.id !== id);
-        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
+        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
         alert('Publicación eliminada');
@@ -534,7 +543,7 @@ guardarPublicacion(e) {
         this.publicaciones[index].estado =
             this.publicaciones[index].estado === 'activa' ? 'cerrada' : 'activa';
 
-        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
+        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
     }

@@ -4,7 +4,6 @@ const path = require('path');
 const Alumno = require('../models/Alumno');
 
 // Configuración de Google Drive API (Para subir CVs)
-// Solo OAuth 2.0 (Gmail personal): usar GOOGLE_OAUTH_* en backend/.env
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 function buildDriveAuth() {
@@ -29,15 +28,10 @@ function getDriveClient() {
     return google.drive({ version: 'v3', auth });
 }
 
-// Carpeta destino para CVs (recomendado: carpeta dentro de un Shared Drive)
-// Configurar en backend/.env: DRIVE_CV_FOLDER_ID="<folderId>"
 const CV_FOLDER_ID = process.env.DRIVE_CV_FOLDER_ID;
 
 // Funcion para subir CVs
 async function subirADrive(file, alumno, req){
-    if (!CV_FOLDER_ID) {
-        throw new Error('Falta DRIVE_CV_FOLDER_ID en backend/.env (ID de la carpeta destino en Google Drive).');
-    }
     const drive = getDriveClient();
     const bufferStream = new stream.PassThrough();
     bufferStream.end(file.buffer);
@@ -50,7 +44,7 @@ async function subirADrive(file, alumno, req){
         },
         requestBody: {
             name: `cv-${alumno.boleta}${path.extname(req.file.originalname)}`,
-            parents: [CV_FOLDER_ID], // Carpeta destino en Google Drive / Shared Drive
+            parents: [CV_FOLDER_ID], // Carpeta destino en Google Drive
         },
         fields: 'id',
     });
