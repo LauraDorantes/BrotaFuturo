@@ -349,7 +349,7 @@ h1.titulo-seccion {
 }
 
 .hidden {
-    display: none;
+    display: none !important;
 }
 
 .perfil-readonly h3 {
@@ -1129,4 +1129,31 @@ label[required]::after {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* SECCIÓN AYUDA */
+.ayuda-section {
+    width: 100%;
+    padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ayuda-section .ayuda-contenido{
+    width: 100%;
+    max-width: 900px;
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ayuda-section img {
+    width: 100%;
+    max-width: 700px;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+    object-fit: contain;
 }
