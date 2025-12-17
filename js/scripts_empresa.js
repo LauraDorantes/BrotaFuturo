@@ -50,25 +50,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const perfilAvatar = document.getElementById("perfilAvatar");
 
     const nombreInput = document.getElementById("nombreInput");
-    const aPaternoInput = document.getElementById("aPaternoInput");
-    const aMaternoInput = document.getElementById("aMaternoInput");
+    const apellidosInput = document.getElementById("apellidosInput");
+    const nEmpresaInput = document.getElementById("nEmpresaInput");
     const emailInput = document.getElementById("emailInput");
     const phoneInput = document.getElementById("phoneInput");
-    const deptInput = document.getElementById("deptInput");
-    const sexoInput = document.getElementById("sexoInput");
+    const dirInput = document.getElementById("dirInput");
+    const tipoInput = document.getElementById("tipoInput");
     const rfcInput = document.getElementById("rfcInput");
-    const curpInput = document.getElementById("curpInput");
+
     const passInput = document.getElementById("passInput");
 
     const ro_nombre = document.getElementById("ro_nombre");
-    const ro_aPaterno = document.getElementById("ro_aPaterno");
-    const ro_aMaterno = document.getElementById("ro_aMaterno");
-    const ro_sexo = document.getElementById("ro_sexo");
+    const ro_apellidos = document.getElementById("ro_apellidos");
+    const ro_nEmpresa = document.getElementById("ro_nEmpresa");
+    const ro_tipo = document.getElementById("ro_tipo");
     const ro_email = document.getElementById("ro_email");
     const ro_phone = document.getElementById("ro_phone");
-    const ro_dept = document.getElementById("ro_dept");
+    const ro_dir = document.getElementById("ro_dir");
     const ro_rfc = document.getElementById("ro_rfc");
-    const ro_curp = document.getElementById("ro_curp");
+
 
     const displayName = document.getElementById("displayName");
 
@@ -78,28 +78,28 @@ document.addEventListener("DOMContentLoaded", () => {
         if (data.avatar) perfilAvatar.src = data.avatar;
 
         nombreInput.value = data.nombre || "";
-        aPaternoInput.value = data.aPaterno || "";
-        aMaternoInput.value = data.aMaterno || "";
+        apellidosInput.value = data.apellidos || "";
+        nEmpresaInput.value = data.nEmpresa || "";
         emailInput.value = data.email || "";
         phoneInput.value = data.phone || "";
-        deptInput.value = data.dept || "";
-        sexoInput.value = data.sexo || "";
+        dirInput.value = data.dir || "";
+        tipoInput.value = data.tipo || "";
         passInput.value = data.password || "";
 
         rfcInput.value = data.rfc || "";
 
-        ro_curp.textContent = data.curpNombre || "No subido";
+
         ro_nombre.textContent = data.nombre || "-";
-        ro_aPaterno.textContent = data.aPaterno || "-";
-        ro_aMaterno.textContent = data.aMaterno || "-";
-        ro_sexo.textContent = data.sexo || "-";
+        ro_apellidos.textContent = data.apellidos || "-";
+        ro_nEmpresa.textContent = data.nEmpresa || "-";
+        ro_tipo.textContent = data.tipo || "-";
         ro_email.textContent = data.email || "-";
         ro_phone.textContent = data.phone || "-";
-        ro_dept.textContent = data.dept || "-";
+        ro_dir.textContent = data.dir || "-";
         ro_rfc.textContent = data.rfc || "-";
 
         displayName.textContent = data.nombre
-            ? `${data.nombre} ${data.aPaterno || ""}`.trim()
+            ? `${data.nombre} ${data.apellidos || ""}`.trim()
             : "Nombre Apellido";
     }
     loadPerfil();
@@ -131,21 +131,18 @@ document.addEventListener("DOMContentLoaded", () => {
     perfilForm.addEventListener("submit", (e) => {
         e.preventDefault();
 
-        const curpFile = curpInput.files[0];
-
         const perfilData = {
             nombre: nombreInput.value.trim(),
-            aPaterno: aPaternoInput.value.trim(),
-            aMaterno: aMaternoInput.value.trim(),
+            apellidos: apellidosInput.value.trim(),
+            nEmpresa: nEmpresaInput.value.trim(),
             email: emailInput.value.trim(),
             phone: phoneInput.value.trim(),
-            dept: deptInput.value.trim(),
-            sexo: sexoInput.value,
+            dir: dirInput.value.trim(),
+            tipo: tipoInput.value,
             password: passInput.value.trim(),
 
             avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
-            rfc: rfcInput.value.trim(),
-            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
+            rfc: rfcInput.value.trim()
         };
 
         localStorage.setItem("perfilData", JSON.stringify(perfilData));

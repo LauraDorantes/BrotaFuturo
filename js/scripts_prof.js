@@ -87,8 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
         passInput.value = data.password || "";
 
         rfcInput.value = data.rfc || "";
+        curpInput.value = data.rfc || "";
 
-        ro_curp.textContent = data.curpNombre || "No subido";
+        ro_curp.textContent = data.curpNombre || "-";
         ro_nombre.textContent = data.nombre || "-";
         ro_aPaterno.textContent = data.aPaterno || "-";
         ro_aMaterno.textContent = data.aMaterno || "-";
@@ -145,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
             rfc: rfcInput.value.trim(),
-            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
+            curpNombre: curpInput.value.trim()
         };
 
         localStorage.setItem("perfilData", JSON.stringify(perfilData));
