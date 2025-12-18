@@ -63,10 +63,16 @@ const profesorSchema = new mongoose.Schema({
         required: true,
         enum: ['Masculino', 'Femenino'],
     },
+    //Modifique aquí
     alumnosAsociados : [{
         id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Alumno',
+        },
+        vacante:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:'Vacante',
+            required: true
         },
         estado: {
             type: String,

@@ -207,26 +207,11 @@
                                 <th>Boleta</th>
                                 <th>Nombre Completo</th>
                                 <th>Correo</th>
-                                <th>Fecha</th>
+                                <th>Publicacion asociada</th>
+                                <th>Estado</th>
                             </tr>
                         </thead>
-                        <tbody id="tbodyAlumnos">
-                            <tr class="fila-alumno" data-id="1">
-                                <td>1</td>
-                                <td>2024630264</td>
-                                <td>Alan Gonzalez</td>
-                                <td>alan@alumno.ipn.mx</td>
-                                <td>2025-12-01</td>
-                            </tr>
-
-                            <tr class="fila-alumno" data-id="2">
-                                <td>2</td>
-                                <td>20240002</td>
-                                <td>Isaac Rojas</td>
-                                <td>issac@alumno.ipn.mx</td>
-                                <td>2025-12-02</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="tbodyAlumnos"></tbody>
                     </table>
                 </div>
 
@@ -565,53 +550,53 @@
             </section>
 
           <section class="ayuda-section hidden" id="ayuda-section">
-    <div class="cardHeader" style="margin-bottom: 20px;">
-        <h2 class="titulo-seccion">Centro de Ayuda y Soporte</h2>
-    </div>
+            <div class="cardHeader" style="margin-bottom: 20px;">
+                <h2 class="titulo-seccion">Centro de Ayuda y Soporte</h2>
+            </div>
 
-    <div class="details" style="grid-template-columns: 1fr; margin-bottom: 20px;">
-        <div class="recentOrders">
-            <div class="cardHeader">
-                <h2>¿Cuál es el proceso a seguir?</h2>
+            <div class="details" style="grid-template-columns: 1fr; margin-bottom: 20px;">
+                <div class="recentOrders">
+                    <div class="cardHeader">
+                        <h2>¿Cuál es el proceso a seguir?</h2>
+                    </div>
+                    <div class="ayuda-contenido" style="text-align: center; padding: 20px;">
+                        <img src="./images/DFProfe.png" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1);">
+                    </div>
+                </div>
             </div>
-            <div class="ayuda-contenido" style="text-align: center; padding: 20px;">
-                <img src="./images/DFProfe.png" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1);">
-            </div>
-        </div>
-    </div>
 
-    <div class="cardBox" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 20px;">
-        <div class="card card-button-mail" onclick="enviarReporteAlumnos()">
-            <div>
-                <div class="numbers">Enviar Lista Oficial</div>
-                <div class="cardName">Mandar nombres de alumnos por correo a coordinación</div>
-            </div>
-            <div class="iconBx">
-                <ion-icon name="mail-unread-outline"></ion-icon>
-            </div>
-        </div>
-    </div>
+            <div class="cardBox" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 20px;">
+                <div class="card card-button-mail" onclick="enviarReporteAlumnos()">
+                    <div>
+                        <div class="numbers">Enviar Lista Oficial</div>
+                        <div class="cardName">Mandar nombres de alumnos por correo a coordinación</div>
+                    </div>
+                    <div class="iconBx">
+                        <ion-icon name="mail-unread-outline"></ion-icon>
+                    </div>
+                </div>
+            </div>  
 
-    <div class="details" style="grid-template-columns: 1fr;">
-        <div class="recentOrders">
-            <div class="cardHeader">
-                <h2>¿Cómo funciona el envío?</h2>
+            <div class="details" style="grid-template-columns: 1fr;">
+                <div class="recentOrders">
+                    <div class="cardHeader">
+                        <h2>¿Cómo funciona el envío?</h2>
+                    </div>
+                    <div style="padding: 20px; font-size: 1.1rem; line-height: 1.6; color: var(--black1);">
+                        <p>Al hacer clic en el botón superior <strong>"Enviar Lista Oficial"</strong>, el sistema generará automáticamente un resumen de:</p>
+                        <ul style="margin: 15px 0; padding-left: 20px;">
+                            <li><strong>Tus proyectos:</strong> Títulos y áreas registradas.</li>
+                            <li><strong>Alumnos:</strong> Listado con nombres y correos de los seleccionados.</li>
+                            <li><strong>Firma:</strong> Se incluirá tu nombre y departamento extraído de "Mi Perfil".</li>
+                        </ul>
+                        <p style="background: #fdf6e3; padding: 10px; border-left: 4px solid #f39c12; border-radius: 4px; font-size: 0.95rem;">
+                            <ion-icon name="information-circle-outline"></ion-icon> 
+                            <em>Se abrirá tu aplicación de correo (Outlook, Gmail o Mail) para que revises todo antes de enviarlo.</em>
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div style="padding: 20px; font-size: 1.1rem; line-height: 1.6; color: var(--black1);">
-                <p>Al hacer clic en el botón superior <strong>"Enviar Lista Oficial"</strong>, el sistema generará automáticamente un resumen de:</p>
-                <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li><strong>Tus proyectos:</strong> Títulos y áreas registradas.</li>
-                    <li><strong>Alumnos:</strong> Listado con nombres y correos de los seleccionados.</li>
-                    <li><strong>Firma:</strong> Se incluirá tu nombre y departamento extraído de "Mi Perfil".</li>
-                </ul>
-                <p style="background: #fdf6e3; padding: 10px; border-left: 4px solid #f39c12; border-radius: 4px; font-size: 0.95rem;">
-                    <ion-icon name="information-circle-outline"></ion-icon> 
-                    <em>Se abrirá tu aplicación de correo (Outlook, Gmail o Mail) para que revises todo antes de enviarlo.</em>
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         </div>
 
