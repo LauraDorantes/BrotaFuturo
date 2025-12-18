@@ -1,17 +1,66 @@
 const Vacante = require('../models/Vacante');
 
-/*
-    normalizeRequisitos
-    Normaliza el campo de requisitos para que siempre sea un array de strings.
-    Acepta tanto un string separado por comas como un array de strings.
-    @param {string|Array} val - Requisitos en formato string o array
-    @returns {Array} - Array de strings normalizados
-*/
-const normalizeRequisitos = (val) => {
-    if (Array.isArray(val)) return val.map((r) => String(r).trim()).filter(Boolean);
-    if (typeof val === 'string') return val.split(',').map((r) => r.trim()).filter(Boolean);
-    return [];
-};
+function normalizePropietarioTipo(role) {
+    const r = String(role || '').toLowerCase();
+    if (r === 'institucion') return 'Institucion';
+    if (r === 'profesor') return 'Profesor';
+    return null;
+}
+
+function normalizeString(value) {
+    if (value === undefined || value === null) return null;
+    const s = String(value).trim();
+    return s === '' ? null : s;
+}
+
+function normalizeNumber(value) {
+    if (value === undefined || value === null) return null;
+    const s = String(value).trim();
+    if (s === '') return null;
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
+}
+
+function normalizeTelefono(value) {
+    if (value === undefined || value === null) return null;
+    const digits = String(value).replace(/\D/g, '');
+    if (!digits) return null;
+    const n = Number(digits);
+    return Number.isFinite(n) ? n : null;
+}
+
+function normalizeDate(value) {
+    if (value === undefined || value === null) return null;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function normalizeModalidad(value) {
+    const v = normalizeString(value);
+    if (!v) return null;
+    // Aceptar variantes comunes sin acento
+    if (v === 'Hibrido' || v === 'Hibrida' || v === 'Hibrído') return 'Híbrido';
+    if (v === 'Híbrido' || v === 'Presencial' || v === 'Remoto') return v;
+    return v;
+}
+
+function normalizeBeneficiosAlumno(value) {
+    if (value === undefined || value === null) return null;
+    if (Array.isArray(value)) {
+        const arr = value
+            .map((x) => String(x || '').trim())
+            .filter(Boolean);
+        return arr.length ? arr : null;
+    }
+    const s = String(value).trim();
+    if (!s) return null;
+    // Permitir recibir "a, b, c"
+    const arr = s
+        .split(',')
+        .map((x) => String(x || '').trim())
+        .filter(Boolean);
+    return arr.length ? arr : null;
+}
 
 // Endpoints de gestión de vacantes
 /*
@@ -24,30 +73,53 @@ const normalizeRequisitos = (val) => {
 */
 exports.crearVacante = async (req, res) => {
     try {
-        // Obtener datos de la vacante del cuerpo de la solicitud
-        let { titulo, descripcion, requisitos, salario } = req.body;
-        if (!titulo || !descripcion || !requisitos) {
-            return res.status(400).json({ message: 'Faltan campos requeridos' });
+        const propietarioTipo = normalizePropietarioTipo(req.user && req.user.role);
+        if (!propietarioTipo) {
+            return res.status(403).json({ message: 'Prohibido' });
         }
-        // Normalizar requisitos
-        requisitos = normalizeRequisitos(requisitos);
-        if (requisitos.length === 0) {
-            return res.status(400).json({ message: 'Requisitos no válidos' });
-        }
-        console.log('Creando vacante con datos:', { titulo, descripcion, requisitos, salario, propietario: req.user._id });
-        // Crear la vacante
-        const vacante = await Vacante.create({
-            titulo,
-            descripcion,
-            requisitos,
-            salario,
-            propietarioTipo: req.user.role.toLowerCase() === 'institucion' ? 'Institucion' : 'Profesor',
+
+        const body = req.body || {};
+
+        const vacanteData = {
+            titulo: normalizeString(body.titulo),
+            area: normalizeString(body.area),
+            numeroVacantes: normalizeNumber(body.numeroVacantes),
+            objetivos: normalizeString(body.objetivos),
+            actividades: normalizeString(body.actividades),
+            requerimientos: normalizeString(body.requerimientos),
+            carreraRequerida: normalizeString(body.carreraRequerida),
+            conocimientosTecnicos: normalizeString(body.conocimientosTecnicos),
+            habilidades: normalizeString(body.habilidades),
+            modalidad: normalizeModalidad(body.modalidad),
+            horasSemanal: normalizeNumber(body.horasSemanal),
+            fechaInicio: normalizeDate(body.fechaInicio),
+            fechaLimite: normalizeDate(body.fechaLimite),
+            duracionMeses: normalizeNumber(body.duracionMeses),
+            beneficiosAlumno: normalizeBeneficiosAlumno(body.beneficiosAlumno),
+            otrosBeneficios: body.otrosBeneficios !== undefined ? String(body.otrosBeneficios || '').trim() : undefined,
+            informacionAdicional: body.informacionAdicional !== undefined ? String(body.informacionAdicional || '').trim() : undefined,
+            correoConsulta: normalizeString(body.correoConsulta),
+            telefonoConsulta: normalizeTelefono(body.telefonoConsulta),
+            propietarioTipo,
             propietario: req.user.id,
+        };
+
+        // Default: si no mandan numeroVacantes, usar 1
+        if (vacanteData.numeroVacantes === null) vacanteData.numeroVacantes = 1;
+
+        // Limpiar campos opcionales undefined para que Mongoose aplique defaults
+        Object.keys(vacanteData).forEach((k) => {
+            if (vacanteData[k] === undefined) delete vacanteData[k];
         });
-        // Retornar la vacante creada
-        return res.status(201).json(vacante);
+
+        const nueva = await Vacante.create(vacanteData);
+        return res.status(201).json({ message: 'Vacante creada correctamente', data: nueva });
     } catch (err) {
-        return res.status(500).json({ message: 'Error al crear la vacante' });
+        const isValidation = err && (err.name === 'ValidationError' || err.name === 'CastError');
+        if (isValidation) {
+            return res.status(400).json({ message: err.message || 'Datos inválidos' });
+        }
+        return res.status(500).json({ message: 'Error al crear vacante' });
     }
 };
 
@@ -81,26 +153,75 @@ exports.actualizarVacante = async (req, res) => {
         const vacante = req.vacanteIdData;
 
         // Verificar que el usuario autenticado es el propietario de la vacante
-        if (!(vacante.propietario.toString() === String(req.user.id))) {
+        if (!vacante || !(vacante.propietario.toString() === String(req.user.id))) {
             return res.status(403).json({ message: 'No autorizado para actualizar esta vacante' });
         }
 
-        // Actualizar campos permitidos
-        const { titulo, descripcion, requisitos, salario } = req.body;
-        if (titulo !== undefined) vacante.titulo = titulo;
-        if (descripcion !== undefined) vacante.descripcion = descripcion;
-        if (requisitos !== undefined) {
-            const reqs = normalizeRequisitos(requisitos);
-            if (reqs.length === 0) return res.status(400).json({ message: 'Requisitos no válidos' });
-            vacante.requisitos = reqs;
+        const body = req.body || {};
+
+        // Solo permitir actualizar campos del modelo (sin propietario/propietarioTipo/fechaPublicacion)
+        const updates = {
+            titulo: normalizeString(body.titulo),
+            area: normalizeString(body.area),
+            numeroVacantes: normalizeNumber(body.numeroVacantes),
+            objetivos: normalizeString(body.objetivos),
+            actividades: normalizeString(body.actividades),
+            requerimientos: normalizeString(body.requerimientos),
+            carreraRequerida: normalizeString(body.carreraRequerida),
+            conocimientosTecnicos: normalizeString(body.conocimientosTecnicos),
+            habilidades: normalizeString(body.habilidades),
+            modalidad: normalizeModalidad(body.modalidad),
+            horasSemanal: normalizeNumber(body.horasSemanal),
+            fechaInicio: normalizeDate(body.fechaInicio),
+            fechaLimite: normalizeDate(body.fechaLimite),
+            duracionMeses: normalizeNumber(body.duracionMeses),
+            beneficiosAlumno: normalizeBeneficiosAlumno(body.beneficiosAlumno),
+            correoConsulta: normalizeString(body.correoConsulta),
+            telefonoConsulta: normalizeTelefono(body.telefonoConsulta),
+        };
+
+        // Campos opcionales permiten setear a "" si lo mandan explícitamente
+        if (body.otrosBeneficios !== undefined) updates.otrosBeneficios = String(body.otrosBeneficios || '').trim();
+        if (body.informacionAdicional !== undefined) updates.informacionAdicional = String(body.informacionAdicional || '').trim();
+
+        // Aplicar solo los campos realmente enviados (evitar borrar required con strings vacíos)
+        const keysSent = new Set(Object.keys(body));
+        Object.keys(updates).forEach((k) => {
+            if (!keysSent.has(k)) {
+                delete updates[k];
+                return;
+            }
+            // Si es campo requerido y viene vacío -> inválido
+            if (
+                ['titulo', 'area', 'objetivos', 'actividades', 'requerimientos', 'carreraRequerida', 'conocimientosTecnicos', 'habilidades', 'modalidad', 'correoConsulta']
+                    .includes(k)
+                && (updates[k] === null)
+            ) {
+                return;
+            }
+        });
+
+        // Validaciones básicas de campos requeridos si se enviaron
+        const requiredKeys = ['titulo', 'area', 'objetivos', 'actividades', 'requerimientos', 'carreraRequerida', 'conocimientosTecnicos', 'habilidades', 'modalidad', 'horasSemanal', 'fechaInicio', 'fechaLimite', 'duracionMeses', 'beneficiosAlumno', 'correoConsulta', 'telefonoConsulta'];
+        for (const k of requiredKeys) {
+            if (!keysSent.has(k)) continue;
+            if (updates[k] === null) {
+                return res.status(400).json({ message: `Campo inválido: ${k}` });
+            }
         }
-        if (salario !== undefined) vacante.salario = salario;
-        // Guardar los cambios
-        const guardada = await vacante.save();
-        // Retornar la vacante actualizada
-        return res.json(guardada);
+
+        Object.keys(updates).forEach((k) => {
+            vacante[k] = updates[k];
+        });
+
+        await vacante.save();
+        return res.json({ message: 'Vacante actualizada correctamente', data: vacante });
     } catch (err) {
-        return res.status(500).json({ message: 'Error al actualizar la vacante' });
+        const isValidation = err && (err.name === 'ValidationError' || err.name === 'CastError');
+        if (isValidation) {
+            return res.status(400).json({ message: err.message || 'Datos inválidos' });
+        }
+        return res.status(500).json({ message: 'Error al actualizar vacante' });
     }
 };
 

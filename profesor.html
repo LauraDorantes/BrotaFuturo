@@ -384,7 +384,7 @@
 
                                 <label>Requerimientos específicos
                                     <textarea id="requerimientosPub" rows="2"
-                                        placeholder="Equipo especial, software específico, etc."></textarea>
+                                        placeholder="Equipo especial, software específico, etc." required></textarea>
                                 </label>
                             </div>
 
@@ -403,25 +403,19 @@
                                 </div>
 
                                 <div class="row">
-                                    <label>Semestre mínimo
-                                        <input type="number" id="semestrePub" min="4" max="12" placeholder="6">
-                                    </label>
-
-                                    <label>Créditos mínimos
-                                        <input type="number" id="creditosPub" min="0" placeholder="120">
-                                    </label>
+                                    
                                 </div>
 
                                 <div class="row">
                                     <label>Conocimientos técnicos requeridos
                                         <input type="text" id="conocimientosPub"
-                                            placeholder="Ej: Java, Python, C">
+                                            placeholder="Ej: Java, Python, C" required>
                                     </label>
                                 </div>
 
                                 <label>Habilidades deseables
                                     <textarea id="habilidadesPub" rows="2"
-                                        placeholder="Trabajo en equipo, liderazgo, investigación..."></textarea>
+                                        placeholder="Trabajo en equipo, liderazgo, investigación..." required></textarea>
                                 </label>
                             </div>
 
@@ -489,11 +483,11 @@
                                 <h4>Contacto e Información Adicional</h4>
                                 <div class="row">
                                     <label>Correo para consultas
-                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required>
+                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required readonly>
                                     </label>
 
                                     <label>Teléfono de contacto
-                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000">
+                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000" required readonly>
                                     </label>
                                 </div>
 

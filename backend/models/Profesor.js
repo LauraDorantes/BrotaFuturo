@@ -64,9 +64,16 @@ const profesorSchema = new mongoose.Schema({
         enum: ['Masculino', 'Femenino'],
     },
     alumnosAsociados : [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Alumno',
-    }]
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Alumno',
+        },
+        estado: {
+            type: String,
+            enum: ['Activo', 'Finalizado'],
+            required: true,
+        }}
+    ],
 }, { timestamps: true });
 
 // Índices para optimizar consultas

@@ -527,16 +527,23 @@ document.addEventListener("DOMContentLoaded", () => {
 // SISTEMA DE PUBLICACIONES
 class SistemaPublicaciones {
     constructor() {
-        this.publicaciones = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY)) || [];
+        // LocalStorage se usa como fallback y para estado local (activa/cerrada)
+        this.publicaciones = [];
+        this.localPublicaciones = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY)) || [];
         this.init();
     }
 
     init() {
         this.cargarElementos();
         this.agregarEventListeners();
+        this.configurarFechas();
+
+        // Pintar algo rápido con lo local y luego sincronizar con backend
+        this.publicaciones = Array.isArray(this.localPublicaciones) ? [...this.localPublicaciones] : [];
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
-        this.configurarFechas();
+
+        this.cargarDesdeBackend();
     }
 
     cargarElementos() {
@@ -560,9 +567,8 @@ class SistemaPublicaciones {
         this.vacantesPub = document.getElementById('vacantesPub');
         this.objetivosPub = document.getElementById('objetivosPub');
         this.actividadesPub = document.getElementById('actividadesPub');
+        this.requerimientosPub = document.getElementById('requerimientosPub');
         this.carrerasPub = document.getElementById('carrerasPub');
-        this.semestrePub = document.getElementById('semestrePub');
-        this.creditosPub = document.getElementById('creditosPub');
         this.conocimientosPub = document.getElementById('conocimientosPub');
         this.habilidadesPub = document.getElementById('habilidadesPub');
         this.modalidadPub = document.getElementById('modalidadPub');
@@ -578,6 +584,173 @@ class SistemaPublicaciones {
         // Datos del profesor
         this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
         this.edicionId = null;
+    }
+
+    getPerfilData() {
+        this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+        return this.perfilData;
+    }
+
+    getMyVacanciesEndpoint() {
+        if (typeof PROFESSOR_ENDPOINTS !== 'undefined' && PROFESSOR_ENDPOINTS.MY_VACANCIES) {
+            return PROFESSOR_ENDPOINTS.MY_VACANCIES;
+        }
+        return null;
+    }
+
+    buildUrl(template, params) {
+        let url = String(template || '');
+        Object.keys(params || {}).forEach((k) => {
+            url = url.replace(`:${k}`, encodeURIComponent(String(params[k])));
+        });
+        return url;
+    }
+
+    async fetchJson(url, options) {
+        const res = await fetch(url, options);
+        let data = null;
+        try {
+            data = await res.json();
+        } catch {
+            data = null;
+        }
+        return { res, data };
+    }
+
+    mapModalidadToApi(value) {
+        const v = String(value || '').toLowerCase();
+        if (v === 'presencial') return 'Presencial';
+        if (v === 'remoto') return 'Remoto';
+        if (v === 'hibrido' || v === 'híbrido') return 'Híbrido';
+        return value;
+    }
+
+    mapBeneficiosToApi(beneficiosValues) {
+        const map = {
+            certificacion: 'Certificación al término',
+            cartarecomendacion: 'Carta de recomendación',
+            experiencialaboral: 'Experiencia laboral comprobable',
+        };
+        return (beneficiosValues || [])
+            .map((v) => map[String(v)] || String(v))
+            .filter(Boolean);
+    }
+
+    mapBeneficiosToCheckboxValues(beneficiosAlumno) {
+        const reverse = {
+            'Certificación al término': 'certificacion',
+            'Carta de recomendación': 'cartarecomendacion',
+            'Experiencia laboral comprobable': 'experiencialaboral',
+        };
+        return (beneficiosAlumno || [])
+            .map((b) => reverse[String(b)] || null)
+            .filter(Boolean);
+    }
+
+    toInputDate(value) {
+        if (!value) return '';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return '';
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    normalizePhoneDigits(value) {
+        return String(value || '').replace(/\D/g, '');
+    }
+
+    mapVacanteToPublicacion(vacante) {
+        const id = vacante && (vacante._id || vacante.id);
+        return {
+            id: id ? String(id) : String(Date.now()),
+            titulo: vacante && vacante.titulo ? String(vacante.titulo) : '',
+            area: vacante && vacante.area ? String(vacante.area) : '',
+            vacantes: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
+            vacantesDisponibles: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
+            objetivos: vacante && vacante.objetivos ? String(vacante.objetivos) : '',
+            actividades: vacante && vacante.actividades ? String(vacante.actividades) : '',
+            requerimientos: vacante && vacante.requerimientos ? String(vacante.requerimientos) : '',
+            carreraRequerida: vacante && vacante.carreraRequerida ? String(vacante.carreraRequerida) : '',
+            conocimientos: vacante && vacante.conocimientosTecnicos ? String(vacante.conocimientosTecnicos) : '',
+            habilidades: vacante && vacante.habilidades ? String(vacante.habilidades) : '',
+            modalidad: vacante && vacante.modalidad ? String(vacante.modalidad) : '',
+            horas: vacante && vacante.horasSemanal != null ? Number(vacante.horasSemanal) : 10,
+            fechaInicio: this.toInputDate(vacante && vacante.fechaInicio),
+            fechaLimite: this.toInputDate(vacante && vacante.fechaLimite),
+            duracion: vacante && vacante.duracionMeses != null ? Number(vacante.duracionMeses) : 6,
+            beneficiosAlumno: Array.isArray(vacante && vacante.beneficiosAlumno) ? vacante.beneficiosAlumno : [],
+            otrosBeneficios: vacante && vacante.otrosBeneficios ? String(vacante.otrosBeneficios) : '',
+            infoAdicional: vacante && vacante.informacionAdicional ? String(vacante.informacionAdicional) : '',
+            contactoEmail: vacante && vacante.correoConsulta ? String(vacante.correoConsulta) : '',
+            contactoTelefono: vacante && vacante.telefonoConsulta != null ? String(vacante.telefonoConsulta) : '',
+            estado: 'activa',
+            fechaCreacion: vacante && (vacante.fechaPublicacion || vacante.createdAt) ? new Date(vacante.fechaPublicacion || vacante.createdAt).toISOString() : new Date().toISOString(),
+            postulantes: [],
+        };
+    }
+
+    mergeLocalState(publicacionesFromApi) {
+        const localArr = (() => {
+            try {
+                const raw = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY));
+                return Array.isArray(raw) ? raw : [];
+            } catch {
+                return [];
+            }
+        })();
+        const localById = new Map(
+            localArr
+                .filter((x) => x && (x.id || x._id))
+                .map((x) => [String(x.id || x._id), x])
+        );
+
+        return publicacionesFromApi.map((p) => {
+            const local = localById.get(String(p.id));
+            if (!local) return p;
+            return {
+                ...p,
+                estado: local.estado || p.estado,
+                postulantes: Array.isArray(local.postulantes) ? local.postulantes : p.postulantes,
+            };
+        });
+    }
+
+    async cargarDesdeBackend() {
+        const endpoint = this.getMyVacanciesEndpoint();
+        const token = getAccessToken();
+        if (!endpoint || !token) return;
+
+        try {
+            if (this.listaPublicaciones) {
+                this.listaPublicaciones.innerHTML = '<div class="no-publicaciones"><p>Cargando publicaciones...</p></div>';
+            }
+
+            const { res, data } = await this.fetchJson(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                return;
+            }
+
+            const vacantes = Array.isArray(data)
+                ? data
+                : (data && Array.isArray(data.data) ? data.data : []);
+
+            const publicacionesFromApi = vacantes.map((v) => this.mapVacanteToPublicacion(v));
+            this.publicaciones = this.mergeLocalState(publicacionesFromApi);
+            localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+
+            this.mostrarPublicaciones();
+            this.actualizarEstadisticas();
+        } catch {
+            // noop
+        }
     }
 
     agregarEventListeners() {
@@ -638,57 +811,78 @@ class SistemaPublicaciones {
         this.modalPublicacion.classList.remove('hidden');
         this.configurarFechas();
 
-        // Rellenar datos del profesor
-        if (this.perfilData.email) {
-            this.contactoEmailPub.value = this.perfilData.email;
+        // Correo/teléfono siempre desde perfil (solo lectura)
+        const perfil = this.getPerfilData();
+        if (this.contactoEmailPub) {
+            this.contactoEmailPub.readOnly = true;
+            this.contactoEmailPub.value = perfil.email || '';
         }
-        if (this.perfilData.phone) {
-            this.contactoTelefonoPub.value = this.perfilData.phone;
+        if (this.contactoTelefonoPub) {
+            this.contactoTelefonoPub.readOnly = true;
+            this.contactoTelefonoPub.value = perfil.phone || '';
         }
+
     }
 
     abrirModalEditar(id) {
-    const publicacion = this.publicaciones.find(p => p.id === id);
+    const publicacion = this.publicaciones.find(p => String(p.id) === String(id));
     if (!publicacion) return;
 
     this.modalTitulo.textContent = 'Editar Publicación';
     this.edicionId = id;
 
     this.tituloPub.value = publicacion.titulo || '';
-    this.areaPub.value = publicacion.areaId || publicacion.area || ''; 
+    if (this.areaPub) {
+        if (publicacion.areaId) {
+            this.areaPub.value = publicacion.areaId;
+        } else {
+            const areaTexto = String(publicacion.area || '').trim();
+            const opt = Array.from(this.areaPub.options).find((o) => String(o.text || '').trim() === areaTexto);
+            this.areaPub.value = opt ? opt.value : '';
+        }
+    }
     this.vacantesPub.value = publicacion.vacantes || 1;
     this.objetivosPub.value = publicacion.objetivos || '';
     this.actividadesPub.value = publicacion.actividades || '';
+    if (this.requerimientosPub) this.requerimientosPub.value = publicacion.requerimientos || '';
 
-    if (publicacion.carreras || publicacion.carrerasIds) {
-        const carrerasSelect = this.carrerasPub;
-        Array.from(carrerasSelect.options).forEach(option => {
-            if (publicacion.carrerasIds && publicacion.carrerasIds.includes(option.value)) {
-                option.selected = true;
-            } else if (publicacion.carreras && publicacion.carreras.includes(option.text)) {
-                option.selected = true;
-            } else {
-                option.selected = false;
-            }
+    // carreraRequerida viene como string desde backend: intentamos seleccionar coincidencias por texto
+    if (this.carrerasPub) {
+        const carreraReq = String(publicacion.carreraRequerida || '');
+        Array.from(this.carrerasPub.options).forEach((option) => {
+            option.selected = carreraReq.includes(option.text);
         });
     }
 
-    this.semestrePub.value = publicacion.semestre || '';
-    this.creditosPub.value = publicacion.creditos || '';
     this.conocimientosPub.value = publicacion.conocimientos || '';
     this.habilidadesPub.value = publicacion.habilidades || '';
-    this.modalidadPub.value = publicacion.modalidad || '';
+    // modalidad: el backend guarda con mayúscula/acentos; el select usa values en minúscula
+    if (this.modalidadPub) {
+        const m = String(publicacion.modalidad || '');
+        this.modalidadPub.value = m.toLowerCase().includes('híbrido') || m.toLowerCase().includes('hibrido')
+            ? 'hibrido'
+            : m.toLowerCase();
+    }
     this.horasPub.value = publicacion.horas || 10;
     this.fechaInicioPub.value = publicacion.fechaInicio || '';
     this.fechaLimitePub.value = publicacion.fechaLimite || '';
     this.duracionPub.value = publicacion.duracion || 6;
-    this.contactoEmailPub.value = publicacion.contactoEmail || '';
-    this.contactoTelefonoPub.value = publicacion.contactoTelefono || '';
+    // Correo/teléfono siempre desde perfil (solo lectura)
+    const perfil = this.getPerfilData();
+    if (this.contactoEmailPub) {
+        this.contactoEmailPub.readOnly = true;
+        this.contactoEmailPub.value = perfil.email || publicacion.contactoEmail || '';
+    }
+    if (this.contactoTelefonoPub) {
+        this.contactoTelefonoPub.readOnly = true;
+        this.contactoTelefonoPub.value = perfil.phone || publicacion.contactoTelefono || '';
+    }
     this.infoAdicionalPub.value = publicacion.infoAdicional || '';
     this.otrosBeneficiosPub.value = publicacion.otrosBeneficios || '';
 
-    document.querySelectorAll('input[name="beneficios"]').forEach(checkbox => {
-        checkbox.checked = publicacion.beneficios && publicacion.beneficios.includes(checkbox.value);
+    const selectedCheckboxValues = this.mapBeneficiosToCheckboxValues(publicacion.beneficiosAlumno);
+    document.querySelectorAll('input[name="beneficios"]').forEach((checkbox) => {
+        checkbox.checked = selectedCheckboxValues.includes(checkbox.value);
     });
 
     this.modalPublicacion.classList.remove('hidden');
@@ -699,19 +893,29 @@ class SistemaPublicaciones {
         this.edicionId = null;
     }
 
-guardarPublicacion(e) {
+async guardarPublicacion(e) {
     e.preventDefault();
 
-    const beneficios = [];
-    document.querySelectorAll('input[name="beneficios"]:checked').forEach(checkbox => {
-        beneficios.push(checkbox.value);
+    const beneficiosRaw = [];
+    document.querySelectorAll('input[name="beneficios"]:checked').forEach((checkbox) => {
+        beneficiosRaw.push(checkbox.value);
     });
+    const beneficios = this.mapBeneficiosToApi(beneficiosRaw);
 
     const areaSelect = this.areaPub;
-    const areaTexto = areaSelect.options[areaSelect.selectedIndex].text;
-    
-    const carreras = Array.from(this.carrerasPub.selectedOptions).map(o => o.text);
-    
+    const areaTexto = areaSelect && areaSelect.selectedIndex >= 0
+        ? areaSelect.options[areaSelect.selectedIndex].text
+        : '';
+
+    const carrerasSeleccionadas = this.carrerasPub
+        ? Array.from(this.carrerasPub.selectedOptions).map((o) => o.text)
+        : [];
+
+    if (!carrerasSeleccionadas.length) {
+        alert('Selecciona al menos una carrera requerida');
+        return;
+    }
+
     const nuevaVacantes = parseInt(this.vacantesPub.value);
     
     let vacantesDisponibles;
@@ -736,60 +940,104 @@ guardarPublicacion(e) {
         postulantes = [];
     }
 
-    const publicacion = {
-        id: this.edicionId || Date.now(),
-        titulo: this.tituloPub.value,
-        area: areaTexto,
-        areaId: this.areaPub.value,
-        vacantes: nuevaVacantes,
-        vacantesDisponibles: vacantesDisponibles,
-        objetivos: this.objetivosPub.value,
-        actividades: this.actividadesPub.value,
-        carreras: carreras,
-        carrerasIds: Array.from(this.carrerasPub.selectedOptions).map(o => o.value),
-        semestre: this.semestrePub.value ? parseInt(this.semestrePub.value) : null,
-        creditos: this.creditosPub.value ? parseInt(this.creditosPub.value) : null,
-        conocimientos: this.conocimientosPub.value,
-        habilidades: this.habilidadesPub.value,
-        modalidad: this.modalidadPub.value,
-        horas: parseInt(this.horasPub.value),
-        fechaInicio: this.fechaInicioPub.value,
-        fechaLimite: this.fechaLimitePub.value,
-        duracion: parseInt(this.duracionPub.value),
-        beneficios: beneficios,
-        otrosBeneficios: this.otrosBeneficiosPub.value,
-        contactoEmail: this.contactoEmailPub.value,
-        contactoTelefono: this.contactoTelefonoPub.value,
-        infoAdicional: this.infoAdicionalPub.value,
-        estado: 'activa',
-        fechaCreacion: new Date().toISOString(),
-        profesor: {
-            nombre: this.perfilData.nombre || 'Profesor',
-            apellido: this.perfilData.aPaterno || '',
-            departamento: this.perfilData.dept || '',
-            email: this.perfilData.email || ''
-        },
-        postulantes: postulantes, 
-        fechaActualizacion: new Date().toISOString()
-    };
-
-    if (this.edicionId) {
-        const index = this.publicaciones.findIndex(p => p.id === this.edicionId);
-        if (index !== -1) {
-            publicacion.fechaCreacion = this.publicaciones[index].fechaCreacion;
-            this.publicaciones[index] = publicacion;
-        }
-    } else {
-        this.publicaciones.unshift(publicacion);
+    const perfil = this.getPerfilData();
+    const token = getAccessToken();
+    if (!token) {
+        alert('Sesión expirada. Vuelve a iniciar sesión.');
+        return;
+    }
+    if (!perfil.email || !perfil.phone) {
+        alert('Para publicar, primero completa tu correo y teléfono en tu perfil.');
+        return;
     }
 
-    localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+    // Payload para el modelo Vacante del backend
+    const payload = {
+        titulo: this.tituloPub.value,
+        area: areaTexto,
+        numeroVacantes: nuevaVacantes,
+        objetivos: this.objetivosPub.value,
+        actividades: this.actividadesPub.value,
+        requerimientos: this.requerimientosPub ? this.requerimientosPub.value : '',
+        carreraRequerida: carrerasSeleccionadas.join(', '),
+        conocimientosTecnicos: this.conocimientosPub.value,
+        habilidades: this.habilidadesPub.value,
+        modalidad: this.mapModalidadToApi(this.modalidadPub.value),
+        horasSemanal: parseInt(this.horasPub.value),
+        fechaInicio: this.fechaInicioPub.value,
+        fechaLimite: this.fechaLimitePub.value,
+        duracionMeses: parseInt(this.duracionPub.value),
+        beneficiosAlumno: beneficios,
+        otrosBeneficios: this.otrosBeneficiosPub.value,
+        informacionAdicional: this.infoAdicionalPub.value,
+        correoConsulta: perfil.email,
+        telefonoConsulta: this.normalizePhoneDigits(perfil.phone),
+    };
 
-    this.mostrarPublicaciones();
-    this.actualizarEstadisticas();
-    this.cerrarModal();
+    // Validaciones mínimas para evitar 400 por campos requeridos del backend
+    const required = [
+        { k: 'titulo', v: payload.titulo },
+        { k: 'area', v: payload.area },
+        { k: 'objetivos', v: payload.objetivos },
+        { k: 'actividades', v: payload.actividades },
+        { k: 'requerimientos', v: payload.requerimientos },
+        { k: 'carreraRequerida', v: payload.carreraRequerida },
+        { k: 'conocimientosTecnicos', v: payload.conocimientosTecnicos },
+        { k: 'habilidades', v: payload.habilidades },
+        { k: 'modalidad', v: payload.modalidad },
+        { k: 'horasSemanal', v: payload.horasSemanal },
+        { k: 'fechaInicio', v: payload.fechaInicio },
+        { k: 'fechaLimite', v: payload.fechaLimite },
+        { k: 'duracionMeses', v: payload.duracionMeses },
+        { k: 'beneficiosAlumno', v: payload.beneficiosAlumno && payload.beneficiosAlumno.length },
+        { k: 'correoConsulta', v: payload.correoConsulta },
+        { k: 'telefonoConsulta', v: payload.telefonoConsulta },
+    ];
+    const missing = required.find((x) => !x.v);
+    if (missing) {
+        alert(`Completa el campo requerido: ${missing.k}`);
+        return;
+    }
 
-    alert(this.edicionId ? 'Publicación actualizada exitosamente' : 'Publicación creada exitosamente');
+    try {
+        let url = null;
+        let method = null;
+
+        if (this.edicionId) {
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.UPDATE_VACANCY) {
+                throw new Error('Falta configuración: VACANCY_ENDPOINTS.UPDATE_VACANCY');
+            }
+            url = this.buildUrl(VACANCY_ENDPOINTS.UPDATE_VACANCY, { id: this.edicionId });
+            method = 'PUT';
+        } else {
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.CREATE_VACANCY) {
+                throw new Error('Falta configuración: VACANCY_ENDPOINTS.CREATE_VACANCY');
+            }
+            url = VACANCY_ENDPOINTS.CREATE_VACANCY;
+            method = 'POST';
+        }
+
+        const { res, data } = await this.fetchJson(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const msg = data && data.message ? data.message : 'No se pudo guardar la publicación';
+            throw new Error(msg);
+        }
+
+        // Refrescar desde backend (fuente de verdad)
+        await this.cargarDesdeBackend();
+        this.cerrarModal();
+        alert(this.edicionId ? 'Publicación actualizada exitosamente' : 'Publicación creada exitosamente');
+    } catch (err) {
+        alert(err && err.message ? err.message : 'No se pudo guardar la publicación');
+    }
 }
 
     mostrarPublicaciones() {
@@ -864,8 +1112,8 @@ guardarPublicacion(e) {
         const target = e.target.closest('button');
         if (!target) return;
 
-        const id = parseInt(target.dataset.id);
-        const publicacion = this.publicaciones.find(p => p.id === id);
+        const id = String(target.dataset.id || '');
+        const publicacion = this.publicaciones.find(p => String(p.id) === id);
         if (!publicacion) return;
 
         if (target.classList.contains('editar-publicacion')) {
@@ -885,15 +1133,38 @@ guardarPublicacion(e) {
     }
 
     eliminarPublicacion(id) {
-        this.publicaciones = this.publicaciones.filter(p => p.id !== id);
-        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
-        this.mostrarPublicaciones();
-        this.actualizarEstadisticas();
-        alert('Publicación eliminada');
+        (async () => {
+            const token = getAccessToken();
+            if (!token) {
+                alert('Sesión expirada. Vuelve a iniciar sesión.');
+                return;
+            }
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.DELETE_VACANCY) {
+                alert('Falta configuración: VACANCY_ENDPOINTS.DELETE_VACANCY');
+                return;
+            }
+            try {
+                const url = this.buildUrl(VACANCY_ENDPOINTS.DELETE_VACANCY, { id });
+                const { res, data } = await this.fetchJson(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+                if (!res.ok) {
+                    const msg = data && data.message ? data.message : 'No se pudo eliminar';
+                    throw new Error(msg);
+                }
+                await this.cargarDesdeBackend();
+                alert('Publicación eliminada');
+            } catch (err) {
+                alert(err && err.message ? err.message : 'No se pudo eliminar');
+            }
+        })();
     }
 
     cambiarEstadoPublicacion(id) {
-        const index = this.publicaciones.findIndex(p => p.id === id);
+        const index = this.publicaciones.findIndex(p => String(p.id) === String(id));
         if (index === -1) return;
 
         this.publicaciones[index].estado =
@@ -942,8 +1213,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 const publicacionesSection = document.getElementById('publicaciones-section');
                 if (publicacionesSection && !publicacionesSection.classList.contains('hidden')) {
-                    // Inicializar publicaciones 
-                    window.sistemaPublicaciones = new SistemaPublicaciones();
+                    // Evitar múltiples instancias (cada instancia agrega listeners y duplicaría requests)
+                    if (!window.sistemaPublicaciones) {
+                        window.sistemaPublicaciones = new SistemaPublicaciones();
+                    } else if (typeof window.sistemaPublicaciones.cargarDesdeBackend === 'function') {
+                        window.sistemaPublicaciones.cargarDesdeBackend();
+                    }
                 }
             }
         });
@@ -955,7 +1230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (publicacionesSection && !publicacionesSection.classList.contains('hidden')) {
-        window.sistemaPublicaciones = new SistemaPublicaciones();
+        if (!window.sistemaPublicaciones) {
+            window.sistemaPublicaciones = new SistemaPublicaciones();
+        } else if (typeof window.sistemaPublicaciones.cargarDesdeBackend === 'function') {
+            window.sistemaPublicaciones.cargarDesdeBackend();
+        }
     }
 });
 

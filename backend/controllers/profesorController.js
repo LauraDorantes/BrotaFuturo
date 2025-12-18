@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
 const Alumno = require('../models/Alumno');
-const Profesor = require('../models/Profesor');
 const Institucion = require('../models/Institucion');
+const Profesor = require('../models/Profesor');
+const Vacante = require('../models/Vacante');
 
 /*
     actualizarPerfil
@@ -88,4 +89,65 @@ exports.actualizarPerfil = async (req, res) => {
         console.error('Error actualizando perfil:', error);
         return res.status(500).json({ message: 'Error al actualizar el perfil', error });
     }
+};
+
+/*
+    obtenerVacantes
+    Endpoint para que un profesor obtenga las vacantes que ha publicado.
+    @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
+    @return {Object} - Array de vacantes del profesor o error en caso de fallo.
+*/
+exports.obtenerVacantes = async (req, res) => {
+    try {
+        const profesorId = req.user && req.user.id;
+        if (!profesorId) {
+            return res.status(401).json({ message: 'No autorizado' });
+        }
+
+        const vacantes = await Vacante.find({
+            propietarioTipo: 'Profesor',
+            propietario: profesorId,
+        })
+            .sort({ fechaPublicacion: -1 })
+            .lean();
+
+        return res.json({ message: 'Vacantes obtenidas correctamente', data: vacantes });
+    } catch (err) {
+        console.error('Error obteniendo vacantes del profesor:', err);
+        return res.status(500).json({ message: 'Error al obtener vacantes' });
+    }
+
+};
+
+/*
+    obtenerAlumnosSupervisados
+    Endpoint para que un profesor obtenga la lista de alumnos que supervisa o ha supervisado.
+    @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
+    @return {Object} - Array de alumnos supervisados por el profesor o error en caso de fallo.
+*/
+exports.obtenerAlumnosAsociados = async (req, res) => {
+    try {
+        const profesorId = req.user && req.user.id;
+        if (!profesorId) {
+            return res.status(401).json({ message: 'No autorizado' });
+        }
+
+        const profesor = await Profesor.findById(profesorId)
+            .populate({
+                path: 'alumnosAsociados',
+                select: '-password -__v',
+            })
+            .lean();
+
+        if (!profesor) {
+            return res.status(404).json({ message: 'Profesor no encontrado' });
+        }
+
+        const alumnos = Array.isArray(profesor.alumnosAsociados) ? profesor.alumnosAsociados : [];
+        return res.json({ message: 'Alumnos obtenidos correctamente', data: alumnos });
+    } catch (err) {
+        console.error('Error obteniendo alumnos asociados:', err);
+        return res.status(500).json({ message: 'Error al obtener alumnos asociados' });
+    }
+
 };

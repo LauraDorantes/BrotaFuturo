@@ -38,6 +38,10 @@ const STUDENT_ENDPOINTS = {
 // Rutas de profesor
 const PROFESSOR_ENDPOINTS = {
     UPDATE_PROFILE: `${API_BASE_URL}/profesor/actualizarPerfil`,
+    // Vacantes del profesor (mis publicaciones)
+    MY_VACANCIES: `${API_BASE_URL}/profesor/vacantes`,
+    // Alumnos asociados al profesor
+    MY_STUDENTS: `${API_BASE_URL}/profesor/alumnos`,
 };
 
 // Rutas de vacantes

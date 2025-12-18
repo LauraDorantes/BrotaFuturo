@@ -797,11 +797,14 @@ async function cargarVacantes() {
  */
 function crearCardVacante(vacante) {
     const card = document.createElement('div');
-    card.className = `vacante-card ${vacante.propietarioTipo.toLowerCase()}`;
+    const propietarioTipo = String(vacante && vacante.propietarioTipo ? vacante.propietarioTipo : '');
+    card.className = `vacante-card ${propietarioTipo ? propietarioTipo.toLowerCase() : ''}`;
     card.dataset.vacanteId = vacante._id;
 
-    const tipoLabel = vacante.propietarioTipo === 'Profesor' ? 'Profesor' : 'Empresa/Institución';
-    const tipoClass = vacante.propietarioTipo === 'Profesor' ? 'profesor' : 'institucion';
+    const tipoLabel = propietarioTipo === 'Profesor' ? 'Profesor' : 'Empresa/Institución';
+    const tipoClass = propietarioTipo === 'Profesor' ? 'profesor' : 'institucion';
+
+    const descripcionCorta = getVacanteDescripcion(vacante);
 
     card.innerHTML = `
         <div class="vacante-tipo ${tipoClass}">${tipoLabel}</div>
@@ -809,9 +812,10 @@ function crearCardVacante(vacante) {
             <h3>${vacante.titulo || 'Sin título'}</h3>
         </div>
         <div class="publicacion-info">
-            <p><strong>Descripción:</strong> ${(vacante.descripcion || '').substring(0, 100)}${vacante.descripcion && vacante.descripcion.length > 100 ? '...' : ''}</p>
-            ${vacante.salario ? `<p><strong>Salario:</strong> $${vacante.salario.toLocaleString()}</p>` : ''}
-            <p><strong>Fecha publicación:</strong> ${new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES')}</p>
+            <p><strong>Descripción:</strong> ${descripcionCorta.substring(0, 100)}${descripcionCorta.length > 100 ? '...' : ''}</p>
+            <p><strong>Área:</strong> ${vacante.area || '-'}</p>
+            <p><strong>Vacantes:</strong> ${vacante.numeroVacantes != null ? vacante.numeroVacantes : '-'}</p>
+            <p><strong>Fecha publicación:</strong> ${vacante.fechaPublicacion ? new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES') : '-'}</p>
         </div>
         <div class="publicacion-actions">
             <button class="btn btn-primary ver-vacante" data-vacante-id="${vacante._id}">
@@ -871,7 +875,8 @@ function filtrarVacantes(vacantes) {
     if (buscarTexto) {
         vacantesFiltradas = vacantesFiltradas.filter(v => 
             (v.titulo && v.titulo.toLowerCase().includes(buscarTexto)) ||
-            (v.descripcion && v.descripcion.toLowerCase().includes(buscarTexto))
+            (getVacanteDescripcion(v).toLowerCase().includes(buscarTexto)) ||
+            (v.area && String(v.area).toLowerCase().includes(buscarTexto))
         );
     }
 
@@ -891,8 +896,42 @@ function filtrarVacantes(vacantes) {
  * @param {object} vacante - Datos de la vacante
  */
 function mostrarDetalleVacante(vacante) {
-    // Implementar modal con detalles completos si es necesario
-    alert(`Título: ${vacante.titulo}\n\nDescripción: ${vacante.descripcion}\n\nRequisitos: ${vacante.requisitos?.join(', ')}`);
+    const titulo = vacante && vacante.titulo ? vacante.titulo : 'Sin título';
+    const tipo = vacante && vacante.propietarioTipo ? vacante.propietarioTipo : '-';
+    const area = vacante && vacante.area ? vacante.area : '-';
+    const vacantesNum = (vacante && vacante.numeroVacantes != null) ? vacante.numeroVacantes : '-';
+    const modalidad = vacante && vacante.modalidad ? vacante.modalidad : '-';
+    const horas = (vacante && vacante.horasSemanal != null) ? vacante.horasSemanal : '-';
+    const duracion = (vacante && vacante.duracionMeses != null) ? vacante.duracionMeses : '-';
+    const fechaInicio = vacante && vacante.fechaInicio ? new Date(vacante.fechaInicio).toLocaleDateString('es-ES') : '-';
+    const fechaLimite = vacante && vacante.fechaLimite ? new Date(vacante.fechaLimite).toLocaleDateString('es-ES') : '-';
+    const fechaPublicacion = vacante && vacante.fechaPublicacion ? new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES') : '-';
+
+    const descripcion = getVacanteDescripcion(vacante);
+    const requisitos = getVacanteRequisitosTexto(vacante);
+    const beneficios = getVacanteBeneficiosTexto(vacante);
+    const contacto = getVacanteContactoTexto(vacante);
+
+    alert(
+        `Título: ${titulo}` +
+        `\nTipo: ${tipo}` +
+        `\nÁrea: ${area}` +
+        `\nVacantes: ${vacantesNum}` +
+        `\nModalidad: ${modalidad}` +
+        `\nHoras semanales: ${horas}` +
+        `\nDuración (meses): ${duracion}` +
+        `\nFecha inicio: ${fechaInicio}` +
+        `\nFecha límite: ${fechaLimite}` +
+        `\nFecha publicación: ${fechaPublicacion}` +
+        `\n\nDescripción/Objetivos:` +
+        `\n${descripcion || '-'}` +
+        `\n\nRequisitos:` +
+        `\n${requisitos || '-'}` +
+        `\n\nBeneficios:` +
+        `\n${beneficios || '-'}` +
+        `\n\nContacto:` +
+        `\n${contacto || '-'}`
+    );
 }
 
 /**
@@ -906,13 +945,15 @@ function abrirModalPostulacion(vacante) {
 
     if (!modal || !vacanteInfo) return;
 
-    // Mostrar información de la vacante
+    // Mostrar información de la vacante (compatible con modelos antiguos y el actual)
+    const descripcion = getVacanteDescripcion(vacante);
+    const requisitos = getVacanteRequisitosTexto(vacante);
     vacanteInfo.innerHTML = `
         <h4>${vacante.titulo}</h4>
         <p><strong>Tipo:</strong> ${vacante.propietarioTipo}</p>
-        <p><strong>Descripción:</strong> ${vacante.descripcion}</p>
-        ${vacante.requisitos && vacante.requisitos.length > 0 ? 
-            `<p><strong>Requisitos:</strong> ${vacante.requisitos.join(', ')}</p>` : ''}
+        <p><strong>Área:</strong> ${vacante.area || '-'}</p>
+        <p><strong>Descripción:</strong> ${descripcion || '-'}</p>
+        ${requisitos ? `<p><strong>Requisitos:</strong> ${requisitos}</p>` : ''}
     `;
 
     // Guardar ID de la vacante en el formulario
@@ -944,6 +985,53 @@ function abrirModalPostulacion(vacante) {
             showError(error.message || 'Error al enviar la postulación');
         }
     };
+}
+
+function getVacanteDescripcion(v) {
+    if (!v) return '';
+    // Soporte para modelo anterior
+    if (typeof v.descripcion === 'string' && v.descripcion.trim()) return v.descripcion.trim();
+
+    const parts = [];
+    if (typeof v.objetivos === 'string' && v.objetivos.trim()) parts.push(`Objetivos: ${v.objetivos.trim()}`);
+    if (typeof v.actividades === 'string' && v.actividades.trim()) parts.push(`Actividades: ${v.actividades.trim()}`);
+    if (typeof v.requerimientos === 'string' && v.requerimientos.trim()) parts.push(`Requerimientos: ${v.requerimientos.trim()}`);
+    return parts.join(' | ');
+}
+
+function getVacanteRequisitosTexto(v) {
+    if (!v) return '';
+    // Modelo anterior: requisitos como array o string
+    if (Array.isArray(v.requisitos)) return v.requisitos.filter(Boolean).join(', ');
+    if (typeof v.requisitos === 'string' && v.requisitos.trim()) return v.requisitos.trim();
+
+    const parts = [];
+    if (typeof v.carreraRequerida === 'string' && v.carreraRequerida.trim()) parts.push(`Carrera: ${v.carreraRequerida.trim()}`);
+    if (typeof v.conocimientosTecnicos === 'string' && v.conocimientosTecnicos.trim()) parts.push(`Conocimientos: ${v.conocimientosTecnicos.trim()}`);
+    if (typeof v.habilidades === 'string' && v.habilidades.trim()) parts.push(`Habilidades: ${v.habilidades.trim()}`);
+    if (typeof v.requerimientos === 'string' && v.requerimientos.trim()) parts.push(`Requerimientos: ${v.requerimientos.trim()}`);
+    return parts.join(' | ');
+}
+
+function getVacanteBeneficiosTexto(v) {
+    if (!v) return '';
+    if (Array.isArray(v.beneficiosAlumno) && v.beneficiosAlumno.length) {
+        return v.beneficiosAlumno.filter(Boolean).join(', ');
+    }
+    if (Array.isArray(v.beneficios) && v.beneficios.length) {
+        return v.beneficios.filter(Boolean).join(', ');
+    }
+    return '';
+}
+
+function getVacanteContactoTexto(v) {
+    if (!v) return '';
+    const email = v.correoConsulta || v.contactoEmail || '';
+    const tel = v.telefonoConsulta || v.contactoTelefono || '';
+    const parts = [];
+    if (email) parts.push(String(email));
+    if (tel) parts.push(String(tel));
+    return parts.join(' | ');
 }
 
 /**
