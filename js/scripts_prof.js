@@ -1241,61 +1241,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 //ALUMNOS
-document.querySelectorAll(".fila-alumno").forEach(fila => {
-    fila.addEventListener("click", () => {
+async function cargarAlumnos() {
+    const token = localStorage.getItem('token');
 
-        const nombre = fila.children[2].textContent;
-        const correo = fila.children[3].textContent;
-        const boleta = fila.children[1].textContent;
-
-        document.getElementById("m_nombre").textContent = nombre;
-        document.getElementById("m_correo").textContent = correo;
-        document.getElementById("m_boleta").textContent = boleta;
-
-        document.getElementById("m_telefono").textContent = "";
-        document.getElementById("m_carrera").textContent = "";
-        document.getElementById("m_creditos").textContent = "";
-        document.getElementById("m_publicacion").textContent = "";
-
-        document.getElementById("modalAlumno").classList.remove("hidden");
-    });
-});
-
-//CIERRE DE MODALES EN GENERAL
-(function initModals() {
-    const modales = document.querySelectorAll('.modal');
-
-    modales.forEach(modal => {
-        const closeBtn = modal.querySelector('.close');
-
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-        }
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-    });
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === "Escape") {
-            document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
+    const res = await fetch('http://localhost:5000/api/profesor/alumnos', {
+        headers: {
+            Authorization: `Bearer ${token}`
         }
     });
-})();
 
+    if (!res.ok) {
+        console.error('Error al cargar alumnos');
+        return;
+    }
 
-//NOTIFICACIONES
-const datosAlumnoEjemplo = {
-    nombre: "Alumno de Ejemplo",
-    creditos: "72.8%",
-    correo: "alumno@alumno.ipn.mx",
-    carrera: "ISC"
-};
+    const alumnos = await res.json();
+    const tbody = document.querySelector('#tablaAlumnos tbody');
+
+    tbody.innerHTML = '';
+
+    alumnos.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${a.numero}</td>
+            <td>${a.boleta}</td>
+            <td>${a.nombreCompleto}</td>
+            <td>${a.correo}</td>
+            <td>${a.publicacion}</td>
+            <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">
+                ${a.estado}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
 
 //CORREO REPORTE DE ALUMNOS
 function enviarReporteAlumnos() {

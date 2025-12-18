@@ -125,6 +125,7 @@ exports.obtenerVacantes = async (req, res) => {
     @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
     @return {Object} - Array de alumnos supervisados por el profesor o error en caso de fallo.
 */
+//Modifique aquí
 exports.obtenerAlumnosAsociados = async (req, res) => {
     try {
         const profesorId = req.user && req.user.id;
@@ -133,21 +134,27 @@ exports.obtenerAlumnosAsociados = async (req, res) => {
         }
 
         const profesor = await Profesor.findById(profesorId)
-            .populate({
-                path: 'alumnosAsociados',
-                select: '-password -__v',
-            })
-            .lean();
+            .populate('alumnosAsociados.alumno', 'boleta nombres apellidoPaterno apellidoMaterno correo')
+            .populate('alumnosAsociados.vacante', 'titulo');
 
         if (!profesor) {
             return res.status(404).json({ message: 'Profesor no encontrado' });
         }
 
-        const alumnos = Array.isArray(profesor.alumnosAsociados) ? profesor.alumnosAsociados : [];
-        return res.json({ message: 'Alumnos obtenidos correctamente', data: alumnos });
-    } catch (err) {
-        console.error('Error obteniendo alumnos asociados:', err);
-        return res.status(500).json({ message: 'Error al obtener alumnos asociados' });
-    }
+        const alumnos = profesor.alumnosAsociados.map((a, index) => ({
+            numero: index + 1,
+            boleta: a.alumno.boleta,
+            nombreCompleto: `${a.alumno.nombres} ${a.alumno.apellidoPaterno} ${a.alumno.apellidoMaterno}`,
+            correo: a.alumno.correo,
+            publicacion: a.vacante.titulo,
+            estado: a.estado
+        }));
 
+        return res.json(alumnos);
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al obtener alumnos' });
+    }
+    
 };

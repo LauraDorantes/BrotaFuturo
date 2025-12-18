@@ -1209,3 +1209,13 @@ label[required]::after {
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
     object-fit: contain;
 }
+
+.activo {
+    color: #2e7d32;
+    font-weight: 600;
+}
+
+.finalizado {
+    color: #c62828;
+    font-weight: 600;
+}
