@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
  * Campos:
  * - alumno: Referencia al estudiante que se postula (requerido)
  * - vacante: Referencia a la vacante a la que se postula (requerido)
- * - estado: Estado de la postulación (pendiente, aceptada, rechazada) - por defecto 'pendiente'
+ * - estado: Estado de la postulación (Pendiente, Aceptada, Rechazada) - por defecto 'Pendiente'
  * - mensaje: Mensaje opcional del estudiante al postularse
  * - fechaPostulacion: Fecha en que se realizó la postulación (automático)
  * - fechaRespuesta: Fecha en que se respondió la postulación (opcional)
@@ -26,8 +26,8 @@ const postulacionSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['pendiente', 'aceptada', 'rechazada'],
-        default: 'pendiente',
+        enum: ['Pendiente', 'Aceptada', 'Rechazada'],
+        default: 'Pendiente',
         required: true,
     },
     mensaje: {

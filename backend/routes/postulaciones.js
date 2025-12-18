@@ -37,7 +37,7 @@ router.post(
     GET obtenerMisPostulaciones
     Endpoint para que un estudiante obtenga todas sus postulaciones
     @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
-    @param {String} req.query.estado - Filtro opcional por estado: 'pendiente', 'aceptada', 'rechazada'
+    @param {String} req.query.estado - Filtro opcional por estado: 'Pendiente', 'Aceptada', 'Rechazada' (se acepta también en minúsculas)
     @return {Object} - Array de postulaciones del estudiante
 */
 router.get(
@@ -66,7 +66,7 @@ router.get(
 /*
     DELETE cancelarPostulacion
     Endpoint para que un estudiante cancele su propia postulación
-    Solo se puede cancelar si está en estado 'pendiente'
+    Solo se puede cancelar si está en estado 'Pendiente'
     @param {String} req.params.postulacionId - ID de la postulación a cancelar
     @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
     @return {Object} - Mensaje de éxito o error en caso de fallo

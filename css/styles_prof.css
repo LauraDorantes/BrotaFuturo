@@ -396,6 +396,16 @@ h1.titulo-seccion {
     border-bottom: 1px solid #e5e7eb;
 }
 
+/* Botones dentro de tablas (ej: modal postulantes) */
+.tabla-alumnos .btn.btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 6px;
+}
+
 .fila-alumno {
     cursor: pointer;
 }

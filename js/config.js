@@ -40,6 +40,11 @@ const PROFESSOR_ENDPOINTS = {
     UPDATE_PROFILE: `${API_BASE_URL}/profesor/actualizarPerfil`,
     // Vacantes del profesor (mis publicaciones)
     MY_VACANCIES: `${API_BASE_URL}/profesor/vacantes`,
+    // Postulantes de una vacante del profesor
+    VACANCY_APPLICANTS: `${API_BASE_URL}/profesor/vacantes/:id/postulantes`,
+    // Aceptar/Rechazar postulación
+    ACCEPT_APPLICATION: `${API_BASE_URL}/profesor/vacantes/:vacanteId/postulaciones/:postulacionId/aceptar`,
+    REJECT_APPLICATION: `${API_BASE_URL}/profesor/vacantes/:vacanteId/postulaciones/:postulacionId/rechazar`,
     // Alumnos asociados al profesor
     MY_STUDENTS: `${API_BASE_URL}/profesor/alumnos`,
 };

@@ -2,6 +2,9 @@ const express = require('express');
 const {
     actualizarPerfil,
     obtenerVacantes,
+    obtenerPostulantesDeVacante,
+    aceptarPostulacionDeVacante,
+    rechazarPostulacionDeVacante,
     obtenerAlumnosAsociados,
 } = require('../controllers/profesorController');
 const { requireAuth } = require('../middlewares/authMiddleware');
@@ -32,6 +35,42 @@ router.get(
     requireAuth,
     requireRoles('profesor'),
     obtenerVacantes
+);
+
+/*
+    GET obtenerPostulantesDeVacante
+    Endpoint para que un profesor obtenga los postulantes de una vacante propia.
+    @param {String} req.params.vacanteId - ID de la vacante
+    @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
+    @return {Object} - Postulaciones con alumno poblado
+*/
+router.get(
+    '/vacantes/:vacanteId/postulantes',
+    requireAuth,
+    requireRoles('profesor'),
+    obtenerPostulantesDeVacante
+);
+
+/*
+    PUT aceptarPostulacionDeVacante
+    Endpoint para que un profesor acepte una postulación en una vacante propia.
+*/
+router.put(
+    '/vacantes/:vacanteId/postulaciones/:postulacionId/aceptar',
+    requireAuth,
+    requireRoles('profesor'),
+    aceptarPostulacionDeVacante
+);
+
+/*
+    PUT rechazarPostulacionDeVacante
+    Endpoint para que un profesor rechace una postulación en una vacante propia.
+*/
+router.put(
+    '/vacantes/:vacanteId/postulaciones/:postulacionId/rechazar',
+    requireAuth,
+    requireRoles('profesor'),
+    rechazarPostulacionDeVacante
 );
 
 /*

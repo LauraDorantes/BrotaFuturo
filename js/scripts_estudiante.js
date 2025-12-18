@@ -769,23 +769,37 @@ async function cargarVacantes() {
     try {
         const vacantesUrl = requireConfigValue('VACANCY_ENDPOINTS', (typeof VACANCY_ENDPOINTS !== 'undefined' ? VACANCY_ENDPOINTS : null), 'GET_VACANCIES');
         const vacantes = await fetchAPI(vacantesUrl);
+
+        // Ocultar vacantes sin cupo disponible (por si el backend devuelve todas)
+        const vacantesDisponibles = (Array.isArray(vacantes) ? vacantes : []).filter(esVacanteDisponible);
         
-        if (!vacantes || vacantes.length === 0) {
+        if (!vacantesDisponibles || vacantesDisponibles.length === 0) {
             listaVacantes.innerHTML = '<div class="no-publicaciones"><p>No hay vacantes disponibles en este momento</p></div>';
             return;
         }
 
         listaVacantes.innerHTML = '';
-        vacantes.forEach(vacante => {
+        vacantesDisponibles.forEach(vacante => {
             listaVacantes.appendChild(crearCardVacante(vacante));
         });
 
         // Configurar filtros
-        configurarFiltrosVacantes(vacantes);
+        configurarFiltrosVacantes(vacantesDisponibles);
     } catch (error) {
         console.error('Error al cargar vacantes:', error);
         listaVacantes.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar las vacantes</div>';
     }
+}
+
+function esVacanteDisponible(vacante) {
+    if (!vacante) return false;
+    // Si el backend manda vacantesDisponibles, úsalo como fuente de verdad.
+    if (vacante.vacantesDisponibles != null) {
+        const n = Number(vacante.vacantesDisponibles);
+        return Number.isFinite(n) ? n > 0 : true;
+    }
+    // Fallback: si no viene, asume disponible.
+    return true;
 }
 
 /**
@@ -860,7 +874,7 @@ function filtrarVacantes(vacantes) {
 
     if (!listaVacantes) return;
 
-    let vacantesFiltradas = vacantes;
+    let vacantesFiltradas = (Array.isArray(vacantes) ? vacantes : []).filter(esVacanteDisponible);
 
     // Filtrar por tipo
     if (filtroTipo) {
@@ -1155,7 +1169,9 @@ async function cargarPostulaciones() {
  */
 function crearCardPostulacion(postulacion) {
     const card = document.createElement('div');
-    card.className = `postulacion-card ${postulacion.estado}`;
+    const estadoRaw = String((postulacion && postulacion.estado) || '').trim();
+    const estadoKey = estadoRaw.toLowerCase();
+    card.className = `postulacion-card ${estadoKey}`;
 
     const vacante = postulacion.vacante || {};
     const estadoLabels = {
@@ -1167,7 +1183,7 @@ function crearCardPostulacion(postulacion) {
     card.innerHTML = `
         <div class="publicacion-header">
             <h3>${vacante.titulo || 'Vacante'}</h3>
-            <span class="postulacion-estado ${postulacion.estado}">${estadoLabels[postulacion.estado] || postulacion.estado}</span>
+            <span class="postulacion-estado ${estadoKey}">${estadoLabels[estadoKey] || estadoRaw || '-'}</span>
         </div>
         <div class="publicacion-info">
             <p><strong>Tipo:</strong> ${postulacion.vacante?.propietarioTipo || '-'}</p>
@@ -1184,7 +1200,7 @@ function crearCardPostulacion(postulacion) {
             <button class="btn btn-small ver-detalle-postulacion" data-postulacion-id="${postulacion._id}">
                 <ion-icon name="eye-outline"></ion-icon> Ver Detalles
             </button>
-            ${postulacion.estado === 'pendiente' ? 
+            ${estadoKey === 'pendiente' ? 
                 `<button class="btn btn-small outline cancelar-postulacion" data-postulacion-id="${postulacion._id}">
                     <ion-icon name="close-outline"></ion-icon> Cancelar
                 </button>` : ''}

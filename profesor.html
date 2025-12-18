@@ -504,6 +504,39 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Modal: Postulantes por publicación -->
+                <div id="modalPostulantes" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span class="close">&times;</span>
+
+                        <h3 id="postulantesTitulo">Postulantes</h3>
+
+                        <div class="modal-datos">
+                            <p><strong>Publicación:</strong> <span id="postulantesVacante">-</span></p>
+                            <p><strong>Total:</strong> <span id="postulantesTotal">0</span></p>
+                        </div>
+
+                        <div class="tabla-container">
+                            <table class="tabla-alumnos">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Correo</th>
+                                        <th>Boleta</th>
+                                        <th>Carrera</th>
+                                        <th>Créditos</th>
+                                        <th>CV</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyPostulantes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!--NOTIFICACIONES-->

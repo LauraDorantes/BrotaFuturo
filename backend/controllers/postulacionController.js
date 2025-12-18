@@ -31,6 +31,22 @@ exports.crearPostulacion = async (req, res) => {
             return res.status(404).json({ message: 'Vacante no encontrada' });
         }
 
+        // Validar que la vacante tenga cupo disponible
+        const capacidad = vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1;
+        const aceptadasCount = await Postulacion.countDocuments({ vacante: vacanteId, estado: 'Aceptada' });
+        if (Number.isFinite(capacidad) && aceptadasCount >= capacidad) {
+            return res.status(409).json({ message: 'Esta vacante ya no tiene cupo disponible' });
+        }
+
+        // Validar que el alumno tenga CV cargado
+        const alumno = await Alumno.findById(alumnoId).select('cvID').lean();
+        if (!alumno) {
+            return res.status(404).json({ message: 'Alumno no encontrado' });
+        }
+        if (!alumno.cvID) {
+            return res.status(400).json({ message: 'Para postularte debes subir tu CV en tu perfil primero' });
+        }
+
         // Verificar que el estudiante no se haya postulado ya a esta vacante
         const postulacionExistente = await Postulacion.findOne({
             alumno: alumnoId,
@@ -46,13 +62,20 @@ exports.crearPostulacion = async (req, res) => {
             alumno: alumnoId,
             vacante: vacanteId,
             mensaje: mensaje || '',
-            estado: 'pendiente'
+            estado: 'Pendiente'
         });
 
         // Poblar los datos relacionados para la respuesta
         const postulacionCompleta = await Postulacion.findById(postulacion._id)
             .populate('alumno', 'nombres apellidoPaterno apellidoMaterno correo boleta carrera creditos')
-            .populate('vacante', 'titulo descripcion requisitos salario propietarioTipo propietario');
+            .populate({
+                path: 'vacante',
+                select: 'titulo area numeroVacantes objetivos actividades requerimientos carreraRequerida conocimientosTecnicos habilidades modalidad horasSemanal fechaInicio fechaLimite duracionMeses beneficiosAlumno otrosBeneficios informacionAdicional correoConsulta telefonoConsulta propietarioTipo propietario fechaPublicacion',
+                populate: {
+                    path: 'propietario',
+                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento telefono nombre nombreRepresentante apellidosRepresentante direccion',
+                },
+            });
 
         return res.status(201).json(postulacionCompleta);
     } catch (error) {
@@ -73,21 +96,32 @@ exports.obtenerMisPostulaciones = async (req, res) => {
         const alumnoId = req.user.id;
         const { estado } = req.query;
 
+        const normalizarEstado = (value) => {
+            const key = String(value || '').trim().toLowerCase();
+            const map = {
+                pendiente: 'Pendiente',
+                aceptada: 'Aceptada',
+                rechazada: 'Rechazada',
+            };
+            return map[key] || null;
+        };
+
         // Construir el filtro
         const filtro = { alumno: alumnoId };
-        if (estado && ['pendiente', 'aceptada', 'rechazada'].includes(estado)) {
-            filtro.estado = estado;
+        const estadoCanonico = normalizarEstado(estado);
+        if (estadoCanonico) {
+            filtro.estado = estadoCanonico;
         }
 
         // Obtener postulaciones con datos relacionados
         const postulaciones = await Postulacion.find(filtro)
-            .populate('vacante', 'titulo descripcion requisitos salario propietarioTipo fechaPublicacion')
             .populate({
                 path: 'vacante',
+                select: 'titulo area numeroVacantes objetivos actividades requerimientos carreraRequerida conocimientosTecnicos habilidades modalidad horasSemanal fechaInicio fechaLimite duracionMeses beneficiosAlumno otrosBeneficios informacionAdicional correoConsulta telefonoConsulta propietarioTipo propietario fechaPublicacion',
                 populate: {
                     path: 'propietario',
-                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento nombre representante direccion'
-                }
+                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento telefono nombre nombreRepresentante apellidosRepresentante direccion',
+                },
             })
             .sort({ createdAt: -1 });
 
@@ -118,13 +152,13 @@ exports.obtenerPostulacionPorId = async (req, res) => {
         // Poblar datos relacionados
         const postulacionCompleta = await Postulacion.findById(postulacion._id)
             .populate('alumno', 'nombres apellidoPaterno apellidoMaterno correo boleta carrera creditos cvID')
-            .populate('vacante', 'titulo descripcion requisitos salario propietarioTipo fechaPublicacion')
             .populate({
                 path: 'vacante',
+                select: 'titulo area numeroVacantes objetivos actividades requerimientos carreraRequerida conocimientosTecnicos habilidades modalidad horasSemanal fechaInicio fechaLimite duracionMeses beneficiosAlumno otrosBeneficios informacionAdicional correoConsulta telefonoConsulta propietarioTipo propietario fechaPublicacion',
                 populate: {
                     path: 'propietario',
-                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento nombre representante direccion telefono'
-                }
+                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento telefono nombre nombreRepresentante apellidosRepresentante direccion',
+                },
             });
 
         return res.json(postulacionCompleta);
@@ -152,7 +186,7 @@ exports.cancelarPostulacion = async (req, res) => {
         }
 
         // Solo se puede cancelar si está pendiente
-        if (postulacion.estado !== 'pendiente') {
+        if (String(postulacion.estado || '').toLowerCase() !== 'pendiente') {
             return res.status(400).json({ 
                 message: 'Solo se pueden cancelar postulaciones pendientes' 
             });
