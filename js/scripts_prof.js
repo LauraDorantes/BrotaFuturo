@@ -87,9 +87,8 @@ document.addEventListener("DOMContentLoaded", () => {
         passInput.value = data.password || "";
 
         rfcInput.value = data.rfc || "";
-        curpInput.value = data.rfc || "";
 
-        ro_curp.textContent = data.curpNombre || "-";
+        ro_curp.textContent = data.curpNombre || "No subido";
         ro_nombre.textContent = data.nombre || "-";
         ro_aPaterno.textContent = data.aPaterno || "-";
         ro_aMaterno.textContent = data.aMaterno || "-";
@@ -146,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
             rfc: rfcInput.value.trim(),
-            curpNombre: curpInput.value.trim()
+            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
         };
 
         localStorage.setItem("perfilData", JSON.stringify(perfilData));
@@ -653,6 +652,60 @@ const datosAlumnoEjemplo = {
     correo: "alumno@alumno.ipn.mx",
     carrera: "ISC"
 };
+
+//CORREO REPORTE DE ALUMNOS
+function enviarReporteAlumnos() {
+    // 1. Obtener los datos almacenados en el navegador
+    const publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
+    const perfil = JSON.parse(localStorage.getItem('perfilData')) || {};
+
+    if (publicaciones.length === 0) {
+        alert("No hay proyectos registrados para generar una lista.");
+        return;
+    }
+
+    // 3. Preparar la firma del profesor con sus datos de perfil
+    const nombreProfe = `${perfil.nombre || 'Profesor'} ${perfil.aPaterno || ''} ${perfil.aMaterno || ''}`.trim();
+    const departamento = perfil.dept || "Departamento Académico";
+    
+    //Construir el cuerpo del correo
+    let cuerpoMensaje = `Estimados coordinadores de Servicio Social,\n\n`;
+    cuerpoMensaje += `Por medio de la presente, envío la lista de alumnos asignados a mis proyectos:\n\n`;
+
+    let totalAlumnos = 0;
+
+    publicaciones.forEach(pub => {
+        if (pub.postulantes && pub.postulantes.length > 0) {
+            cuerpoMensaje += `------------------------------------------\n`;
+            cuerpoMensaje += `PROYECTO: ${pub.titulo.toUpperCase()}\n`;
+            cuerpoMensaje += `ÁREA: ${pub.area || 'General'}\n`;
+            cuerpoMensaje += `------------------------------------------\n`;
+
+            pub.postulantes.forEach((alumno, index) => {
+                cuerpoMensaje += `${index + 1}. ${alumno.nombre} - (${alumno.correo || 'Sin correo registrado'})\n`;
+                totalAlumnos++;
+            });
+            cuerpoMensaje += `\n`;
+        }
+    });
+
+    if (totalAlumnos === 0) {
+        alert("Aún no tienes alumnos aceptados o postulados en tus proyectos.");
+        return;
+    }
+
+    cuerpoMensaje += `Total de alumnos: ${totalAlumnos}\n\n`;
+    cuerpoMensaje += `Atentamente,\n`;
+    cuerpoMensaje += `${nombreProfe}\n`;
+    cuerpoMensaje += `${departamento}\n`;
+
+    const destinatario = ""; 
+    const asunto = `Reporte de Alumnos de Servicio Social - ${nombreProfe}`;
+    
+    const mailtoLink = `mailto:${destinatario}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoMensaje)}`;
+
+    window.location.href = mailtoLink;
+}
 
 document.getElementById("noti1").addEventListener("click", () => {
     document.getElementById("n_nombre").textContent = datosAlumnoEjemplo.nombre;
