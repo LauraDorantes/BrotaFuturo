@@ -163,6 +163,11 @@ document.querySelectorAll(".nav-item").forEach(item => {
             history.replaceState(null, '', `#${sectionClass}`);
         }
         showSection(sectionClass);
+
+        // Cargar alumnos asociados al abrir la sección
+        if (sectionClass === 'alumnos-section') {
+            cargarAlumnos();
+        }
     });
 });
 
@@ -187,7 +192,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    showSection(getSectionFromHash() || 'perfil-section');
+    const initialSection = getSectionFromHash() || 'perfil-section';
+    showSection(initialSection);
+    if (initialSection === 'alumnos-section') {
+        cargarAlumnos();
+    }
 });
 
 
@@ -557,6 +566,7 @@ class SistemaPublicaciones {
 
         // Modal de postulantes
         this.modalPostulantes = document.getElementById('modalPostulantes');
+        this.cerrarModalPostulantesBtn = this.modalPostulantes ? this.modalPostulantes.querySelector('.close') : null;
         this.postulantesVacante = document.getElementById('postulantesVacante');
         this.postulantesTotal = document.getElementById('postulantesTotal');
         this.tbodyPostulantes = document.getElementById('tbodyPostulantes');
@@ -590,6 +600,13 @@ class SistemaPublicaciones {
         // Datos del profesor
         this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
         this.edicionId = null;
+    }
+
+    cerrarModalPostulantes() {
+        if (this.modalPostulantes) {
+            this.modalPostulantes.classList.add('hidden');
+        }
+        this._currentVacanteId = null;
     }
 
     setPostulantesModalLoading(titulo) {
@@ -958,6 +975,21 @@ class SistemaPublicaciones {
                 if (e.target === this.modalPublicacion) this.cerrarModal();
             });
         }
+
+        // Cerrar modal de postulantes
+        if (this.cerrarModalPostulantesBtn) {
+            this.cerrarModalPostulantesBtn.addEventListener('click', () => this.cerrarModalPostulantes());
+        }
+        if (this.modalPostulantes) {
+            this.modalPostulantes.addEventListener('click', (e) => {
+                if (e.target === this.modalPostulantes) this.cerrarModalPostulantes();
+            });
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modalPostulantes && !this.modalPostulantes.classList.contains('hidden')) {
+                this.cerrarModalPostulantes();
+            }
+        });
 
         // Botón guardar publicación
         if (this.formPublicacion) {
@@ -1479,9 +1511,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 //ALUMNOS
 async function cargarAlumnos() {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
+    const endpoint = (typeof PROFESSOR_ENDPOINTS !== 'undefined' && PROFESSOR_ENDPOINTS.MY_STUDENTS)
+        ? PROFESSOR_ENDPOINTS.MY_STUDENTS
+        : 'http://localhost:5000/api/profesor/alumnos';
 
-    const res = await fetch('http://localhost:5000/api/profesor/alumnos', {
+    if (!token) {
+        console.error('Sesión expirada');
+        return;
+    }
+
+    const res = await fetch(endpoint, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -1493,18 +1533,24 @@ async function cargarAlumnos() {
     }
 
     const alumnos = await res.json();
-    const tbody = document.querySelector('#tablaAlumnos tbody');
+    const tbody = document.getElementById('tbodyAlumnos');
+
+    if (!tbody) {
+        console.error('No se encontró tbodyAlumnos');
+        return;
+    }
 
     tbody.innerHTML = '';
 
-    alumnos.forEach(a => {
+    (Array.isArray(alumnos) ? alumnos : []).forEach(a => {
         const tr = document.createElement('tr');
+        const tituloProyecto = (a && (a.tituloProyecto || a.publicacion)) ? String(a.tituloProyecto || a.publicacion) : '-';
         tr.innerHTML = `
             <td>${a.numero}</td>
             <td>${a.boleta}</td>
             <td>${a.nombreCompleto}</td>
             <td>${a.correo}</td>
-            <td>${a.publicacion}</td>
+            <td>${tituloProyecto}</td>
             <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">
                 ${a.estado}
             </td>
