@@ -2,18 +2,139 @@ const contenedor = document.getElementById('contenedor');
 const registroBtn = document.getElementById('registro');
 const accederBtn = document.getElementById('acceder');
 
+// Helpers de autenticación (requiere que js/config.js se cargue antes)
+function getSelectedUserType() {
+    const el = document.getElementById('selected-user-type');
+    return el ? String(el.textContent || '').trim() : '';
+}
+
+function showInlineLoginError(message) {
+    const el = document.getElementById('loginError');
+    if (!el) return;
+    if (!message) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+    }
+    el.textContent = message;
+    el.style.display = 'block';
+}
+
+async function safeReadJson(response) {
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
+function saveAuthToStorage(authResponse) {
+    if (!authResponse) return;
+    const { accessToken, refreshToken, user } = authResponse;
+    if (typeof STORAGE_KEYS === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: STORAGE_KEYS. Revisa que se cargue js/config.js antes de este script.');
+    }
+    if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    if (user?.role) localStorage.setItem(STORAGE_KEYS.USER_ROLE, user.role);
+    if (user?.id) localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+    if (user?.correo) localStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.correo);
+}
+
+function redirectAfterAuth(role) {
+    const roleKey = String(role || '').toLowerCase();
+    if (typeof REDIRECT_PAGES === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: REDIRECT_PAGES. Revisa que se cargue js/config.js antes de este script.');
+    }
+    if (REDIRECT_PAGES[roleKey]) {
+        window.location.href = REDIRECT_PAGES[roleKey];
+        return;
+    }
+}
+
+function normalizeAlumnoPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        boleta: Number(fd.get('boleta')),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+        creditos: Number(fd.get('creditos')),
+        carrera: String(fd.get('carrera') || '').trim(),
+    };
+}
+
+function normalizeProfesorPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    const departamentoSelect = formulario.querySelector("select[name='carrera']");
+    const departamentoValue = String(fd.get('carrera') || '').trim();
+    const departamentoLabel =
+        departamentoSelect && departamentoSelect.selectedIndex > 0
+            ? String(departamentoSelect.options[departamentoSelect.selectedIndex].text || '').trim()
+            : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        departamento: (departamentoLabel || departamentoValue),
+        rfc: String(fd.get('rfc') || '').trim().toUpperCase(),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+    };
+}
+
+async function postJson(url, body) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await safeReadJson(res);
+    if (!res.ok) {
+        const message = data?.message || `Error HTTP ${res.status}`;
+        const err = new Error(message);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
 const campos = {
     boleta: false,
     nombre: false,
+    apellidoPaterno: false,
+    apellidoMaterno: false,
     telefono: false,
     curp: false,
     correo: false,
     contrasena: false,
     sexo: false,
     carrera: false,
-    semestre: false,
+    creditos: false,
     rfc: false,
     representante: false,
+    representanteNombre: false,
+    representanteApellidos: false,
     direccion: false,
     tipo: false
 }
@@ -99,13 +220,14 @@ function mostrarFormularioInstitucion() {
 // Función para validar si todos los campos requeridos están completos
 function validarFormularioCompleto(tipo) {
     if (tipo === 'Alumno') {
-        return campos.boleta && campos.nombre && campos.telefono && campos.curp && 
-               campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.semestre;
+        return campos.boleta && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && 
+               campos.telefono && campos.curp && 
+               campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.creditos;
     } else if (tipo === 'Profesor') {
-        return campos.rfc && campos.nombre && campos.telefono && campos.curp && 
+        return campos.rfc && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && campos.telefono && campos.curp && 
                campos.correo && campos.contrasena && campos.sexo && campos.carrera;
     } else if (tipo === 'Institucion') {
-        return campos.nombre && campos.rfc && campos.representante && campos.telefono && 
+        return campos.nombre && campos.rfc && campos.representanteNombre && campos.representanteApellidos && campos.telefono && 
                campos.correo && campos.contrasena && campos.tipo && campos.direccion;
     }
     return false;
@@ -236,6 +358,10 @@ function mostrarRegistroForm() {
     }
 }
 
+function mostrarRegistro() {
+    tipoUsuario('Alumno');
+}
+
 // Event listeners para los botones del toggle
 function inicializarEventListeners() {
     if (registroBtn) {
@@ -333,16 +459,20 @@ function resetearEstadoCampos(tipo) {
     if (tipo === 'Alumno') {
         campos.boleta = false;
         campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
         campos.telefono = false;
         campos.curp = false;
         campos.correo = false;
         campos.contrasena = false;
         campos.sexo = false;
         campos.carrera = false;
-        campos.semestre = false;
+        campos.creditos = false;
     } else if (tipo === 'Profesor') {
         campos.rfc = false;
         campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
         campos.telefono = false;
         campos.curp = false;
         campos.correo = false;
@@ -353,6 +483,8 @@ function resetearEstadoCampos(tipo) {
         campos.nombre = false;
         campos.rfc = false;
         campos.representante = false;
+        campos.representanteNombre = false;
+        campos.representanteApellidos = false;
         campos.telefono = false;
         campos.correo = false;
         campos.contrasena = false;
@@ -435,16 +567,36 @@ function mostrarModalConfirmacion(tipo, formulario) {
 
     // Configurar el evento del botón de confirmar
     const btnConfirmar = document.getElementById('btnConfirmarEnvio');
-    btnConfirmar.onclick = function() {
-        // Aquí puedes agregar la lógica para enviar los datos al servidor
-        enviarFormulario(tipo, formulario);
-        
-        // Cerrar el modal
-        const modalInstance = bootstrap.Modal.getInstance(modal);
-        modalInstance.hide();
-        
-        // Mostrar mensaje de éxito
-        mostrarMensajeExito(tipo);
+    btnConfirmar.onclick = async function() {
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Enviando...';
+        try {
+            await enviarFormulario(tipo, formulario);
+            // Cerrar el modal
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            modalInstance.hide();
+            // Mostrar mensaje de éxito
+            mostrarMensajeExito(tipo);
+        } catch (e) {
+            const message = e?.message || 'No se pudo completar el registro';
+            if (tipo === 'Alumno') {
+                const mensajeError = document.getElementById('mensaje_errorAlumno');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            } else if (tipo === 'Profesor') {
+                const mensajeError = document.getElementById('mensaje_errorProfe');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            }
+            console.error(e);
+        } finally {
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'Confirmar y Enviar';
+        }
     };
 
     // Mostrar el modal
@@ -461,7 +613,7 @@ function generarContenidoAlumno(formulario) {
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Boleta:</strong> ${formulario.boleta.value}</p>
-                <p><strong>Nombre:</strong> ${formulario.nombre.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
                 <p><strong>CURP:</strong> ${formulario.curp.value}</p>
                 <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
             </div>
@@ -469,7 +621,7 @@ function generarContenidoAlumno(formulario) {
                 <p><strong>Correo:</strong> ${formulario.correo.value}</p>
                 <p><strong>Sexo:</strong> ${formulario.sexo.options[formulario.sexo.selectedIndex].text}</p>
                 <p><strong>Carrera:</strong> ${formulario.carrera.options[formulario.carrera.selectedIndex].text}</p>
-                <p><strong>Semestre:</strong> ${formulario.semestre.options[formulario.semestre.selectedIndex].text}</p>
+                <p><strong>Créditos:</strong> ${formulario.creditos.value}</p>
             </div>
         </div>
     `;
@@ -484,7 +636,7 @@ function generarContenidoProfesor(formulario) {
         <div class="row">
             <div class="col-md-6">
                 <p><strong>RFC:</strong> ${formulario.rfc.value}</p>
-                <p><strong>Nombre:</strong> ${formulario.nombre.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
                 <p><strong>CURP:</strong> ${formulario.curp.value}</p>
                 <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
             </div>
@@ -501,7 +653,8 @@ function generarContenidoProfesor(formulario) {
 function generarContenidoInstitucion(formulario) {
     const nombre = formulario.querySelector("[name='nombre']");
     const rfc = formulario.querySelector("[name='rfc']");
-    const representante = formulario.querySelector("[name='representante']");
+    const representanteNombre = formulario.querySelector("[name='representanteNombre']");
+    const representanteApellidos = formulario.querySelector("[name='representanteApellidos']");
     const telefono = formulario.querySelector("[name='telefono']");
     const correo = formulario.querySelector("[name='correo']");
     const direccion = formulario.querySelector("[name='direccion']");
@@ -515,7 +668,7 @@ function generarContenidoInstitucion(formulario) {
             <div class="col-md-6">
                 <p><strong>Nombre de la Institución:</strong> ${nombre.value}</p>
                 <p><strong>RFC:</strong> ${rfc.value}</p>
-                <p><strong>Representante:</strong> ${representante.value}</p>
+                <p><strong>Representante:</strong> ${representanteNombre.value} ${representanteApellidos.value}</p>
                 <p><strong>Teléfono:</strong> ${telefono.value}</p>
             </div>
             <div class="col-md-6">
@@ -528,10 +681,108 @@ function generarContenidoInstitucion(formulario) {
 }
 
 // Función para enviar el formulario (simulación)
-function enviarFormulario(tipo, formulario) {
+async function enviarFormulario(tipo, formulario) {
     console.log(`Enviando formulario de ${tipo}:`, formulario);
-    // Aquí iría la lógica real para enviar los datos al servidor
-    // Por ejemplo: fetch('/api/registro', { method: 'POST', body: new FormData(formulario) })
+
+    if (tipo === 'Alumno') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_ALUMNO) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeAlumnoPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_ALUMNO, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'alumno');
+        return;
+    }
+
+    if (tipo === 'Profesor') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_PROFESOR) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeProfesorPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.departamento) {
+            throw new Error('Seleccione un Área o Departamento');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+        if (!payload.nombres || !payload.apellidoPaterno || !payload.apellidoMaterno) {
+            throw new Error('Nombre y apellidos son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_PROFESOR, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'profesor');
+        return;
+    }
+
+    throw new Error('Tipo de registro no soportado');
+}
+
+async function loginAlumno(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_ALUMNO) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_ALUMNO, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'alumno');
+}
+
+async function loginProfesor(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_PROFESOR) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_PROFESOR, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'profesor');
+}
+
+async function loginInstitucion(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_INSTITUCION) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_INSTITUCION, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'institucion');
+}
+
+async function loginByRoleAuto(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined') {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+
+    const attempts = [
+        { name: 'alumno', url: AUTH_ENDPOINTS.LOGIN_ALUMNO },
+        { name: 'profesor', url: AUTH_ENDPOINTS.LOGIN_PROFESOR },
+        { name: 'institucion', url: AUTH_ENDPOINTS.LOGIN_INSTITUCION },
+    ].filter((x) => !!x.url);
+
+    for (const attempt of attempts) {
+        try {
+            const auth = await postJson(attempt.url, { correo, password });
+            saveAuthToStorage(auth);
+            redirectAfterAuth(auth?.user?.role || attempt.name);
+            return;
+        } catch (err) {
+            // Si es 401, probamos con el siguiente tipo.
+            if (err?.status === 401) continue;
+            throw err;
+        }
+    }
+
+    throw new Error('Credenciales inválidas');
 }
 
 // Función para mostrar mensaje de éxito
@@ -587,7 +838,6 @@ function mostrarMensajeExito(tipo) {
 // Resto del código permanece igual...
 const validarFormulario = (e) => {
     const campo = e.target.name;
-    const valor = e.target.value;
     
     switch(campo) {
         case "boleta":
@@ -595,6 +845,15 @@ const validarFormulario = (e) => {
             break;
         case "nombre":
             validarCampo(expresiones.nombre, e.target, 'nombre');
+            break;
+        case "apellidoPaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoPaterno');
+            break;
+        case "apellidoMaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoMaterno');
+            break;
+        case "creditos":
+            validarCreditos(e.target);
             break;
         case "curp":
             validarCampo(expresiones.curp, e.target, 'curp');
@@ -618,12 +877,16 @@ const validarFormulario = (e) => {
         case "rfc":
             validarCampo(expresiones.rfc, e.target, 'rfc');
             break;
-        case "representante":
-            validarCampo(expresiones.nombre, e.target, 'representante');
+        case "representanteNombre":
+            validarCampo(expresiones.nombre, e.target, 'representanteNombre');
+            break;
+        case "representanteApellidos":
+            validarCampo(expresiones.nombre, e.target, 'representanteApellidos');
             break;
         case "direccion":
             // Para dirección, solo validamos que no esté vacía
             const grupoDireccion = e.target.closest('.formulario__grupo');
+            if (!grupoDireccion) return;
             const errorElementDireccion = grupoDireccion.querySelector('.formulario__input-error');
             
             if (e.target.value.trim() !== '') {
@@ -661,6 +924,26 @@ const validarCampo = (expresion, input, campo) => {
             errorElement.classList.add('formulario__input-error-activo');
         }
         campos[campo] = false;
+    }
+}
+
+const validarCreditos = (input) => {
+    const valor = parseInt(input.value);
+    const grupo = input.closest('.formulario__grupo');
+    if (!grupo) return;
+    
+    const errorElement = grupo.querySelector('.formulario__input-error');
+    
+    if (!isNaN(valor) && valor >= 0 && valor <= 387) {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        grupo.classList.add('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.remove('formulario__input-error-activo');
+        campos['creditos'] = true;
+    } else {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        grupo.classList.remove('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.add('formulario__input-error-activo');
+        campos['creditos'] = false;
     }
 }
 
@@ -710,42 +993,43 @@ function inicializarValidacionFormularios() {
 function validarSelects(tipo) {
     if (tipo === 'Alumno') {
         const formulario = document.getElementById('formularioAlumno');
-        if (formulario) {
-            const sexoValido = formulario.sexo.value !== "Sexo";
-            const semestreValido = formulario.semestre.value !== "Semestre";
-            const carreraValida = formulario.carrera.value !== "Carrera";
-            
-            campos.sexo = sexoValido;
-            campos.semestre = semestreValido;
-            campos.carrera = carreraValida;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.sexo, sexoValido);
-            actualizarEstiloSelect(formulario.semestre, semestreValido);
-            actualizarEstiloSelect(formulario.carrera, carreraValida);
-        }
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
     } else if (tipo === 'Profesor') {
         const formulario = document.getElementById('formularioProfesor');
-        if (formulario) {
-            const sexoValido = formulario.sexo.value !== "Sexo";
-            const carreraValida = formulario.carrera.value !== "Área o Departamento";
-            
-            campos.sexo = sexoValido;
-            campos.carrera = carreraValida;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.sexo, sexoValido);
-            actualizarEstiloSelect(formulario.carrera, carreraValida);
-        }
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
     } else if (tipo === 'Institucion') {
         const formulario = document.getElementById('formularioInstitucion');
-        if (formulario) {
-            const tipoValido = formulario.querySelector("[name='tipo']").value !== "Tipo de Institución";
-            campos.tipo = tipoValido;
-            
-            // Actualizar estilos visuales
-            actualizarEstiloSelect(formulario.querySelector("[name='tipo']"), tipoValido);
-        }
+        if (!formulario) return;
+
+        const tipoSelect = formulario.querySelector("select[name='tipo']");
+        const tipoValido = !!tipoSelect && tipoSelect.selectedIndex > 0;
+
+        campos.tipo = tipoValido;
+        if (tipoSelect) actualizarEstiloSelect(tipoSelect, tipoValido);
     }
 }
 
@@ -795,6 +1079,34 @@ function inicializarEnvioFormularios() {
     }
 }
 
+function inicializarLogin() {
+    const formLogin = document.getElementById('formLogin');
+    if (!formLogin) return;
+
+    formLogin.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        showInlineLoginError('');
+
+        const correo = String(document.getElementById('loginCorreo')?.value || '').trim();
+        const password = String(document.getElementById('loginPassword')?.value || '');
+
+        if (!correo || !password) {
+            showInlineLoginError('Ingrese correo y contraseña');
+            return;
+        }
+
+        const submitBtn = formLogin.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+            await loginByRoleAuto(correo, password);
+        } catch (err) {
+            showInlineLoginError(err?.message || 'Credenciales inválidas');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM cargado - inicializando formularios');
     
@@ -807,4 +1119,5 @@ document.addEventListener('DOMContentLoaded', function() {
     inicializarEventListeners();
     inicializarValidacionFormularios();
     inicializarEnvioFormularios();
+    inicializarLogin();
 });

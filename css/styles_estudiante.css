@@ -53,6 +53,11 @@ h1.titulo-seccion {
     display: none !important;
 }
 
+/* Validación visual (perfil): campos inválidos */
+.input-invalid {
+    border: 2px solid var(--red) !important;
+}
+
 .navigation {
     position: fixed;
     width: 300px;
@@ -165,6 +170,8 @@ h1.titulo-seccion {
     min-height: 100vh;
     background: var(--white);
     transition: 0.5s;
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .main.active {

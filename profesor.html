@@ -56,7 +56,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="#" id="logoutBtn">
                         <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
                         <span class="title">Log out</span>
                     </a>
@@ -141,7 +141,6 @@
                                         <option value="">Seleccione...</option>
                                         <option value="Femenino">Femenino</option>
                                         <option value="Masculino">Masculino</option>
-                                        <option value="Otro">Otro</option>
                                     </select>
                                 </label>
                             </div>
@@ -156,9 +155,15 @@
                                 </label>
                             </div>
 
-                            <label>Password
-                                <input id="passInput" type="password" placeholder="********" required>
-                            </label>
+                            <div class="row">
+                                <label>Contraseña actual
+                                    <input id="currentPasswordInput" type="password" placeholder="********">
+                                </label>
+
+                                <label>Nueva contraseña
+                                    <input id="newPasswordInput" type="password" placeholder="********">
+                                </label>
+                            </div>
 
                             <div class="form-actions">
                                 <button type="submit" class="btn">Guardar</button>
@@ -379,7 +384,7 @@
 
                                 <label>Requerimientos específicos
                                     <textarea id="requerimientosPub" rows="2"
-                                        placeholder="Equipo especial, software específico, etc."></textarea>
+                                        placeholder="Equipo especial, software específico, etc." required></textarea>
                                 </label>
                             </div>
 
@@ -398,25 +403,19 @@
                                 </div>
 
                                 <div class="row">
-                                    <label>Semestre mínimo
-                                        <input type="number" id="semestrePub" min="4" max="12" placeholder="6">
-                                    </label>
-
-                                    <label>Créditos mínimos
-                                        <input type="number" id="creditosPub" min="0" placeholder="120">
-                                    </label>
+                                    
                                 </div>
 
                                 <div class="row">
                                     <label>Conocimientos técnicos requeridos
                                         <input type="text" id="conocimientosPub"
-                                            placeholder="Ej: Java, Python, C">
+                                            placeholder="Ej: Java, Python, C" required>
                                     </label>
                                 </div>
 
                                 <label>Habilidades deseables
                                     <textarea id="habilidadesPub" rows="2"
-                                        placeholder="Trabajo en equipo, liderazgo, investigación..."></textarea>
+                                        placeholder="Trabajo en equipo, liderazgo, investigación..." required></textarea>
                                 </label>
                             </div>
 
@@ -484,11 +483,11 @@
                                 <h4>Contacto e Información Adicional</h4>
                                 <div class="row">
                                     <label>Correo para consultas
-                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required>
+                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required readonly>
                                     </label>
 
                                     <label>Teléfono de contacto
-                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000">
+                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000" required readonly>
                                     </label>
                                 </div>
 
@@ -585,7 +584,7 @@
 
     </div>
 
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="./js/config.js"></script>
     <script src="./js/scripts_prof.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>

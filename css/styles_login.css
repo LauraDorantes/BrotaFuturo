@@ -64,9 +64,15 @@ body.modal-open .contenedor_menu {
     z-index: 10001 !important;
 }
 
-body.modal-open .dropdown-menu,
-body.modal-open .btn {
-    display: none !important;
+/*
+    IMPORTANTE:
+    No ocultar todos los .btn cuando hay un modal abierto,
+    porque también desaparecen los botones del modal (Confirmar/Editar).
+    Solo se oculta el menú (dropdown) superior.
+*/
+body.modal-open .contenedor_menu .dropdown-menu,
+body.modal-open .contenedor_menu .btn {
+        display: none !important;
 }
 
 .contenedor_menu{
@@ -142,6 +148,16 @@ body.modal-open .btn {
     flex-direction: column;
     padding: 50px 40px 20px 40px; 
     height: 100%;
+}
+
+/* Evita que el menú absoluto cubra el título del registro */
+.contenedor.activo .formulario-registro form {
+    padding-top: 90px;
+}
+
+/* Reduce el espacio entre los últimos campos y los botones (Alumno) */
+#formularioAlumno #visibleAlumno .d-flex.gap-2 button {
+    margin-top: 0;
 }
 
 .contenedor input, select{

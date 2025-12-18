@@ -53,6 +53,11 @@ h1.titulo-seccion {
     display: none;
 }
 
+/* Validación visual (perfil): campos inválidos */
+.input-invalid {
+    border: 2px solid var(--red) !important;
+}
+
 .navigation {
     position: fixed;
     width: 300px;
