@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="./images/Logo.png">
-    <title>Profesor Inicio</title>
-    <link rel="stylesheet" href="./css/styles_prof.css">
+    <title>Empresas Inicio</title>
+    <link rel="stylesheet" href="./css/styles_empresa.css">
 </head>
 
 <body>
@@ -16,7 +16,7 @@
                 <li>
                     <a href="#">
                         <span class="icon"><ion-icon name="glasses-outline"></ion-icon></span>
-                        <span class="title">Profesores - BrotaFuturo</span>
+                        <span class="title">Empresas - BrotaFuturo</span>
                     </a>
                 </li>
 
@@ -108,22 +108,22 @@
                         <form id="perfilForm" class="hidden">
 
                             <div class="row">
-                                <label>Nombre
+                                <label>Nombre del Representante
                                     <input id="nombreInput" type="text" placeholder="Nombre" required>
                                 </label>
 
-                                <label>Apellido Paterno
-                                    <input id="aPaternoInput" type="text" placeholder="Apellido Paterno" required>
+                                <label>Apellidos del Representante
+                                    <input id="apellidosInput" type="text" placeholder="Apellido Paterno" required>
                                 </label>
 
-                                <label>Apellido Materno
-                                    <input id="aMaternoInput" type="text" placeholder="Apellido Materno">
+                                <label>Empresa
+                                    <input id="nEmpresaInput" type="text" placeholder="Nombre de la empresa">
                                 </label>
                             </div>
 
                             <div class="row">
                                 <label>Correo electrónico
-                                    <input id="emailInput" type="email" placeholder="tu@ipn.mx" required>
+                                    <input id="emailInput" type="email" placeholder="tu@gmail.mx" required>
                                 </label>
 
                                 <label>Teléfono
@@ -132,15 +132,15 @@
                             </div>
 
                             <div class="row">
-                                <label>Departamento
-                                    <input id="deptInput" type="text" placeholder="Departamento o área">
+                                <label>Dirección
+                                    <input id="dirInput" type="text" placeholder="Dirección">
                                 </label>
 
-                                <label>Sexo
-                                    <select id="sexoInput">
+                                <label>Tipo de institucion
+                                    <select id="tipoInput">
                                         <option value="">Seleccione...</option>
-                                        <option value="Femenino">Femenino</option>
-                                        <option value="Masculino">Masculino</option>
+                                        <option value="Publica">Pública</option>
+                                        <option value="Privada">Privada</option>
                                         <option value="Otro">Otro</option>
                                     </select>
                                 </label>
@@ -149,10 +149,6 @@
                             <div class="row">
                                 <label>RFC
                                     <input id="rfcInput" type="text" placeholder="Ej: DOLJ930521ABC" maxlength="13">
-                                </label>
-
-                                <label>CURP
-                                    <input id="curpInput" type="text" placeholder="Ej: ISA029291MDFXXXXX" maxlength="18">
                                 </label>
                             </div>
 
@@ -532,60 +528,18 @@
                 </div>
             </section>
 
-          <section class="ayuda-section hidden" id="ayuda-section">
-    <div class="cardHeader" style="margin-bottom: 20px;">
-        <h2 class="titulo-seccion">Centro de Ayuda y Soporte</h2>
-    </div>
-
-    <div class="details" style="grid-template-columns: 1fr; margin-bottom: 20px;">
-        <div class="recentOrders">
-            <div class="cardHeader">
-                <h2>¿Cuál es el proceso a seguir?</h2>
-            </div>
-            <div class="ayuda-contenido" style="text-align: center; padding: 20px;">
-                <img src="./images/DFProfe.png" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1);">
-            </div>
-        </div>
-    </div>
-
-    <div class="cardBox" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 20px;">
-        <div class="card card-button-mail" onclick="enviarReporteAlumnos()">
-            <div>
-                <div class="numbers">Enviar Lista Oficial</div>
-                <div class="cardName">Mandar nombres de alumnos por correo a coordinación</div>
-            </div>
-            <div class="iconBx">
-                <ion-icon name="mail-unread-outline"></ion-icon>
-            </div>
-        </div>
-    </div>
-
-    <div class="details" style="grid-template-columns: 1fr;">
-        <div class="recentOrders">
-            <div class="cardHeader">
-                <h2>¿Cómo funciona el envío?</h2>
-            </div>
-            <div style="padding: 20px; font-size: 1.1rem; line-height: 1.6; color: var(--black1);">
-                <p>Al hacer clic en el botón superior <strong>"Enviar Lista Oficial"</strong>, el sistema generará automáticamente un resumen de:</p>
-                <ul style="margin: 15px 0; padding-left: 20px;">
-                    <li><strong>Tus proyectos:</strong> Títulos y áreas registradas.</li>
-                    <li><strong>Alumnos:</strong> Listado con nombres y correos de los seleccionados.</li>
-                    <li><strong>Firma:</strong> Se incluirá tu nombre y departamento extraído de "Mi Perfil".</li>
-                </ul>
-                <p style="background: #fdf6e3; padding: 10px; border-left: 4px solid #f39c12; border-radius: 4px; font-size: 0.95rem;">
-                    <ion-icon name="information-circle-outline"></ion-icon> 
-                    <em>Se abrirá tu aplicación de correo (Outlook, Gmail o Mail) para que revises todo antes de enviarlo.</em>
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
+            <section class="ayuda-section hidden">
+                <h2 class="titulo-seccion">¿Cuál es el proceso a seguir?</h2>
+                <div class="ayuda-contenido">
+                    <img src="./images/DFEmpresa.png">
+                </div>
+            </section>
 
         </div>
 
     </div>
 
-    <script src="./js/config.js"></script>
+    <script src="./js/scripts_empresa.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </body>

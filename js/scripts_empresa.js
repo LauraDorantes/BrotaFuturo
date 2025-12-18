@@ -1,14 +1,5 @@
 let list = document.querySelectorAll(".navigation li");
 
-// Preferir claves centralizadas (definidas en js/config.js)
-const PROFESOR_PROFILE_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PROFILE)
-    ? STORAGE_KEYS.PROFESOR_PROFILE
-    : 'perfilData';
-
-const PROFESOR_PUBLICACIONES_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PUBLICACIONES)
-    ? STORAGE_KEYS.PROFESOR_PUBLICACIONES
-    : 'publicaciones';
-
 function activeLink() {
     list.forEach((item) => {
         item.classList.remove("hovered");
@@ -59,56 +50,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const perfilAvatar = document.getElementById("perfilAvatar");
 
     const nombreInput = document.getElementById("nombreInput");
-    const aPaternoInput = document.getElementById("aPaternoInput");
-    const aMaternoInput = document.getElementById("aMaternoInput");
+    const apellidosInput = document.getElementById("apellidosInput");
+    const nEmpresaInput = document.getElementById("nEmpresaInput");
     const emailInput = document.getElementById("emailInput");
     const phoneInput = document.getElementById("phoneInput");
-    const deptInput = document.getElementById("deptInput");
-    const sexoInput = document.getElementById("sexoInput");
+    const dirInput = document.getElementById("dirInput");
+    const tipoInput = document.getElementById("tipoInput");
     const rfcInput = document.getElementById("rfcInput");
-    const curpInput = document.getElementById("curpInput");
+
     const passInput = document.getElementById("passInput");
 
     const ro_nombre = document.getElementById("ro_nombre");
-    const ro_aPaterno = document.getElementById("ro_aPaterno");
-    const ro_aMaterno = document.getElementById("ro_aMaterno");
-    const ro_sexo = document.getElementById("ro_sexo");
+    const ro_apellidos = document.getElementById("ro_apellidos");
+    const ro_nEmpresa = document.getElementById("ro_nEmpresa");
+    const ro_tipo = document.getElementById("ro_tipo");
     const ro_email = document.getElementById("ro_email");
     const ro_phone = document.getElementById("ro_phone");
-    const ro_dept = document.getElementById("ro_dept");
+    const ro_dir = document.getElementById("ro_dir");
     const ro_rfc = document.getElementById("ro_rfc");
-    const ro_curp = document.getElementById("ro_curp");
+
 
     const displayName = document.getElementById("displayName");
 
     function loadPerfil() {
-        const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+        const data = JSON.parse(localStorage.getItem("perfilData")) || {};
 
         if (data.avatar) perfilAvatar.src = data.avatar;
 
         nombreInput.value = data.nombre || "";
-        aPaternoInput.value = data.aPaterno || "";
-        aMaternoInput.value = data.aMaterno || "";
+        apellidosInput.value = data.apellidos || "";
+        nEmpresaInput.value = data.nEmpresa || "";
         emailInput.value = data.email || "";
         phoneInput.value = data.phone || "";
-        deptInput.value = data.dept || "";
-        sexoInput.value = data.sexo || "";
+        dirInput.value = data.dir || "";
+        tipoInput.value = data.tipo || "";
         passInput.value = data.password || "";
 
         rfcInput.value = data.rfc || "";
 
-        ro_curp.textContent = data.curpNombre || "No subido";
+
         ro_nombre.textContent = data.nombre || "-";
-        ro_aPaterno.textContent = data.aPaterno || "-";
-        ro_aMaterno.textContent = data.aMaterno || "-";
-        ro_sexo.textContent = data.sexo || "-";
+        ro_apellidos.textContent = data.apellidos || "-";
+        ro_nEmpresa.textContent = data.nEmpresa || "-";
+        ro_tipo.textContent = data.tipo || "-";
         ro_email.textContent = data.email || "-";
         ro_phone.textContent = data.phone || "-";
-        ro_dept.textContent = data.dept || "-";
+        ro_dir.textContent = data.dir || "-";
         ro_rfc.textContent = data.rfc || "-";
 
         displayName.textContent = data.nombre
-            ? `${data.nombre} ${data.aPaterno || ""}`.trim()
+            ? `${data.nombre} ${data.apellidos || ""}`.trim()
             : "Nombre Apellido";
     }
     loadPerfil();
@@ -140,24 +131,21 @@ document.addEventListener("DOMContentLoaded", () => {
     perfilForm.addEventListener("submit", (e) => {
         e.preventDefault();
 
-        const curpFile = curpInput.files[0];
-
         const perfilData = {
             nombre: nombreInput.value.trim(),
-            aPaterno: aPaternoInput.value.trim(),
-            aMaterno: aMaternoInput.value.trim(),
+            apellidos: apellidosInput.value.trim(),
+            nEmpresa: nEmpresaInput.value.trim(),
             email: emailInput.value.trim(),
             phone: phoneInput.value.trim(),
-            dept: deptInput.value.trim(),
-            sexo: sexoInput.value,
+            dir: dirInput.value.trim(),
+            tipo: tipoInput.value,
             password: passInput.value.trim(),
 
             avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
-            rfc: rfcInput.value.trim(),
-            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
+            rfc: rfcInput.value.trim()
         };
 
-        localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
+        localStorage.setItem("perfilData", JSON.stringify(perfilData));
 
         delete perfilAvatar.dataset.tmp;
 
@@ -171,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // SISTEMA DE PUBLICACIONES
 class SistemaPublicaciones {
     constructor() {
-        this.publicaciones = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY)) || [];
+        this.publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
         this.init();
     }
 
@@ -220,7 +208,7 @@ class SistemaPublicaciones {
         this.otrosBeneficiosPub = document.getElementById('otrosBeneficiosPub');
 
         // Datos del profesor
-        this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+        this.perfilData = JSON.parse(localStorage.getItem('perfilData')) || {};
         this.edicionId = null;
     }
 
@@ -427,7 +415,7 @@ guardarPublicacion(e) {
         this.publicaciones.unshift(publicacion);
     }
 
-    localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+    localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
 
     this.mostrarPublicaciones();
     this.actualizarEstadisticas();
@@ -530,7 +518,7 @@ guardarPublicacion(e) {
 
     eliminarPublicacion(id) {
         this.publicaciones = this.publicaciones.filter(p => p.id !== id);
-        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
         alert('Publicación eliminada');
@@ -543,7 +531,7 @@ guardarPublicacion(e) {
         this.publicaciones[index].estado =
             this.publicaciones[index].estado === 'activa' ? 'cerrada' : 'activa';
 
-        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
     }
@@ -661,60 +649,6 @@ const datosAlumnoEjemplo = {
     correo: "alumno@alumno.ipn.mx",
     carrera: "ISC"
 };
-
-//CORREO REPORTE DE ALUMNOS
-function enviarReporteAlumnos() {
-    // 1. Obtener los datos almacenados en el navegador
-    const publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
-    const perfil = JSON.parse(localStorage.getItem('perfilData')) || {};
-
-    if (publicaciones.length === 0) {
-        alert("No hay proyectos registrados para generar una lista.");
-        return;
-    }
-
-    // 3. Preparar la firma del profesor con sus datos de perfil
-    const nombreProfe = `${perfil.nombre || 'Profesor'} ${perfil.aPaterno || ''} ${perfil.aMaterno || ''}`.trim();
-    const departamento = perfil.dept || "Departamento Académico";
-    
-    //Construir el cuerpo del correo
-    let cuerpoMensaje = `Estimados coordinadores de Servicio Social,\n\n`;
-    cuerpoMensaje += `Por medio de la presente, envío la lista de alumnos asignados a mis proyectos:\n\n`;
-
-    let totalAlumnos = 0;
-
-    publicaciones.forEach(pub => {
-        if (pub.postulantes && pub.postulantes.length > 0) {
-            cuerpoMensaje += `------------------------------------------\n`;
-            cuerpoMensaje += `PROYECTO: ${pub.titulo.toUpperCase()}\n`;
-            cuerpoMensaje += `ÁREA: ${pub.area || 'General'}\n`;
-            cuerpoMensaje += `------------------------------------------\n`;
-
-            pub.postulantes.forEach((alumno, index) => {
-                cuerpoMensaje += `${index + 1}. ${alumno.nombre} - (${alumno.correo || 'Sin correo registrado'})\n`;
-                totalAlumnos++;
-            });
-            cuerpoMensaje += `\n`;
-        }
-    });
-
-    if (totalAlumnos === 0) {
-        alert("Aún no tienes alumnos aceptados o postulados en tus proyectos.");
-        return;
-    }
-
-    cuerpoMensaje += `Total de alumnos: ${totalAlumnos}\n\n`;
-    cuerpoMensaje += `Atentamente,\n`;
-    cuerpoMensaje += `${nombreProfe}\n`;
-    cuerpoMensaje += `${departamento}\n`;
-
-    const destinatario = ""; 
-    const asunto = `Reporte de Alumnos de Servicio Social - ${nombreProfe}`;
-    
-    const mailtoLink = `mailto:${destinatario}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoMensaje)}`;
-
-    window.location.href = mailtoLink;
-}
 
 document.getElementById("noti1").addEventListener("click", () => {
     document.getElementById("n_nombre").textContent = datosAlumnoEjemplo.nombre;

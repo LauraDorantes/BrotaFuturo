@@ -41,8 +41,8 @@ h4{
     margin-top: 0.5rem;
     margin-bottom: 1rem;
     font-size: 1.2rem;
-    color: #7F00FF;
-    border-left: 4px solid #b339ff;
+    color: #9f50ef;
+    border-left: 4px solid #9f50ef;
     padding-left: 0.5rem;
 }
 
@@ -126,7 +126,7 @@ nav ul li{
 }
 
 nav ul li a{
-    color: #7F00FF;
+    color: #9f50ef;
     text-decoration: none;
     font-weight: bold;
 }
@@ -143,7 +143,7 @@ nav ul li a:hover{
 /*Botones*/
 button{
     border: none;
-    background: #7F00FF;
+    background: #9f50ef;
     padding: 12px 30px;
     border-radius: 30px;
     color: white;
@@ -245,7 +245,7 @@ th, td {
 
 thead {
     text-align: center;
-    background-color: #7F00FF;
+    background-color: #a572d8;
     color: white;
 }
 
@@ -254,8 +254,8 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-    background-color: black;
-    color: white;
+    background-color: rgb(255, 227, 252);
+    color: black;
 }
 
 @media screen and (max-width: 768px) {
@@ -316,7 +316,7 @@ tbody tr:hover {
     height: 0;
     width: 100%;
     transition: all 1s ease-in-out;
-    background: #344ede;
+    background: #4a8fd8;
 
     display: flex;
     align-items: center;   /* Centra verticalmente */
@@ -339,13 +339,13 @@ tbody tr:hover {
 
 .cards_wrapper .card h5 a {
     text-decoration: none;   /* quita el subrayado */
-    color: #0056b3;          /* azul sobrio */
+    color: #4a8fd8;          /* azul sobrio */
     font-weight: bold;
     display: inline-block;   /* opcional, para que sea más limpio */
 }
 
 .cards_wrapper .card h5 a:hover {
-    color: #002d62;          /* azul más oscuro al hover */
+    color: #0352ac;          /* azul más oscuro al hover */
     text-decoration: underline; /* subrayado solo al pasar */
 }
 
@@ -415,7 +415,7 @@ textarea {
 }
 
 .btnContacto {
-  background-color: #7F00FF;
+  background-color: #9f50ef;
   color: #fff;
   border: none;
   padding: 12px 20px;
@@ -434,4 +434,3 @@ textarea {
   max-width: 420px;
   height: auto;
 }
-
