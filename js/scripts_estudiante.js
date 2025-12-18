@@ -319,10 +319,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                clearAuthStorage();
-                window.location.href = 'login.html';
-            }
+            clearAuthStorage();
+            window.location.href = 'login.html';
         });
     }
 
@@ -896,13 +894,26 @@ function filtrarVacantes(vacantes) {
  * @param {object} vacante - Datos de la vacante
  */
 function mostrarDetalleVacante(vacante) {
+    mostrarModalDetalleVacante(vacante);
+}
+
+function mostrarModalDetalleVacante(vacante) {
+    const modal = document.getElementById('modalDetalleVacante');
+    const content = document.getElementById('detalleVacanteContent');
+    if (!modal || !content) {
+        // fallback si no existe el modal
+        return;
+    }
+
     const titulo = vacante && vacante.titulo ? vacante.titulo : 'Sin título';
     const tipo = vacante && vacante.propietarioTipo ? vacante.propietarioTipo : '-';
+
     const area = vacante && vacante.area ? vacante.area : '-';
     const vacantesNum = (vacante && vacante.numeroVacantes != null) ? vacante.numeroVacantes : '-';
     const modalidad = vacante && vacante.modalidad ? vacante.modalidad : '-';
     const horas = (vacante && vacante.horasSemanal != null) ? vacante.horasSemanal : '-';
     const duracion = (vacante && vacante.duracionMeses != null) ? vacante.duracionMeses : '-';
+
     const fechaInicio = vacante && vacante.fechaInicio ? new Date(vacante.fechaInicio).toLocaleDateString('es-ES') : '-';
     const fechaLimite = vacante && vacante.fechaLimite ? new Date(vacante.fechaLimite).toLocaleDateString('es-ES') : '-';
     const fechaPublicacion = vacante && vacante.fechaPublicacion ? new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES') : '-';
@@ -912,26 +923,65 @@ function mostrarDetalleVacante(vacante) {
     const beneficios = getVacanteBeneficiosTexto(vacante);
     const contacto = getVacanteContactoTexto(vacante);
 
-    alert(
-        `Título: ${titulo}` +
-        `\nTipo: ${tipo}` +
-        `\nÁrea: ${area}` +
-        `\nVacantes: ${vacantesNum}` +
-        `\nModalidad: ${modalidad}` +
-        `\nHoras semanales: ${horas}` +
-        `\nDuración (meses): ${duracion}` +
-        `\nFecha inicio: ${fechaInicio}` +
-        `\nFecha límite: ${fechaLimite}` +
-        `\nFecha publicación: ${fechaPublicacion}` +
-        `\n\nDescripción/Objetivos:` +
-        `\n${descripcion || '-'}` +
-        `\n\nRequisitos:` +
-        `\n${requisitos || '-'}` +
-        `\n\nBeneficios:` +
-        `\n${beneficios || '-'}` +
-        `\n\nContacto:` +
-        `\n${contacto || '-'}`
-    );
+    content.innerHTML = `
+        <div class="form-section">
+            <h4>${escapeHtml(titulo)}</h4>
+            <p><strong>Tipo:</strong> ${escapeHtml(tipo)}</p>
+            <p><strong>Área:</strong> ${escapeHtml(area)}</p>
+            <p><strong>Vacantes:</strong> ${escapeHtml(String(vacantesNum))}</p>
+            <p><strong>Modalidad:</strong> ${escapeHtml(String(modalidad))}</p>
+            <p><strong>Horas semanales:</strong> ${escapeHtml(String(horas))}</p>
+            <p><strong>Duración (meses):</strong> ${escapeHtml(String(duracion))}</p>
+            <p><strong>Fecha inicio:</strong> ${escapeHtml(String(fechaInicio))}</p>
+            <p><strong>Fecha límite:</strong> ${escapeHtml(String(fechaLimite))}</p>
+            <p><strong>Fecha publicación:</strong> ${escapeHtml(String(fechaPublicacion))}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Descripción / Objetivos</h4>
+            <p>${escapeHtml(descripcion || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Requisitos</h4>
+            <p>${escapeHtml(requisitos || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Beneficios</h4>
+            <p>${escapeHtml(beneficios || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Contacto</h4>
+            <p>${escapeHtml(contacto || '-')}</p>
+        </div>
+    `;
+
+    const cerrarBtn = document.getElementById('cerrarModalDetalleVacante');
+    const close = () => modal.classList.add('hidden');
+    if (cerrarBtn) cerrarBtn.onclick = close;
+    modal.onclick = (e) => {
+        if (e.target === modal) close();
+    };
+    window.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') {
+            close();
+            window.removeEventListener('keydown', onEsc);
+        }
+    });
+
+    modal.classList.remove('hidden');
+}
+
+function escapeHtml(value) {
+    const s = String(value == null ? '' : value);
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**
