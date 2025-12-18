@@ -56,7 +56,7 @@
                 </li>
 
                 <li>
-                    <a href="#">
+                    <a href="#" id="logoutBtn">
                         <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
                         <span class="title">Log out</span>
                     </a>
@@ -141,7 +141,6 @@
                                         <option value="">Seleccione...</option>
                                         <option value="Femenino">Femenino</option>
                                         <option value="Masculino">Masculino</option>
-                                        <option value="Otro">Otro</option>
                                     </select>
                                 </label>
                             </div>
@@ -156,9 +155,15 @@
                                 </label>
                             </div>
 
-                            <label>Password
-                                <input id="passInput" type="password" placeholder="********" required>
-                            </label>
+                            <div class="row">
+                                <label>Contraseña actual
+                                    <input id="currentPasswordInput" type="password" placeholder="********">
+                                </label>
+
+                                <label>Nueva contraseña
+                                    <input id="newPasswordInput" type="password" placeholder="********">
+                                </label>
+                            </div>
 
                             <div class="form-actions">
                                 <button type="submit" class="btn">Guardar</button>
@@ -586,6 +591,7 @@
     </div>
 
     <script src="./js/config.js"></script>
+    <script src="./js/scripts_prof.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </body>

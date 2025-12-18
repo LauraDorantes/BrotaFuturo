@@ -9,6 +9,101 @@ const PROFESOR_PUBLICACIONES_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORA
     ? STORAGE_KEYS.PROFESOR_PUBLICACIONES
     : 'publicaciones';
 
+function getAccessToken() {
+    try {
+        if (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) {
+            return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        }
+    } catch { /* noop */ }
+    return localStorage.getItem('accessToken');
+}
+
+function getStoredUserRole() {
+    try {
+        if (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.USER_ROLE) {
+            return localStorage.getItem(STORAGE_KEYS.USER_ROLE);
+        }
+    } catch { /* noop */ }
+    return localStorage.getItem('userRole');
+}
+
+function clearAuthStorage() {
+    const keys = (typeof STORAGE_KEYS !== 'undefined')
+        ? [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER_ROLE, STORAGE_KEYS.USER_ID, STORAGE_KEYS.USER_EMAIL]
+        : ['accessToken', 'refreshToken', 'userRole', 'userId', 'userEmail'];
+    keys.filter(Boolean).forEach((k) => localStorage.removeItem(k));
+}
+
+function redirectToLogin() {
+    window.location.href = 'login.html';
+}
+
+async function fetchMe() {
+    const token = getAccessToken();
+    if (!token) return null;
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.GET_USER) return null;
+
+    const res = await fetch(AUTH_ENDPOINTS.GET_USER, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) return null;
+    try {
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
+
+function mapApiProfesorToPerfilData(apiUser) {
+    if (!apiUser) return {};
+    return {
+        nombre: apiUser.nombres || '',
+        aPaterno: apiUser.apellidoPaterno || '',
+        aMaterno: apiUser.apellidoMaterno || '',
+        email: apiUser.correo || '',
+        phone: apiUser.telefono != null ? String(apiUser.telefono) : '',
+        dept: apiUser.departamento || '',
+        sexo: apiUser.sexo || '',
+        rfc: apiUser.rfc || '',
+        curp: apiUser.curp || '',
+    };
+}
+
+async function updateProfesorPerfil(payload) {
+    const token = getAccessToken();
+    if (!token) throw new Error('Sin token');
+    if (typeof PROFESSOR_ENDPOINTS === 'undefined' || !PROFESSOR_ENDPOINTS.UPDATE_PROFILE) {
+        throw new Error('Falta configuraci\u00f3n: PROFESSOR_ENDPOINTS.UPDATE_PROFILE');
+    }
+
+    const res = await fetch(PROFESSOR_ENDPOINTS.UPDATE_PROFILE, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload || {}),
+    });
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch {
+        data = null;
+    }
+
+    if (!res.ok) {
+        const msg = data && data.message ? data.message : 'Error al actualizar perfil';
+        throw new Error(msg);
+    }
+
+    return data;
+}
+
 function activeLink() {
     list.forEach((item) => {
         item.classList.remove("hovered");
@@ -27,146 +122,407 @@ toggle.onclick = function () {
     main.classList.toggle("active");
 }
 
-// CAMBIAR SECCIONES 
-document.querySelectorAll(".nav-item").forEach(item => {
-    item.addEventListener("click", () => {
-        const sectionClass = item.getAttribute("data-section");
-        
-        document.querySelectorAll("section").forEach(sec => {
-            sec.classList.add("hidden");
-        });
-        
-        const sectionToShow = document.querySelector(`.${sectionClass}`);
-        if (sectionToShow) {
-            sectionToShow.classList.remove("hidden");
-        }
-        
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.add('hidden');
-        });
+function showSection(sectionClass) {
+    if (!sectionClass) return;
+
+    // Solo ocultar los paneles principales (evitar ocultar secciones internas como #perfilReadOnly)
+    document.querySelectorAll(".main > section").forEach(sec => {
+        sec.classList.add("hidden");
     });
+
+    const sectionToShow = document.querySelector(`.${sectionClass}`);
+    if (sectionToShow) {
+        sectionToShow.classList.remove("hidden");
+    }
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+}
+
+function getSectionFromHash() {
+    const hash = String(window.location.hash || '').replace('#', '').trim();
+    if (!hash) return null;
+    // Permitimos usar el hash como clase de sección (ej: #perfil-section)
+    if (document.querySelector(`.${hash}`)) return hash;
+    // Fallback: si usan el id en el hash, intentamos mapearlo a la sección contenedora
+    const byId = document.getElementById(hash);
+    if (byId && byId.tagName && byId.tagName.toLowerCase() === 'section') {
+        const cls = Array.from(byId.classList).find(c => c.endsWith('-section'));
+        return cls || null;
+    }
+    return null;
+}
+
+// CAMBIAR SECCIONES
+document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        const sectionClass = item.getAttribute("data-section");
+        if (sectionClass) {
+            history.replaceState(null, '', `#${sectionClass}`);
+        }
+        showSection(sectionClass);
+    });
+});
+
+// Sección inicial: Perfil (o la que venga en el hash)
+document.addEventListener("DOMContentLoaded", () => {
+    // Guard simple: si no hay sesión válida, regresar al login
+    const role = String(getStoredUserRole() || '').toLowerCase();
+    const token = getAccessToken();
+    if (!token || (role && role !== 'profesor')) {
+        clearAuthStorage();
+        redirectToLogin();
+        return;
+    }
+
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            clearAuthStorage();
+            redirectToLogin();
+        });
+    }
+
+    showSection(getSectionFromHash() || 'perfil-section');
 });
 
 
 //MI PERFIL
-document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
+        const editBtn = document.getElementById("editBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const perfilForm = document.getElementById("perfilForm");
+        const perfilReadOnly = document.getElementById("perfilReadOnly");
+        const avatarInput = document.getElementById("avatarInput");
+        const perfilAvatar = document.getElementById("perfilAvatar");
 
-    const editBtn = document.getElementById("editBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const perfilForm = document.getElementById("perfilForm");
-    const perfilReadOnly = document.getElementById("perfilReadOnly");
-    const avatarInput = document.getElementById("avatarInput");
-    const perfilAvatar = document.getElementById("perfilAvatar");
+        const nombreInput = document.getElementById("nombreInput");
+        const aPaternoInput = document.getElementById("aPaternoInput");
+        const aMaternoInput = document.getElementById("aMaternoInput");
+        const emailInput = document.getElementById("emailInput");
+        const phoneInput = document.getElementById("phoneInput");
+        const deptInput = document.getElementById("deptInput");
+        const sexoInput = document.getElementById("sexoInput");
+        const rfcInput = document.getElementById("rfcInput");
+        const curpInput = document.getElementById("curpInput");
+        const currentPasswordInput = document.getElementById("currentPasswordInput");
+        const newPasswordInput = document.getElementById("newPasswordInput");
 
-    const nombreInput = document.getElementById("nombreInput");
-    const aPaternoInput = document.getElementById("aPaternoInput");
-    const aMaternoInput = document.getElementById("aMaternoInput");
-    const emailInput = document.getElementById("emailInput");
-    const phoneInput = document.getElementById("phoneInput");
-    const deptInput = document.getElementById("deptInput");
-    const sexoInput = document.getElementById("sexoInput");
-    const rfcInput = document.getElementById("rfcInput");
-    const curpInput = document.getElementById("curpInput");
-    const passInput = document.getElementById("passInput");
+        const ro_nombre = document.getElementById("ro_nombre");
+        const ro_aPaterno = document.getElementById("ro_aPaterno");
+        const ro_aMaterno = document.getElementById("ro_aMaterno");
+        const ro_sexo = document.getElementById("ro_sexo");
+        const ro_email = document.getElementById("ro_email");
+        const ro_phone = document.getElementById("ro_phone");
+        const ro_dept = document.getElementById("ro_dept");
+        const ro_rfc = document.getElementById("ro_rfc");
+        const ro_curp = document.getElementById("ro_curp");
+        const displayName = document.getElementById("displayName");
 
-    const ro_nombre = document.getElementById("ro_nombre");
-    const ro_aPaterno = document.getElementById("ro_aPaterno");
-    const ro_aMaterno = document.getElementById("ro_aMaterno");
-    const ro_sexo = document.getElementById("ro_sexo");
-    const ro_email = document.getElementById("ro_email");
-    const ro_phone = document.getElementById("ro_phone");
-    const ro_dept = document.getElementById("ro_dept");
-    const ro_rfc = document.getElementById("ro_rfc");
-    const ro_curp = document.getElementById("ro_curp");
+        if (!perfilForm || !perfilReadOnly) return;
 
-    const displayName = document.getElementById("displayName");
+        function loadPerfil() {
+            const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
 
-    function loadPerfil() {
-        const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+            if (perfilAvatar && data.avatar) perfilAvatar.src = data.avatar;
 
-        if (data.avatar) perfilAvatar.src = data.avatar;
+            if (nombreInput) nombreInput.value = data.nombre || "";
+            if (aPaternoInput) aPaternoInput.value = data.aPaterno || "";
+            if (aMaternoInput) aMaternoInput.value = data.aMaterno || "";
+            if (emailInput) emailInput.value = data.email || "";
+            if (phoneInput) phoneInput.value = data.phone || "";
+            if (deptInput) deptInput.value = data.dept || "";
+            if (sexoInput) sexoInput.value = data.sexo || "";
+            if (rfcInput) rfcInput.value = data.rfc || "";
+            if (curpInput) curpInput.value = data.curp || "";
 
-        nombreInput.value = data.nombre || "";
-        aPaternoInput.value = data.aPaterno || "";
-        aMaternoInput.value = data.aMaterno || "";
-        emailInput.value = data.email || "";
-        phoneInput.value = data.phone || "";
-        deptInput.value = data.dept || "";
-        sexoInput.value = data.sexo || "";
-        passInput.value = data.password || "";
+            // Password: no se precarga
+            if (currentPasswordInput) currentPasswordInput.value = "";
+            if (newPasswordInput) newPasswordInput.value = "";
 
-        rfcInput.value = data.rfc || "";
+            if (ro_curp) ro_curp.textContent = data.curp || "-";
+            if (ro_nombre) ro_nombre.textContent = data.nombre || "-";
+            if (ro_aPaterno) ro_aPaterno.textContent = data.aPaterno || "-";
+            if (ro_aMaterno) ro_aMaterno.textContent = data.aMaterno || "-";
+            if (ro_sexo) ro_sexo.textContent = data.sexo || "-";
+            if (ro_email) ro_email.textContent = data.email || "-";
+            if (ro_phone) ro_phone.textContent = data.phone || "-";
+            if (ro_dept) ro_dept.textContent = data.dept || "-";
+            if (ro_rfc) ro_rfc.textContent = data.rfc || "-";
 
-        ro_curp.textContent = data.curpNombre || "No subido";
-        ro_nombre.textContent = data.nombre || "-";
-        ro_aPaterno.textContent = data.aPaterno || "-";
-        ro_aMaterno.textContent = data.aMaterno || "-";
-        ro_sexo.textContent = data.sexo || "-";
-        ro_email.textContent = data.email || "-";
-        ro_phone.textContent = data.phone || "-";
-        ro_dept.textContent = data.dept || "-";
-        ro_rfc.textContent = data.rfc || "-";
+            if (displayName) {
+                displayName.textContent = data.nombre
+                    ? `${data.nombre} ${data.aPaterno || ""}`.trim()
+                    : "Nombre Apellido";
+            }
+        }
 
-        displayName.textContent = data.nombre
-            ? `${data.nombre} ${data.aPaterno || ""}`.trim()
-            : "Nombre Apellido";
-    }
-    loadPerfil();
+        async function changePassword(currentPassword, newPassword) {
+            const token = getAccessToken();
+            if (!token) throw new Error('Sin token');
+            if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.CHANGE_PASSWORD) {
+                throw new Error('Falta configuraci\u00f3n: AUTH_ENDPOINTS.CHANGE_PASSWORD');
+            }
 
-    avatarInput.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+            const res = await fetch(AUTH_ENDPOINTS.CHANGE_PASSWORD, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                }),
+            });
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            perfilAvatar.src = ev.target.result;
-            perfilAvatar.dataset.tmp = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
+            let data = null;
+            try {
+                data = await res.json();
+            } catch {
+                data = null;
+            }
 
-    editBtn.addEventListener("click", () => {
-        perfilForm.classList.remove("hidden");
-        perfilReadOnly.classList.add("hidden");
-    });
+            if (!res.ok) {
+                const msg = data && data.message ? data.message : 'Error al cambiar la contrase\u00f1a';
+                throw new Error(msg);
+            }
+            return data;
+        }
 
-    cancelBtn.addEventListener("click", () => {
-        perfilForm.classList.add("hidden");
-        perfilReadOnly.classList.remove("hidden");
-        loadPerfil();
-        delete perfilAvatar.dataset.tmp;
-    });
-
-    perfilForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-
-        const curpFile = curpInput.files[0];
-
-        const perfilData = {
-            nombre: nombreInput.value.trim(),
-            aPaterno: aPaternoInput.value.trim(),
-            aMaterno: aMaternoInput.value.trim(),
-            email: emailInput.value.trim(),
-            phone: phoneInput.value.trim(),
-            dept: deptInput.value.trim(),
-            sexo: sexoInput.value,
-            password: passInput.value.trim(),
-
-            avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
-            rfc: rfcInput.value.trim(),
-            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
-        };
-
-        localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
-
-        delete perfilAvatar.dataset.tmp;
-
+        // 1) Pintar lo que haya local (fallback)
         loadPerfil();
 
-        perfilForm.classList.add("hidden");
-        perfilReadOnly.classList.remove("hidden");
+        // 2) Intentar cargar desde backend y sincronizar UI
+        (async () => {
+            try {
+                const meResponse = await fetchMe();
+                const apiUser = meResponse && meResponse.user ? meResponse.user : null;
+                if (!apiUser) return;
+
+                const perfilFromApi = mapApiProfesorToPerfilData(apiUser);
+                const merged = {
+                    ...JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {},
+                    ...perfilFromApi,
+                };
+                localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(merged));
+                loadPerfil();
+            } catch {
+                // Si falla, nos quedamos con el localStorage
+            }
+        })();
+
+        if (avatarInput && perfilAvatar) {
+            avatarInput.addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    perfilAvatar.src = ev.target.result;
+                    perfilAvatar.dataset.tmp = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (editBtn) {
+            editBtn.addEventListener("click", () => {
+                perfilForm.classList.remove("hidden");
+                perfilReadOnly.classList.add("hidden");
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", () => {
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+                loadPerfil();
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+            });
+        }
+
+        perfilForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const markInvalid = (el) => {
+                if (!el) return;
+                el.classList.add('input-invalid');
+                if (typeof el.focus === 'function') el.focus();
+            };
+            const clearInvalid = (el) => {
+                if (!el) return;
+                el.classList.remove('input-invalid');
+            };
+
+            // Limpia marcas previas
+            [nombreInput, aPaternoInput, aMaternoInput, emailInput, phoneInput, deptInput, sexoInput, rfcInput, curpInput]
+                .filter(Boolean)
+                .forEach(clearInvalid);
+
+            // Quitar marca al editar
+            [nombreInput, aPaternoInput, aMaternoInput, emailInput, phoneInput, deptInput, rfcInput, curpInput]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('input', () => clearInvalid(el), { once: true }));
+            [sexoInput]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('change', () => clearInvalid(el), { once: true }));
+
+            // Validaciones alineadas con scripts_login.js
+            const expresiones = {
+                nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+                telefono: /^\d{7,10}$/,
+                curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
+                correoProfe: /^[a-zA-Z0-9_.+-]+@ipn\.mx$/,
+                rfc: /^[A-Z]{3,4}\d{6}[A-Z0-9]{3}$/i,
+            };
+
+            const nombresRaw = String((nombreInput && nombreInput.value) || '').trim();
+            const apellidoPaternoRaw = String((aPaternoInput && aPaternoInput.value) || '').trim();
+            const apellidoMaternoRaw = String((aMaternoInput && aMaternoInput.value) || '').trim();
+            const correoRaw = String((emailInput && emailInput.value) || '').trim();
+            const telefonoDigits = String((phoneInput && phoneInput.value) || '').replace(/\D/g, '');
+            const departamentoRaw = String((deptInput && deptInput.value) || '').trim();
+            const sexoRaw = String((sexoInput && sexoInput.value) || '').trim();
+            const rfcRaw = String((rfcInput && rfcInput.value) || '').trim().toUpperCase();
+            const curpRaw = String((curpInput && curpInput.value) || '').trim().toUpperCase();
+
+            if (!nombresRaw || !expresiones.nombre.test(nombresRaw)) {
+                markInvalid(nombreInput);
+                alert('Nombres inválidos');
+                return;
+            }
+            if (!apellidoPaternoRaw || !expresiones.nombre.test(apellidoPaternoRaw)) {
+                markInvalid(aPaternoInput);
+                alert('Apellido paterno inválido');
+                return;
+            }
+            if (!apellidoMaternoRaw || !expresiones.nombre.test(apellidoMaternoRaw)) {
+                markInvalid(aMaternoInput);
+                alert('Apellido materno inválido');
+                return;
+            }
+            if (!correoRaw || !expresiones.correoProfe.test(correoRaw)) {
+                markInvalid(emailInput);
+                alert('Correo inválido (usa @ipn.mx)');
+                return;
+            }
+            if (!telefonoDigits || !expresiones.telefono.test(telefonoDigits)) {
+                markInvalid(phoneInput);
+                alert('Teléfono inválido (7 a 10 dígitos)');
+                return;
+            }
+            if (!departamentoRaw) {
+                markInvalid(deptInput);
+                alert('Departamento requerido');
+                return;
+            }
+            if (!sexoRaw || (sexoRaw !== 'Masculino' && sexoRaw !== 'Femenino')) {
+                markInvalid(sexoInput);
+                alert('Selecciona un sexo válido');
+                return;
+            }
+            if (!rfcRaw || !expresiones.rfc.test(rfcRaw)) {
+                markInvalid(rfcInput);
+                alert('RFC inválido');
+                return;
+            }
+            if (!curpRaw || !expresiones.curp.test(curpRaw)) {
+                markInvalid(curpInput);
+                alert('CURP inválida');
+                return;
+            }
+
+            // Misma regla que en login/registro (scripts_login.js)
+            const STRONG_PASSWORD_REGEX = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/;
+
+            const currentPassword = currentPasswordInput ? String(currentPasswordInput.value || '') : '';
+            const newPassword = newPasswordInput ? String(newPasswordInput.value || '') : '';
+
+            // Validar cambio de contraseña (opcional)
+            if (newPassword.trim()) {
+                if (!currentPassword.trim()) {
+                    alert('Para cambiar la contrase\u00f1a, ingresa tu contrase\u00f1a actual');
+                    return;
+                }
+                if (!STRONG_PASSWORD_REGEX.test(newPassword)) {
+                    alert('La nueva contrase\u00f1a debe tener al menos 6 caracteres, 1 may\u00fascula, 1 min\u00fascula, 1 n\u00famero y 1 s\u00edmbolo');
+                    return;
+                }
+            }
+
+            const payload = {
+                nombres: nombresRaw,
+                apellidoPaterno: apellidoPaternoRaw,
+                apellidoMaterno: apellidoMaternoRaw,
+                correo: correoRaw,
+                departamento: departamentoRaw,
+                sexo: sexoRaw,
+                rfc: rfcRaw,
+                curp: curpRaw,
+                telefono: Number(telefonoDigits),
+            };
+
+            // No enviar strings vacíos para no pisar datos existentes
+            Object.keys(payload).forEach((k) => {
+                if (payload[k] === '') delete payload[k];
+            });
+
+            const perfilData = {
+                nombre: nombresRaw,
+                aPaterno: apellidoPaternoRaw,
+                aMaterno: apellidoMaternoRaw,
+                email: correoRaw,
+                phone: telefonoDigits,
+                dept: departamentoRaw,
+                sexo: sexoRaw,
+                avatar: perfilAvatar ? (perfilAvatar.dataset.tmp || perfilAvatar.src) : '',
+                rfc: rfcRaw,
+                curp: curpRaw,
+            };
+
+            try {
+                // 1) Cambiar contraseña (si aplica)
+                if (newPassword.trim()) {
+                    await changePassword(currentPassword, newPassword);
+                    if (currentPasswordInput) currentPasswordInput.value = '';
+                    if (newPasswordInput) newPasswordInput.value = '';
+                }
+
+                // 2) Actualizar perfil
+                const updated = await updateProfesorPerfil(payload);
+                const apiProfesor = updated && updated.data ? updated.data : null;
+                if (apiProfesor) {
+                    const perfilFromApi = mapApiProfesorToPerfilData(apiProfesor);
+                    const merged = {
+                        ...JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {},
+                        ...perfilFromApi,
+                        avatar: perfilData.avatar,
+                    };
+                    localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(merged));
+                } else {
+                    localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
+                }
+
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+                loadPerfil();
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+            } catch (err) {
+                // Si falla el backend, al menos guardar local
+                localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+                loadPerfil();
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+                alert(err && err.message ? err.message : 'No se pudo actualizar el perfil');
+            }
+        });
     });
-});
 
 // SISTEMA DE PUBLICACIONES
 class SistemaPublicaciones {

@@ -11,6 +11,7 @@ const vacantesRoutes = require('./routes/vacantes');
 const postulacionesRoutes = require('./routes/postulaciones');
 const mensajesRoutes = require('./routes/mensajes');
 const driveRoutes = require('./routes/drive');
+const profesorRoutes = require('./routes/profesor');
 
 // Cargar variables de entorno
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/vacantes', vacantesRoutes);
 app.use('/api/postulaciones', postulacionesRoutes);
 app.use('/api/mensajes', mensajesRoutes);
 app.use('/api/drive', driveRoutes);
+app.use('/api/profesor', profesorRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -268,11 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cambiar entre secciones
     document.querySelectorAll(".nav-item").forEach(item => {
-        item.addEventListener("click", () => {
+        item.addEventListener("click", (e) => {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
             const sectionClass = item.getAttribute("data-section");
             
             // Ocultar todas las secciones
-            document.querySelectorAll("section").forEach(sec => {
+            // Solo ocultar paneles principales, no sub-secciones internas (ej: #perfilReadOnly)
+            document.querySelectorAll(".main > section").forEach(sec => {
                 sec.classList.add("hidden");
             });
             
@@ -302,6 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarPostulaciones();
             } else if (sectionClass === 'mensajes-section') {
                 cargarMensajesRecibidos();
+            } else if (sectionClass === 'perfil-section') {
+                // Volver a mostrar el perfil (y asegurar el estado de lectura)
+                const perfilForm = document.getElementById('perfilForm');
+                const perfilReadOnly = document.getElementById('perfilReadOnly');
+                if (perfilForm) perfilForm.classList.add('hidden');
+                if (perfilReadOnly) perfilReadOnly.classList.remove('hidden');
+                cargarPerfil();
             }
         });
     });
@@ -463,20 +472,136 @@ document.addEventListener('DOMContentLoaded', () => {
     if (perfilForm) {
         perfilForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const markInvalid = (el) => {
+                if (!el) return;
+                el.classList.add('input-invalid');
+                if (typeof el.focus === 'function') el.focus();
+            };
+            const clearInvalid = (el) => {
+                if (!el) return;
+                el.classList.remove('input-invalid');
+            };
+
+            const elNombre = document.getElementById('nombreInput');
+            const elAPaterno = document.getElementById('aPaternoInput');
+            const elAMaterno = document.getElementById('aMaternoInput');
+            const elCorreo = document.getElementById('emailInput');
+            const elTelefono = document.getElementById('phoneInput');
+            const elBoleta = document.getElementById('boletaInput');
+            const elSexo = document.getElementById('sexoInput');
+            const elCarrera = document.getElementById('carreraInput');
+            const elCreditos = document.getElementById('creditosInput');
+            const elCurp = document.getElementById('curpInput');
+
+            // Limpia marcas previas
+            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elSexo, elCarrera, elCreditos, elCurp]
+                .filter(Boolean)
+                .forEach(clearInvalid);
+
+            // Quitar marca al editar
+            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elCreditos, elCurp]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('input', () => clearInvalid(el), { once: true }));
+            [elSexo, elCarrera]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('change', () => clearInvalid(el), { once: true }));
+
+            // Validaciones alineadas con scripts_login.js
+            const expresiones = {
+                boleta: /^(\d{10})$/,
+                nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+                telefono: /^\d{7,10}$/,
+                curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
+                correoAlumno: /^[a-zA-Z0-9_.+-]+@alumno\.ipn\.mx$/,
+            };
+
+            const nombresRaw = String(document.getElementById('nombreInput').value || '').trim();
+            const apellidoPaternoRaw = String(document.getElementById('aPaternoInput').value || '').trim();
+            const apellidoMaternoRaw = String(document.getElementById('aMaternoInput').value || '').trim();
+            const correoRaw = String(document.getElementById('emailInput').value || '').trim();
+            const telefonoDigits = String(document.getElementById('phoneInput').value || '').replace(/\D/g, '');
+            const boletaDigits = String(document.getElementById('boletaInput').value || '').replace(/\D/g, '');
+            const sexoRaw = String(document.getElementById('sexoInput').value || '').trim();
+            const carreraRaw = String(document.getElementById('carreraInput').value || '').trim();
+            const creditosRaw = String(document.getElementById('creditosInput').value || '').trim();
+            const curpRaw = String(document.getElementById('curpInput').value || '').trim().toUpperCase();
+
+            const creditosNum = creditosRaw === '' ? NaN : Number(creditosRaw);
+
+            if (!nombresRaw || !expresiones.nombre.test(nombresRaw)) {
+                markInvalid(elNombre);
+                showError('Nombres inválidos');
+                return;
+            }
+            if (!apellidoPaternoRaw || !expresiones.nombre.test(apellidoPaternoRaw)) {
+                markInvalid(elAPaterno);
+                showError('Apellido paterno inválido');
+                return;
+            }
+            if (!apellidoMaternoRaw || !expresiones.nombre.test(apellidoMaternoRaw)) {
+                markInvalid(elAMaterno);
+                showError('Apellido materno inválido');
+                return;
+            }
+            if (!correoRaw || !expresiones.correoAlumno.test(correoRaw)) {
+                markInvalid(elCorreo);
+                showError('Correo inválido (usa @alumno.ipn.mx)');
+                return;
+            }
+            if (!telefonoDigits || !expresiones.telefono.test(telefonoDigits)) {
+                markInvalid(elTelefono);
+                showError('Teléfono inválido (7 a 10 dígitos)');
+                return;
+            }
+            if (!boletaDigits || !expresiones.boleta.test(boletaDigits)) {
+                markInvalid(elBoleta);
+                showError('Boleta inválida (10 dígitos)');
+                return;
+            }
+            if (!sexoRaw || (sexoRaw !== 'Masculino' && sexoRaw !== 'Femenino')) {
+                markInvalid(elSexo);
+                showError('Selecciona un sexo válido');
+                return;
+            }
+            if (!carreraRaw || (carreraRaw !== 'ISC' && carreraRaw !== 'IIA' && carreraRaw !== 'LCD')) {
+                markInvalid(elCarrera);
+                showError('Selecciona una carrera válida');
+                return;
+            }
+            if (!Number.isFinite(creditosNum) || creditosNum < 0 || creditosNum > 387) {
+                markInvalid(elCreditos);
+                showError('Créditos inválidos (0 a 387)');
+                return;
+            }
+            if (!curpRaw || !expresiones.curp.test(curpRaw)) {
+                markInvalid(elCurp);
+                showError('CURP inválida');
+                return;
+            }
             
             // TODO: Implementar actualización de perfil cuando exista el endpoint
             // Por ahora solo guardamos en localStorage como ejemplo
             const formData = {
-                nombres: String(document.getElementById('nombreInput').value || '').trim(),
-                apellidoPaterno: String(document.getElementById('aPaternoInput').value || '').trim(),
-                apellidoMaterno: String(document.getElementById('aMaternoInput').value || '').trim(),
-                telefono: Number(String(document.getElementById('phoneInput').value || '').replace(/\D/g, '')),
-                boleta: Number(String(document.getElementById('boletaInput').value || '').replace(/\D/g, '')),
-                sexo: String(document.getElementById('sexoInput').value || '').trim(),
-                carrera: String(document.getElementById('carreraInput').value || '').trim(),
-                creditos: Number(document.getElementById('creditosInput').value),
-                curp: String(document.getElementById('curpInput').value || '').trim(),
+                nombres: nombresRaw,
+                apellidoPaterno: apellidoPaternoRaw,
+                apellidoMaterno: apellidoMaternoRaw,
+                correo: correoRaw,
+                telefono: Number(telefonoDigits),
+                boleta: Number(boletaDigits),
+                sexo: sexoRaw,
+                carrera: carreraRaw,
+                creditos: Number(creditosNum),
+                curp: curpRaw,
             };
+
+            const currentPasswordEl = document.getElementById('currentPasswordInput');
+            const newPasswordEl = document.getElementById('newPasswordInput');
+            const currentPassword = currentPasswordEl ? String(currentPasswordEl.value || '') : '';
+            const newPassword = newPasswordEl ? String(newPasswordEl.value || '') : '';
+
+            // Misma regla que en login/registro (scripts_login.js)
+            const STRONG_PASSWORD_REGEX = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/;
 
             try {
                 // Llamada a la API para actualizar el perfil
@@ -490,6 +615,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 const updatedUser = response?.data || response?.user;
                 if (updatedUser) {
                     currentUser = updatedUser;
+
+                    // Cambio de contraseña (opcional)
+                    if (newPassword.trim()) {
+                        if (!currentPassword.trim()) {
+                            showError('Para cambiar la contraseña, ingresa tu contraseña actual');
+                            return;
+                        }
+
+                        if (!STRONG_PASSWORD_REGEX.test(newPassword)) {
+                            showError('La nueva contraseña debe tener al menos 6 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo');
+                            return;
+                        }
+
+                        const changePasswordUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'CHANGE_PASSWORD');
+                        await fetchAPI(changePasswordUrl, {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                currentPassword: currentPassword,
+                                newPassword: newPassword,
+                            }),
+                        });
+
+                        if (currentPasswordEl) currentPasswordEl.value = '';
+                        if (newPasswordEl) newPasswordEl.value = '';
+                    }
+
                     showSuccess('Perfil actualizado correctamente');
                     perfilForm.classList.add('hidden');
                     perfilReadOnly.classList.remove('hidden');

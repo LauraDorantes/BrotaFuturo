@@ -35,6 +35,11 @@ const STUDENT_ENDPOINTS = {
     UPDATE_CV: `${API_BASE_URL}/alumnos/actualizarCV`,
 };
 
+// Rutas de profesor
+const PROFESSOR_ENDPOINTS = {
+    UPDATE_PROFILE: `${API_BASE_URL}/profesor/actualizarPerfil`,
+};
+
 // Rutas de vacantes
 const VACANCY_ENDPOINTS = {
     GET_VACANCIES: `${API_BASE_URL}/vacantes`,
@@ -72,7 +77,8 @@ const MESSAGE_ENDPOINTS = {
 // Páginas de redirección después del login
 const REDIRECT_PAGES = {
     alumno: 'estudiante.html',
-    profesor: 'profesor.html',
+    // Abrir directamente el panel de Perfil
+    profesor: 'profesor.html#perfil-section',
     institucion: 'institucion.html',
 };
 

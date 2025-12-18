@@ -1,7 +1,10 @@
 const { google } = require('googleapis');
 const stream = require('stream');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const Alumno = require('../models/Alumno');
+const Profesor = require('../models/Profesor');
+const Institucion = require('../models/Institucion');
 
 // Configuración de Google Drive API (Para subir CVs)
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
@@ -122,7 +125,7 @@ exports.actualizarCV = async (req, res) => {
 /*
     actualizarPerfil
     Endpoint para que un estudiante actualice su información personal.
-    @param {Object} req.body - Datos a actualizar (nombres, apellidoPaterno, apellidoMaterno, telefono, boleta, sexo, carrera, creditos, curp)
+    @param {Object} req.body - Datos a actualizar (nombres, apellidoPaterno, apellidoMaterno, telefono, boleta, sexo, carrera, creditos, curp, correo, password)
     @param {String} req.user - Usuario autenticado (alumno) dado por el middleware de autenticación
     @return {Object} - Datos del alumno actualizados o error en caso de fallo.
 */
@@ -132,38 +135,80 @@ exports.actualizarPerfil = async (req, res) => {
         if (!alumno) {
             return res.status(404).json({ message: 'Alumno no encontrado' });
         }
-        // Actualizar los campos
-        alumno.nombres = req.body.nombres || alumno.nombres;
-        alumno.apellidoPaterno = req.body.apellidoPaterno || alumno.apellidoPaterno;
-        alumno.apellidoMaterno = req.body.apellidoMaterno || alumno.apellidoMaterno;
-        alumno.telefono = req.body.telefono || alumno.telefono;
-        alumno.sexo = req.body.sexo || alumno.sexo;
-        alumno.carrera = req.body.carrera || alumno.carrera;
-        alumno.creditos = req.body.creditos || alumno.creditos;
-        // Verificar unicidad de boleta, curp y telefono si se actualizan
-        if (req.body.boleta && req.body.boleta !== alumno.boleta) {
-            const boletaExistente = await Alumno.findOne({ boleta: req.body.boleta });
+        const body = req.body || {};
+
+        const correo = body.correo ? String(body.correo).trim() : null;
+        const boleta = body.boleta !== undefined && body.boleta !== null && String(body.boleta).trim() !== ''
+            ? Number(body.boleta)
+            : null;
+        const curp = body.curp ? String(body.curp).trim().toUpperCase() : null;
+        const telefono = body.telefono !== undefined && body.telefono !== null && String(body.telefono).trim() !== ''
+            ? Number(body.telefono)
+            : null;
+        const creditos = body.creditos !== undefined && body.creditos !== null && String(body.creditos).trim() !== ''
+            ? Number(body.creditos)
+            : null;
+        const password = body.password ? String(body.password) : null;
+
+        // Unicidad boleta
+        if (boleta !== null && Number.isFinite(boleta) && boleta !== alumno.boleta) {
+            const boletaExistente = await Alumno.findOne({ boleta, _id: { $ne: alumno._id } }).lean();
             if (boletaExistente) {
                 return res.status(400).json({ message: 'La boleta ya está en uso por otro alumno' });
             }
-            alumno.boleta = req.body.boleta;
+            alumno.boleta = boleta;
         }
-        if (req.body.curp && req.body.curp !== alumno.curp) {
-            const curpExistente = await Alumno.findOne({ curp: req.body.curp });
+
+        // Unicidad CURP
+        if (curp && curp !== alumno.curp) {
+            const curpExistente = await Alumno.findOne({ curp, _id: { $ne: alumno._id } }).lean();
             if (curpExistente) {
                 return res.status(400).json({ message: 'La CURP ya está en uso por otro alumno' });
             }
-            alumno.curp = req.body.curp;
+            alumno.curp = curp;
         }
-        if (req.body.telefono && req.body.telefono !== alumno.telefono) {
-            const telefonoExistente = await Alumno.findOne({ telefono: req.body.telefono });
+
+        // Unicidad teléfono
+        if (telefono !== null && Number.isFinite(telefono) && telefono !== alumno.telefono) {
+            const telefonoExistente = await Alumno.findOne({ telefono, _id: { $ne: alumno._id } }).lean();
             if (telefonoExistente) {
                 return res.status(400).json({ message: 'El teléfono ya está en uso por otro alumno' });
             }
-            alumno.telefono = req.body.telefono;
-        } 
+            alumno.telefono = telefono;
+        }
+
+        // Unicidad correo (global)
+        if (correo && correo !== alumno.correo) {
+            const [enAlumnos, enProfesores, enInstituciones] = await Promise.all([
+                Alumno.findOne({ correo, _id: { $ne: alumno._id } }).lean(),
+                Profesor.findOne({ correo }).lean(),
+                Institucion.findOne({ correo }).lean(),
+            ]);
+            if (enAlumnos || enProfesores || enInstituciones) {
+                return res.status(400).json({ message: 'El correo ya está registrado por otro usuario' });
+            }
+            alumno.correo = correo;
+        }
+
+        // Campos no únicos
+        if (body.nombres) alumno.nombres = String(body.nombres).trim();
+        if (body.apellidoPaterno) alumno.apellidoPaterno = String(body.apellidoPaterno).trim();
+        if (body.apellidoMaterno) alumno.apellidoMaterno = String(body.apellidoMaterno).trim();
+        if (body.sexo) alumno.sexo = String(body.sexo).trim();
+        if (body.carrera) alumno.carrera = String(body.carrera).trim();
+        if (creditos !== null && Number.isFinite(creditos)) alumno.creditos = creditos;
+
+        // Password (guardar hasheada)
+        if (password && password.trim()) {
+            const hash = await bcrypt.hash(password, 10);
+            alumno.password = hash;
+        }
+
         await alumno.save();
-        return res.json({ message: 'Perfil actualizado correctamente', data: alumno });
+
+        const safeAlumno = alumno.toObject();
+        delete safeAlumno.password;
+        return res.json({ message: 'Perfil actualizado correctamente', data: safeAlumno });
     } catch (error) {
         console.error('Error actualizando perfil:', error);
         return res.status(500).json({ message: 'Error al actualizar el perfil', error });
