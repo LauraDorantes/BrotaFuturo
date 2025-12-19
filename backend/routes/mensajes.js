@@ -26,12 +26,11 @@ const router = express.Router();
     POST enviarMensaje
     Endpoint para enviar un mensaje entre usuarios
     @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
-    @param {String} req.body.destinatarioId - ID del destinatario
-    @param {String} req.body.destinatarioTipo - Tipo del destinatario: 'Alumno', 'Profesor', 'Institucion'
     @param {String} req.body.asunto - Asunto del mensaje (requerido)
     @param {String} req.body.contenido - Contenido del mensaje (requerido)
-    @param {String} req.body.relacionadoConTipo - Tipo de relación: 'Vacante', 'Postulacion' o null (opcional)
-    @param {String} req.body.relacionadoConId - ID de la vacante o postulación relacionada (opcional)
+    @param {String} req.body.postulacionId - ID de la postulación relacionada (recomendado)
+    @param {String} req.body.destinatarioId - (Compat) ID del destinatario (se resolverá una postulación existente)
+    @param {String} req.body.destinatarioTipo - (Compat) Tipo del destinatario: 'Alumno', 'Profesor', 'Institucion'
     @return {Object} - Mensaje creado o error en caso de fallo
 */
 router.post(

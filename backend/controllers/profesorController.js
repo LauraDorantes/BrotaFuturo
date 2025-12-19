@@ -190,13 +190,30 @@ exports.obtenerAlumnosAsociados = async (req, res) => {
 
         const asociados = Array.isArray(profesor.alumnosAsociados) ? profesor.alumnosAsociados : [];
 
-        const alumnos = asociados
-            .map((a, index) => {
+        const alumnos = await Promise.all(
+            asociados.map(async (a, index) => {
                 const alumno = a && a.id ? a.id : null;
                 const vacante = a && a.vacante ? a.vacante : null;
+
+                const alumnoId = alumno && alumno._id ? String(alumno._id) : null;
+                const vacanteId = vacante && vacante._id ? String(vacante._id) : null;
+
+                let postulacionId = null;
+                if (alumnoId && vacanteId) {
+                    const postulacion = await Postulacion.findOne({ alumno: alumnoId, vacante: vacanteId })
+                        .sort({ createdAt: -1 })
+                        .select('_id')
+                        .lean();
+                    postulacionId = postulacion && postulacion._id ? String(postulacion._id) : null;
+                }
+
                 const tituloProyecto = vacante && vacante.titulo ? String(vacante.titulo) : '-';
+
                 return {
                     numero: index + 1,
+                    alumnoId,
+                    vacanteId,
+                    postulacionId,
                     boleta: alumno && alumno.boleta != null ? alumno.boleta : '-',
                     nombreCompleto: alumno
                         ? `${alumno.nombres || ''} ${alumno.apellidoPaterno || ''} ${alumno.apellidoMaterno || ''}`.replace(/\s+/g, ' ').trim()
@@ -208,7 +225,8 @@ exports.obtenerAlumnosAsociados = async (req, res) => {
                     publicacion: tituloProyecto,
                     estado: a && a.estado ? a.estado : '-',
                 };
-            });
+            })
+        );
 
         return res.json(alumnos);
 
