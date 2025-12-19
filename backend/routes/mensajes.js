@@ -6,8 +6,11 @@ const {
     obtenerMensajePorId,
     marcarComoLeido,
     eliminarMensaje,
+    obtenerDestinatariosPermitidos,
+    obtenerEstudiantesPostulados,
 } = require('../controllers/mensajeController');
 const { requireAuth } = require('../middlewares/authMiddleware');
+const { requireRoles } = require('../middlewares/rolesMiddleware');
 const { validarObjectId } = require('../middlewares/validarObjectId');
 const Mensaje = require('../models/Mensaje');
 
@@ -108,6 +111,34 @@ router.delete(
     requireAuth,
     validarObjectId('mensajeId', Mensaje, 'Mensaje'),
     eliminarMensaje
+);
+
+/*
+    GET obtenerDestinatariosPermitidos
+    Endpoint para que un estudiante obtenga los profesores/empresas con los que tiene postulaciones
+    Solo los estudiantes pueden usar este endpoint
+    @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
+    @return {Object} - Array de destinatarios permitidos (profesores e instituciones)
+*/
+router.get(
+    '/destinatarios-permitidos',
+    requireAuth,
+    requireRoles('alumno'),
+    obtenerDestinatariosPermitidos
+);
+
+/*
+    GET obtenerEstudiantesPostulados
+    Endpoint para que un profesor obtenga los estudiantes postulados a sus vacantes
+    Solo los profesores pueden usar este endpoint
+    @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
+    @return {Object} - Array de estudiantes postulados
+*/
+router.get(
+    '/estudiantes-postulados',
+    requireAuth,
+    requireRoles('profesor'),
+    obtenerEstudiantesPostulados
 );
 
 module.exports = router;

@@ -1021,24 +1021,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Botón nuevo mensaje
+    // Botón nuevo mensaje (desde sección Mensajes)
     const nuevoMensajeBtn = document.getElementById('nuevoMensajeBtn');
     if (nuevoMensajeBtn) {
-        nuevoMensajeBtn.addEventListener('click', abrirModalNuevoMensaje);
+        nuevoMensajeBtn.addEventListener('click', () => abrirModalNuevoMensaje(true));
     }
 });
 
 /**
  * Abrir modal para crear nuevo mensaje
+ * @param {boolean} desdeSeccionMensajes - Si es true, solo muestra destinatarios permitidos
  */
-function abrirModalNuevoMensaje() {
+async function abrirModalNuevoMensaje(desdeSeccionMensajes = false) {
     const modal = document.getElementById('modalNuevoMensaje');
     const form = document.getElementById('formNuevoMensaje');
+    const destinatarioTipoSelect = document.getElementById('destinatarioTipo');
+    const destinatarioIdSelect = document.getElementById('destinatarioId');
+    const destinatarioHelp = document.getElementById('destinatarioHelp');
 
     if (!modal || !form) return;
 
     form.reset();
     modal.classList.remove('hidden');
+
+    // Si se abre desde la sección Mensajes, cargar solo destinatarios permitidos
+    if (desdeSeccionMensajes) {
+        await cargarDestinatariosPermitidos();
+        const tipoDestinatarioHelp = document.getElementById('tipoDestinatarioHelp');
+        if (tipoDestinatarioHelp) {
+            tipoDestinatarioHelp.textContent = 'Solo profesores/empresas con los que compartas postulaciones';
+        }
+        if (destinatarioHelp) {
+            destinatarioHelp.textContent = 'Solo puedes enviar mensajes a profesores/empresas con los que compartas postulaciones';
+        }
+    } else {
+        // Si se abre desde una postulación, restaurar opciones originales
+        const tipoDestinatarioHelp = document.getElementById('tipoDestinatarioHelp');
+        if (tipoDestinatarioHelp) {
+            tipoDestinatarioHelp.textContent = 'Selecciona desde una vacante o postulación para prellenar estos campos';
+        }
+        if (destinatarioTipoSelect) {
+            destinatarioTipoSelect.innerHTML = `
+                <option value="">Seleccionar tipo...</option>
+                <option value="Profesor">Profesor</option>
+                <option value="Institucion">Empresa/Institución</option>
+            `;
+        }
+        if (destinatarioIdSelect) {
+            destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
+        }
+        if (destinatarioHelp) {
+            destinatarioHelp.textContent = 'Este campo se completa automáticamente al seleccionar desde una vacante o postulación';
+        }
+    }
 
     const cerrarBtn = document.getElementById('cerrarModalMensaje');
     const cancelarBtn = document.getElementById('cancelarMensajeBtn');
@@ -1047,6 +1082,8 @@ function abrirModalNuevoMensaje() {
         modal.classList.add('hidden');
         form.dataset.relacionadoTipo = '';
         form.dataset.relacionadoId = '';
+        form.dataset.profesores = '';
+        form.dataset.instituciones = '';
     };
 
     if (cerrarBtn) cerrarBtn.onclick = cerrarModal;
@@ -1055,8 +1092,8 @@ function abrirModalNuevoMensaje() {
     form.onsubmit = async (e) => {
         e.preventDefault();
 
-        const destinatarioId = document.getElementById('destinatarioId').value;
-        const destinatarioTipo = document.getElementById('destinatarioTipo').value;
+        const destinatarioId = destinatarioIdSelect ? destinatarioIdSelect.value : '';
+        const destinatarioTipo = destinatarioTipoSelect ? destinatarioTipoSelect.value : '';
         const asunto = document.getElementById('mensajeAsunto').value;
         const contenido = document.getElementById('mensajeContenido').value;
 
@@ -1091,6 +1128,82 @@ function abrirModalNuevoMensaje() {
             showError(error.message || 'Error al enviar el mensaje');
         }
     };
+}
+
+/**
+ * Cargar destinatarios permitidos (profesores/empresas con postulaciones compartidas)
+ */
+async function cargarDestinatariosPermitidos() {
+    try {
+        const data = await fetchAPI('/mensajes/destinatarios-permitidos');
+        const destinatarioTipoSelect = document.getElementById('destinatarioTipo');
+        const destinatarioIdSelect = document.getElementById('destinatarioId');
+        const destinatarioHelp = document.getElementById('destinatarioHelp');
+
+        if (!destinatarioTipoSelect || !destinatarioIdSelect) return;
+
+        // Limpiar selects
+        destinatarioTipoSelect.innerHTML = '<option value="">Seleccionar tipo...</option>';
+        destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
+
+        // Agregar opciones de profesores
+        if (data.profesores && data.profesores.length > 0) {
+            const profesorOption = document.createElement('option');
+            profesorOption.value = 'Profesor';
+            profesorOption.textContent = `Profesor (${data.profesores.length})`;
+            destinatarioTipoSelect.appendChild(profesorOption);
+        }
+
+        // Agregar opciones de instituciones
+        if (data.instituciones && data.instituciones.length > 0) {
+            const institucionOption = document.createElement('option');
+            institucionOption.value = 'Institucion';
+            institucionOption.textContent = `Empresa/Institución (${data.instituciones.length})`;
+            destinatarioTipoSelect.appendChild(institucionOption);
+        }
+
+        if (data.total === 0) {
+            if (destinatarioHelp) {
+                destinatarioHelp.textContent = 'No tienes destinatarios disponibles. Debes tener al menos una postulación para enviar mensajes.';
+                destinatarioHelp.style.color = 'var(--red)';
+            }
+            return;
+        }
+
+        // Guardar datos en el formulario para usar cuando se seleccione el tipo
+        const form = document.getElementById('formNuevoMensaje');
+        if (form) {
+            form.dataset.profesores = JSON.stringify(data.profesores || []);
+            form.dataset.instituciones = JSON.stringify(data.instituciones || []);
+        }
+
+        // Event listener para cuando se seleccione el tipo
+        destinatarioTipoSelect.onchange = () => {
+            const tipo = destinatarioTipoSelect.value;
+            destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
+
+            if (tipo === 'Profesor') {
+                const profesores = JSON.parse(form.dataset.profesores || '[]');
+                profesores.forEach(profesor => {
+                    const option = document.createElement('option');
+                    option.value = profesor.id;
+                    option.textContent = `${profesor.nombre} (${profesor.correo})`;
+                    destinatarioIdSelect.appendChild(option);
+                });
+            } else if (tipo === 'Institucion') {
+                const instituciones = JSON.parse(form.dataset.instituciones || '[]');
+                instituciones.forEach(institucion => {
+                    const option = document.createElement('option');
+                    option.value = institucion.id;
+                    option.textContent = `${institucion.nombre} (${institucion.correo})`;
+                    destinatarioIdSelect.appendChild(option);
+                });
+            }
+        };
+    } catch (error) {
+        console.error('Error cargando destinatarios permitidos:', error);
+        showError('Error al cargar destinatarios. Solo puedes enviar mensajes a profesores/empresas con los que compartas postulaciones.');
+    }
 }
 
 /**

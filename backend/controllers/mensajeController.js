@@ -2,6 +2,8 @@ const Mensaje = require('../models/Mensaje');
 const Alumno = require('../models/Alumno');
 const Profesor = require('../models/Profesor');
 const Institucion = require('../models/Institucion');
+const Postulacion = require('../models/Postulacion');
+const Vacante = require('../models/Vacante');
 
 /**
  * Controlador para gestionar mensajes entre usuarios del sistema
@@ -305,6 +307,135 @@ exports.eliminarMensaje = async (req, res) => {
     } catch (error) {
         console.error('Error eliminando mensaje:', error);
         return res.status(500).json({ message: 'Error al eliminar el mensaje', error: error.message });
+    }
+};
+
+/**
+ * obtenerDestinatariosPermitidos
+ * Endpoint para que un estudiante obtenga los profesores/empresas con los que tiene postulaciones
+ * Solo los estudiantes pueden usar este endpoint
+ * @param {Object} req.user - Usuario autenticado (debe ser alumno)
+ * @return {Object} - Array de destinatarios permitidos (profesores e instituciones)
+ */
+exports.obtenerDestinatariosPermitidos = async (req, res) => {
+    try {
+        const alumnoId = req.user.id;
+
+        // Obtener todas las postulaciones del estudiante
+        const postulaciones = await Postulacion.find({ alumno: alumnoId })
+            .populate({
+                path: 'vacante',
+                populate: {
+                    path: 'propietario',
+                    select: 'nombres apellidoPaterno apellidoMaterno nombre correo'
+                },
+                select: 'propietarioTipo propietario titulo'
+            });
+
+        // Extraer profesores e instituciones únicos
+        const profesoresMap = new Map();
+        const institucionesMap = new Map();
+
+        postulaciones.forEach(postulacion => {
+            if (!postulacion.vacante || !postulacion.vacante.propietario) return;
+
+            const propietario = postulacion.vacante.propietario;
+            const propietarioTipo = postulacion.vacante.propietarioTipo;
+            const propietarioId = propietario._id.toString();
+
+            if (propietarioTipo === 'Profesor') {
+                if (!profesoresMap.has(propietarioId)) {
+                    profesoresMap.set(propietarioId, {
+                        id: propietarioId,
+                        tipo: 'Profesor',
+                        nombre: `${propietario.nombres} ${propietario.apellidoPaterno} ${propietario.apellidoMaterno}`.trim(),
+                        correo: propietario.correo
+                    });
+                }
+            } else if (propietarioTipo === 'Institucion') {
+                if (!institucionesMap.has(propietarioId)) {
+                    institucionesMap.set(propietarioId, {
+                        id: propietarioId,
+                        tipo: 'Institucion',
+                        nombre: propietario.nombre || 'Institución',
+                        correo: propietario.correo
+                    });
+                }
+            }
+        });
+
+        const profesores = Array.from(profesoresMap.values());
+        const instituciones = Array.from(institucionesMap.values());
+
+        return res.json({
+            profesores,
+            instituciones,
+            total: profesores.length + instituciones.length
+        });
+    } catch (error) {
+        console.error('Error obteniendo destinatarios permitidos:', error);
+        return res.status(500).json({ message: 'Error al obtener destinatarios permitidos', error: error.message });
+    }
+};
+
+/**
+ * obtenerEstudiantesPostulados
+ * Endpoint para que un profesor obtenga los estudiantes postulados a sus vacantes
+ * Solo los profesores pueden usar este endpoint
+ * @param {Object} req.user - Usuario autenticado (debe ser profesor)
+ * @return {Object} - Array de estudiantes postulados
+ */
+exports.obtenerEstudiantesPostulados = async (req, res) => {
+    try {
+        const profesorId = req.user.id;
+
+        // Obtener todas las vacantes del profesor
+        const vacantes = await Vacante.find({ 
+            propietario: profesorId, 
+            propietarioTipo: 'Profesor' 
+        }).select('_id');
+
+        const vacanteIds = vacantes.map(v => v._id);
+
+        if (vacanteIds.length === 0) {
+            return res.json({ estudiantes: [], total: 0 });
+        }
+
+        // Obtener todas las postulaciones a estas vacantes
+        const postulaciones = await Postulacion.find({ vacante: { $in: vacanteIds } })
+            .populate('alumno', 'nombres apellidoPaterno apellidoMaterno correo boleta carrera creditos')
+            .populate('vacante', 'titulo propietarioTipo')
+            .sort({ createdAt: -1 });
+
+        // Extraer estudiantes únicos
+        const estudiantesMap = new Map();
+
+        postulaciones.forEach(postulacion => {
+            if (!postulacion.alumno) return;
+
+            const alumnoId = postulacion.alumno._id.toString();
+            if (!estudiantesMap.has(alumnoId)) {
+                estudiantesMap.set(alumnoId, {
+                    id: alumnoId,
+                    tipo: 'Alumno',
+                    nombre: `${postulacion.alumno.nombres} ${postulacion.alumno.apellidoPaterno} ${postulacion.alumno.apellidoMaterno}`.trim(),
+                    correo: postulacion.alumno.correo,
+                    boleta: postulacion.alumno.boleta,
+                    carrera: postulacion.alumno.carrera,
+                    creditos: postulacion.alumno.creditos
+                });
+            }
+        });
+
+        const estudiantes = Array.from(estudiantesMap.values());
+
+        return res.json({
+            estudiantes,
+            total: estudiantes.length
+        });
+    } catch (error) {
+        console.error('Error obteniendo estudiantes postulados:', error);
+        return res.status(500).json({ message: 'Error al obtener estudiantes postulados', error: error.message });
     }
 };
 

@@ -312,11 +312,13 @@
                             <option value="Profesor">Profesor</option>
                             <option value="Institucion">Empresa/Institución</option>
                         </select>
-                        <small>Selecciona desde una vacante o postulación para prellenar estos campos</small>
+                        <small id="tipoDestinatarioHelp">Selecciona el tipo de destinatario</small>
                     </label>
-                    <label>ID del Destinatario
-                        <input type="text" id="destinatarioId" placeholder="ID del destinatario" required>
-                        <small>Este campo se completa automáticamente al seleccionar desde una vacante o postulación</small>
+                    <label>Destinatario
+                        <select id="destinatarioId" required>
+                            <option value="">Seleccionar destinatario...</option>
+                        </select>
+                        <small id="destinatarioHelp">Selecciona un destinatario de la lista</small>
                     </label>
                     <label>Asunto
                         <input type="text" id="mensajeAsunto" placeholder="Asunto del mensaje" required>

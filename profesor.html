@@ -508,26 +508,57 @@
             </section>
 
             <!--NOTIFICACIONES-->
-            <section class="notificaciones-section">
-                <h2 class="titulo-seccion">Notificaciones</h2>
-                <div class="notificaciones-card" id="noti1" data-id="1">
-                    El Alumno <strong>_________</strong> está interesado en tu publicación <strong>________</strong>
+            <section id="notificaciones-section" class="notificaciones-section hidden">
+                <div class="notificaciones-header">
+                    <h2 class="titulo-seccion">Notificaciones</h2>
+                    <button id="nuevoMensajeProfBtn" class="btn btn-primary">
+                        <ion-icon name="add-circle-outline"></ion-icon> Nuevo Mensaje
+                    </button>
+                </div>
+                <div id="listaNotificaciones" class="notificaciones-lista">
+                    <div class="loading-message">Cargando notificaciones...</div>
                 </div>
 
+                <!-- Modal para ver mensaje -->
                 <div id="modalNotificacion" class="modal hidden">
-                    <div class="modal-content">
+                    <div class="modal-content modal-lg">
                         <span id="cerrarModalNoti" class="close">&times;</span>
-                        <h3>Datos del Alumno</h3>
-                        <div class="modal-datos">
-                            <p><strong>Nombre Completo:</strong> <span id="n_nombre"> </span></p>
-                            <p><strong>Créditos:</strong> <span id="n_creditos"> </span></p>
-                            <p><strong>Correo:</strong> <span id="n_correo"> </span></p>
-                            <p><strong>Carrera:</strong> <span id="n_carrera"> </span></p>
+                        <h3 id="modalNotificacionTitulo">Mensaje</h3>
+                        <div id="modalNotificacionContenido" class="modal-datos">
+                            <!-- Contenido dinámico -->
                         </div>
                         <div class="modal-actions">
-                            <button id="btnAceptar" class="btn aceptar">Aceptar</button>
-                            <button id="btnRechazar" class="btn rechazar">Rechazar</button>
+                            <button id="btnResponderMensaje" class="btn btn-primary">Responder</button>
+                            <button id="btnCerrarMensaje" class="btn outline">Cerrar</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Modal para nuevo mensaje -->
+                <div id="modalNuevoMensajeProf" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalMensajeProf" class="close">&times;</span>
+                        <h3>Nuevo Mensaje</h3>
+                        <form id="formNuevoMensajeProf">
+                            <div class="form-section">
+                                <label>Destinatario (Estudiante)
+                                    <select id="destinatarioEstudiante" required>
+                                        <option value="">Seleccionar estudiante...</option>
+                                    </select>
+                                    <small>Solo puedes enviar mensajes a estudiantes postulados a tus vacantes</small>
+                                </label>
+                                <label>Asunto
+                                    <input type="text" id="mensajeAsuntoProf" placeholder="Asunto del mensaje" required>
+                                </label>
+                                <label>Contenido
+                                    <textarea id="mensajeContenidoProf" rows="6" placeholder="Escribe tu mensaje..." required></textarea>
+                                </label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                                <button type="button" id="cancelarMensajeProfBtn" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </section>

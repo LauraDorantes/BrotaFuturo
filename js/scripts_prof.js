@@ -1,3 +1,111 @@
+// ============================================
+// CONFIGURACIÓN Y CONSTANTES
+// ============================================
+
+/**
+ * URL base de la API
+ */
+const API_BASE_URL = 'http://localhost:3000/api';
+
+/**
+ * Almacenamiento del token de autenticación y datos del usuario
+ */
+let authToken = localStorage.getItem('authToken');
+let refreshToken = localStorage.getItem('refreshToken');
+let currentUser = null;
+
+// ============================================
+// UTILIDADES Y HELPERS
+// ============================================
+
+/**
+ * Función auxiliar para hacer peticiones HTTP autenticadas
+ * @param {string} url - URL del endpoint
+ * @param {object} options - Opciones de fetch (method, body, headers, etc.)
+ * @returns {Promise} - Promesa con la respuesta
+ */
+async function fetchAPI(url, options = {}) {
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    // Agregar token de autenticación si está disponible
+    if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            ...options,
+            headers
+        });
+
+        // Si el token expiró, intentar refrescarlo
+        if (response.status === 401 && refreshToken) {
+            const newToken = await refreshAuthToken();
+            if (newToken) {
+                headers['Authorization'] = `Bearer ${newToken}`;
+                return await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+            } else {
+                // Si no se puede refrescar, redirigir al login
+                window.location.href = 'login.html';
+                return;
+            }
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Error en la petición' }));
+            throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error en fetchAPI:', error);
+        throw error;
+    }
+}
+
+/**
+ * Refrescar el token de autenticación
+ * @returns {Promise<string|null>} - Nuevo token o null si falla
+ */
+async function refreshAuthToken() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: refreshToken })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            authToken = data.accessToken;
+            localStorage.setItem('authToken', authToken);
+            return authToken;
+        }
+    } catch (error) {
+        console.error('Error al refrescar token:', error);
+    }
+    return null;
+}
+
+/**
+ * Mostrar mensaje de error al usuario
+ * @param {string} message - Mensaje a mostrar
+ */
+function showError(message) {
+    alert(`Error: ${message}`);
+}
+
+/**
+ * Mostrar mensaje de éxito al usuario
+ * @param {string} message - Mensaje a mostrar
+ */
+function showSuccess(message) {
+    alert(`Éxito: ${message}`);
+}
+
 let list = document.querySelectorAll(".navigation li");
 
 function activeLink() {
@@ -27,7 +135,7 @@ document.querySelectorAll(".nav-item").forEach(item => {
             sec.classList.add("hidden");
         });
         
-        const sectionToShow = document.querySelector(`.${sectionClass}`);
+        const sectionToShow = document.querySelector(`#${sectionClass}`) || document.querySelector(`.${sectionClass}`);
         if (sectionToShow) {
             sectionToShow.classList.remove("hidden");
         }
@@ -35,6 +143,11 @@ document.querySelectorAll(".nav-item").forEach(item => {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.add('hidden');
         });
+
+        // Cargar datos según la sección
+        if (sectionClass === 'notificaciones-section') {
+            cargarNotificaciones();
+        }
     });
 });
 
@@ -645,27 +758,239 @@ document.querySelectorAll(".fila-alumno").forEach(fila => {
 })();
 
 
-//NOTIFICACIONES
-const datosAlumnoEjemplo = {
-    nombre: "Alumno de Ejemplo",
-    creditos: "72.8%",
-    correo: "alumno@alumno.ipn.mx",
-    carrera: "ISC"
-};
+// ============================================
+// GESTIÓN DE NOTIFICACIONES (MENSAJES)
+// ============================================
 
-document.getElementById("noti1").addEventListener("click", () => {
-    document.getElementById("n_nombre").textContent = datosAlumnoEjemplo.nombre;
-    document.getElementById("n_creditos").textContent = datosAlumnoEjemplo.creditos;
-    document.getElementById("n_correo").textContent = datosAlumnoEjemplo.correo;
-    document.getElementById("n_carrera").textContent = datosAlumnoEjemplo.carrera;
+/**
+ * Cargar notificaciones (mensajes recibidos de estudiantes)
+ */
+async function cargarNotificaciones() {
+    const listaNotificaciones = document.getElementById('listaNotificaciones');
+    if (!listaNotificaciones) return;
 
-    document.getElementById("modalNotificacion").classList.remove("hidden");
-});
+    listaNotificaciones.innerHTML = '<div class="loading-message">Cargando notificaciones...</div>';
 
-document.getElementById("btnAceptar").addEventListener("click", () => {
-    alert("Alumno aceptado.");
-});
+    try {
+        // Obtener solo mensajes de estudiantes
+        const data = await fetchAPI('/mensajes/recibidos?limit=50');
+        const mensajes = data.mensajes || [];
+        
+        // Filtrar solo mensajes de estudiantes
+        const mensajesEstudiantes = mensajes.filter(m => m.remitente.tipo === 'Alumno');
 
-document.getElementById("btnRechazar").addEventListener("click", () => {
-    alert("Alumno rechazado.");
+        if (mensajesEstudiantes.length === 0) {
+            listaNotificaciones.innerHTML = '<div class="loading-message">No hay notificaciones</div>';
+            return;
+        }
+
+        listaNotificaciones.innerHTML = '';
+        mensajesEstudiantes.forEach(mensaje => {
+            listaNotificaciones.appendChild(crearCardNotificacion(mensaje));
+        });
+    } catch (error) {
+        console.error('Error al cargar notificaciones:', error);
+        listaNotificaciones.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar las notificaciones</div>';
+    }
+}
+
+/**
+ * Crear tarjeta de notificación (mensaje)
+ * @param {object} mensaje - Datos del mensaje
+ * @returns {HTMLElement} - Elemento HTML de la tarjeta
+ */
+function crearCardNotificacion(mensaje) {
+    const card = document.createElement('div');
+    card.className = `notificaciones-card ${mensaje.leido ? 'leido' : 'no-leido'}`;
+    card.dataset.mensajeId = mensaje._id;
+
+    card.innerHTML = `
+        <div class="notificacion-header">
+            <strong>${mensaje.remitente.nombre}</strong>
+            <span class="notificacion-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+        </div>
+        <div class="notificacion-asunto">${mensaje.asunto}</div>
+        <div class="notificacion-preview">${mensaje.contenido.substring(0, 100)}${mensaje.contenido.length > 100 ? '...' : ''}</div>
+        ${mensaje.relacionadoCon?.tipo ? 
+            `<div class="notificacion-relacionado">Relacionado con: ${mensaje.relacionadoCon.tipo}</div>` : ''}
+        ${!mensaje.leido ? '<span class="notificacion-nueva">Nuevo</span>' : ''}
+    `;
+
+    card.addEventListener('click', () => mostrarDetalleNotificacion(mensaje._id));
+
+    return card;
+}
+
+/**
+ * Mostrar detalle de una notificación (mensaje)
+ * @param {string} mensajeId - ID del mensaje
+ */
+async function mostrarDetalleNotificacion(mensajeId) {
+    try {
+        const mensaje = await fetchAPI(`/mensajes/${mensajeId}`);
+        const modal = document.getElementById('modalNotificacion');
+        const contenido = document.getElementById('modalNotificacionContenido');
+        const titulo = document.getElementById('modalNotificacionTitulo');
+
+        if (!modal || !contenido) return;
+
+        titulo.textContent = mensaje.asunto;
+        contenido.innerHTML = `
+            <div class="mensaje-detalle-info">
+                <p><strong>De:</strong> ${mensaje.remitente.nombre} (${mensaje.remitente.tipo})</p>
+                <p><strong>Fecha:</strong> ${new Date(mensaje.createdAt).toLocaleString('es-ES')}</p>
+                ${mensaje.relacionadoCon?.tipo ? 
+                    `<p><strong>Relacionado con:</strong> ${mensaje.relacionadoCon.tipo}</p>` : ''}
+            </div>
+            <div class="mensaje-detalle-contenido">
+                <p>${mensaje.contenido}</p>
+            </div>
+        `;
+
+        // Guardar datos del mensaje para responder
+        modal.dataset.mensajeId = mensaje._id;
+        modal.dataset.remitenteId = mensaje.remitente.id;
+        modal.dataset.remitenteTipo = mensaje.remitente.tipo;
+
+        modal.classList.remove('hidden');
+
+        // Configurar botón responder
+        const btnResponder = document.getElementById('btnResponderMensaje');
+        if (btnResponder) {
+            btnResponder.onclick = () => {
+                modal.classList.add('hidden');
+                abrirModalNuevoMensajeProf(mensaje.remitente.id, mensaje.remitente.tipo);
+            };
+        }
+
+        // Recargar notificaciones para actualizar estado de leído
+        cargarNotificaciones();
+    } catch (error) {
+        console.error('Error al cargar notificación:', error);
+        showError('Error al cargar la notificación');
+    }
+}
+
+/**
+ * Cargar estudiantes postulados para el select de nuevo mensaje
+ */
+async function cargarEstudiantesPostulados() {
+    try {
+        const data = await fetchAPI('/mensajes/estudiantes-postulados');
+        const select = document.getElementById('destinatarioEstudiante');
+
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+
+        if (data.estudiantes && data.estudiantes.length > 0) {
+            data.estudiantes.forEach(estudiante => {
+                const option = document.createElement('option');
+                option.value = estudiante.id;
+                option.textContent = `${estudiante.nombre} (${estudiante.boleta}) - ${estudiante.carrera}`;
+                select.appendChild(option);
+            });
+        } else {
+            select.innerHTML = '<option value="">No hay estudiantes postulados</option>';
+        }
+    } catch (error) {
+        console.error('Error cargando estudiantes postulados:', error);
+        showError('Error al cargar estudiantes postulados');
+    }
+}
+
+/**
+ * Abrir modal para crear nuevo mensaje a estudiante
+ * @param {string} estudianteId - ID del estudiante (opcional, para prellenar)
+ * @param {string} estudianteTipo - Tipo del estudiante (opcional)
+ */
+async function abrirModalNuevoMensajeProf(estudianteId = null, estudianteTipo = null) {
+    const modal = document.getElementById('modalNuevoMensajeProf');
+    const form = document.getElementById('formNuevoMensajeProf');
+    const selectEstudiante = document.getElementById('destinatarioEstudiante');
+
+    if (!modal || !form) return;
+
+    form.reset();
+    await cargarEstudiantesPostulados();
+
+    // Si se proporciona un estudiante, seleccionarlo
+    if (estudianteId && selectEstudiante) {
+        selectEstudiante.value = estudianteId;
+    }
+
+    modal.classList.remove('hidden');
+
+    const cerrarBtn = document.getElementById('cerrarModalMensajeProf');
+    const cancelarBtn = document.getElementById('cancelarMensajeProfBtn');
+
+    const cerrarModal = () => {
+        modal.classList.add('hidden');
+    };
+
+    if (cerrarBtn) cerrarBtn.onclick = cerrarModal;
+    if (cancelarBtn) cancelarBtn.onclick = cerrarModal;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const destinatarioId = selectEstudiante.value;
+        const asunto = document.getElementById('mensajeAsuntoProf').value;
+        const contenido = document.getElementById('mensajeContenidoProf').value;
+
+        if (!destinatarioId) {
+            showError('Debes seleccionar un estudiante');
+            return;
+        }
+
+        try {
+            await fetchAPI('/mensajes', {
+                method: 'POST',
+                body: JSON.stringify({
+                    destinatarioId,
+                    destinatarioTipo: 'Alumno',
+                    asunto,
+                    contenido
+                })
+            });
+
+            showSuccess('Mensaje enviado correctamente');
+            cerrarModal();
+            cargarNotificaciones();
+        } catch (error) {
+            showError(error.message || 'Error al enviar el mensaje');
+        }
+    };
+}
+
+// Configurar eventos cuando se carga la página
+document.addEventListener('DOMContentLoaded', () => {
+    // Cargar notificaciones cuando se muestra la sección
+    const notificacionesSection = document.getElementById('notificaciones-section');
+    if (notificacionesSection) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (!notificacionesSection.classList.contains('hidden')) {
+                        cargarNotificaciones();
+                    }
+                }
+            });
+        });
+        observer.observe(notificacionesSection, { attributes: true });
+    }
+
+    // Botón nuevo mensaje
+    const nuevoMensajeProfBtn = document.getElementById('nuevoMensajeProfBtn');
+    if (nuevoMensajeProfBtn) {
+        nuevoMensajeProfBtn.addEventListener('click', () => abrirModalNuevoMensajeProf());
+    }
+
+    // Botón cerrar mensaje
+    const btnCerrarMensaje = document.getElementById('btnCerrarMensaje');
+    if (btnCerrarMensaje) {
+        btnCerrarMensaje.addEventListener('click', () => {
+            document.getElementById('modalNotificacion').classList.add('hidden');
+        });
+    }
 });
