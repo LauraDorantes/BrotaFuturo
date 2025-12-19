@@ -1719,7 +1719,6 @@ function enviarReporteAlumnos() {
 
     window.location.href = mailtoLink;
 }
->>>>>>> 795554e226ae306df66176467e32d299b482cadb
 
 /**
  * Cargar notificaciones (mensajes recibidos de estudiantes)
