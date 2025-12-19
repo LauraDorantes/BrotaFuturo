@@ -109,10 +109,40 @@ const vacanteSchema = new mongoose.Schema({
         refPath: 'propietarioTipo',
         required: true,
     }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+});
+
+// Virtual populate: postulaciones relacionadas (Postulacion.vacante -> Vacante._id)
+vacanteSchema.virtual('postulaciones', {
+    ref: 'Postulacion',
+    localField: '_id',
+    foreignField: 'vacante',
+    justOne: false,
+});
+
+// Virtual populate: conteo de postulaciones (sin traer documentos completos)
+vacanteSchema.virtual('postulacionesCount', {
+    ref: 'Postulacion',
+    localField: '_id',
+    foreignField: 'vacante',
+    count: true,
+});
 
 // Indices para optimizar consultas
-vacanteSchema.index({ titulo: 'text', descripcion: 'text', requisitos: 'text' });
+// Nota: el schema actual no incluye `descripcion` ni `requisitos`, así que indexamos campos existentes.
+vacanteSchema.index({
+    titulo: 'text',
+    area: 'text',
+    objetivos: 'text',
+    actividades: 'text',
+    requerimientos: 'text',
+    carreraRequerida: 'text',
+    conocimientosTecnicos: 'text',
+    habilidades: 'text',
+});
 vacanteSchema.index({ fechaPublicacion: -1 });
 vacanteSchema.index({ propietario: 1, propietarioTipo: 1, fechaPublicacion: -1 });
 

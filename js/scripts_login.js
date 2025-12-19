@@ -100,6 +100,28 @@ function normalizeProfesorPayload(formulario) {
     };
 }
 
+function normalizeInstitucionPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const tipoRaw = String(fd.get('tipo') || '').trim().toLowerCase();
+    const tipoNormalizado =
+        tipoRaw === 'publica' || tipoRaw === 'pública'
+            ? 'Publica'
+            : (tipoRaw === 'privada' ? 'Privada' : '');
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombre: String(fd.get('nombre') || '').trim(),
+        nombreRepresentante: String(fd.get('representanteNombre') || '').trim(),
+        apellidosRepresentante: String(fd.get('representanteApellidos') || '').trim(),
+        rfc: String(fd.get('rfc') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        direccion: String(fd.get('direccion') || '').trim(),
+        tipo: tipoNormalizado,
+    };
+}
+
 async function postJson(url, body) {
     const res = await fetch(url, {
         method: 'POST',
@@ -591,6 +613,12 @@ function mostrarModalConfirmacion(tipo, formulario) {
                     mensajeError.textContent = message;
                     mensajeError.style.display = 'block';
                 }
+            } else if (tipo === 'Institucion') {
+                const mensajeError = document.getElementById('mensaje_errorInstitucion');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
             }
             console.error(e);
         } finally {
@@ -725,6 +753,30 @@ async function enviarFormulario(tipo, formulario) {
         const auth = await postJson(AUTH_ENDPOINTS.REGISTER_PROFESOR, payload);
         saveAuthToStorage(auth);
         redirectAfterAuth(auth?.user?.role || 'profesor');
+        return;
+    }
+
+    if (tipo === 'Institucion') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_INSTITUCION) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeInstitucionPayload(formulario);
+
+        if (!payload.nombre) throw new Error('El nombre de la institución es obligatorio');
+        if (!payload.nombreRepresentante || !payload.apellidosRepresentante) {
+            throw new Error('El nombre y apellidos del representante son obligatorios');
+        }
+        if (!payload.rfc) throw new Error('RFC es obligatorio');
+        if (!payload.direccion) throw new Error('Dirección es obligatoria');
+        if (!payload.tipo) throw new Error('Seleccione Pública o Privada');
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_INSTITUCION, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'institucion');
         return;
     }
 

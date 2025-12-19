@@ -296,6 +296,11 @@ document.querySelectorAll(".nav-item").forEach(item => {
             history.replaceState(null, '', `#${sectionClass}`);
         }
         showSection(sectionClass);
+
+        // Cargar alumnos asociados al abrir la sección
+        if (sectionClass === 'alumnos-section') {
+            cargarAlumnos();
+        }
     });
 });
 
@@ -320,7 +325,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    showSection(getSectionFromHash() || 'perfil-section');
+    const initialSection = getSectionFromHash() || 'perfil-section';
+    showSection(initialSection);
+    if (initialSection === 'alumnos-section') {
+        cargarAlumnos();
+    }
 });
 
 
@@ -688,6 +697,13 @@ class SistemaPublicaciones {
         this.modalTitulo = document.getElementById('modalTitulo');
         this.listaPublicaciones = document.getElementById('listaPublicaciones');
 
+        // Modal de postulantes
+        this.modalPostulantes = document.getElementById('modalPostulantes');
+        this.cerrarModalPostulantesBtn = this.modalPostulantes ? this.modalPostulantes.querySelector('.close') : null;
+        this.postulantesVacante = document.getElementById('postulantesVacante');
+        this.postulantesTotal = document.getElementById('postulantesTotal');
+        this.tbodyPostulantes = document.getElementById('tbodyPostulantes');
+
         this.filtroEstado = document.getElementById('filtroEstado');
 
         this.totalPublicaciones = document.getElementById('totalPublicaciones');
@@ -717,6 +733,186 @@ class SistemaPublicaciones {
         // Datos del profesor
         this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
         this.edicionId = null;
+    }
+
+    cerrarModalPostulantes() {
+        if (this.modalPostulantes) {
+            this.modalPostulantes.classList.add('hidden');
+        }
+        this._currentVacanteId = null;
+    }
+
+    setPostulantesModalLoading(titulo) {
+        if (this.postulantesVacante) this.postulantesVacante.textContent = titulo || '-';
+        if (this.postulantesTotal) this.postulantesTotal.textContent = '...';
+        if (this.tbodyPostulantes) {
+            this.tbodyPostulantes.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align:center; padding: 16px;">Cargando postulantes...</td>
+                </tr>
+            `;
+        }
+    }
+
+    setPostulantesModalEmpty(titulo) {
+        if (this.postulantesVacante) this.postulantesVacante.textContent = titulo || '-';
+        if (this.postulantesTotal) this.postulantesTotal.textContent = '0';
+        if (this.tbodyPostulantes) {
+            this.tbodyPostulantes.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align:center; padding: 16px;">No hay postulantes aún.</td>
+                </tr>
+            `;
+        }
+    }
+
+    buildDriveCvUrl(cvID) {
+        const id = String(cvID || '').trim();
+        if (!id) return null;
+        return `https://drive.google.com/uc?id=${encodeURIComponent(id)}`;
+    }
+
+    async responderPostulacion(vacanteId, postulacionId, accion) {
+        const token = getAccessToken();
+        if (!token) {
+            alert('Sesión expirada. Vuelve a iniciar sesión.');
+            return;
+        }
+        if (typeof PROFESSOR_ENDPOINTS === 'undefined') {
+            alert('Falta configuración: PROFESSOR_ENDPOINTS');
+            return;
+        }
+
+        const endpoint = accion === 'aceptar'
+            ? PROFESSOR_ENDPOINTS.ACCEPT_APPLICATION
+            : PROFESSOR_ENDPOINTS.REJECT_APPLICATION;
+
+        if (!endpoint) {
+            alert('Falta configuración de endpoint para responder postulación');
+            return;
+        }
+
+        try {
+            const url = this.buildUrl(endpoint, { vacanteId, postulacionId });
+            const { res, data } = await this.fetchJson(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({}),
+            });
+
+            if (!res.ok) {
+                const msg = data && data.message ? data.message : 'No se pudo actualizar la postulación';
+                throw new Error(msg);
+            }
+
+            // Refrescar lista de postulantes en el modal
+            this.verPostulantes(String(vacanteId));
+        } catch (err) {
+            alert(err && err.message ? err.message : 'No se pudo actualizar la postulación');
+        }
+    }
+
+    renderPostulantesTable(titulo, postulaciones) {
+        if (this.postulantesVacante) this.postulantesVacante.textContent = titulo || '-';
+        if (this.postulantesTotal) this.postulantesTotal.textContent = String(Array.isArray(postulaciones) ? postulaciones.length : 0);
+        if (!this.tbodyPostulantes) return;
+
+        const rows = Array.isArray(postulaciones) ? postulaciones : [];
+        this.tbodyPostulantes.innerHTML = '';
+
+        rows.forEach((p, idx) => {
+            const a = p && p.alumno ? p.alumno : null;
+            const nombre = a
+                ? `${a.nombres || ''} ${a.apellidoPaterno || ''} ${a.apellidoMaterno || ''}`.replace(/\s+/g, ' ').trim()
+                : 'Alumno no disponible';
+
+            const estadoRaw = String((p && p.estado) || '').trim();
+            const estadoKey = estadoRaw.toLowerCase();
+
+            const tr = document.createElement('tr');
+
+            const c1 = document.createElement('td');
+            c1.textContent = String(idx + 1);
+            const c2 = document.createElement('td');
+            c2.textContent = nombre;
+            const c3 = document.createElement('td');
+            c3.textContent = a && a.correo ? String(a.correo) : '-';
+            const c4 = document.createElement('td');
+            c4.textContent = a && a.boleta != null ? String(a.boleta) : '-';
+            const c5 = document.createElement('td');
+            c5.textContent = a && a.carrera ? String(a.carrera) : '-';
+            const c6 = document.createElement('td');
+            c6.textContent = a && a.creditos != null ? String(a.creditos) : '-';
+            const c7 = document.createElement('td');
+
+            // CV
+            const c7cv = document.createElement('td');
+            const cvUrl = a && a.cvID ? this.buildDriveCvUrl(a.cvID) : null;
+            if (cvUrl) {
+                const btnCv = document.createElement('button');
+                btnCv.className = 'btn btn-small outline';
+                btnCv.type = 'button';
+                btnCv.textContent = 'Ver CV';
+                btnCv.addEventListener('click', () => {
+                    window.open(cvUrl, '_blank', 'noopener');
+                });
+                c7cv.appendChild(btnCv);
+            } else {
+                c7cv.textContent = '-';
+            }
+
+            // Estado
+            c7.textContent = estadoRaw || '-';
+
+            // Acciones
+            const c8 = document.createElement('td');
+            // Solo mostrar acciones si está Pendiente
+            if (estadoKey === 'pendiente') {
+                const aceptarBtn = document.createElement('button');
+                aceptarBtn.className = 'btn btn-small aceptar';
+                aceptarBtn.type = 'button';
+                aceptarBtn.textContent = 'Aceptar';
+
+                const rechazarBtn = document.createElement('button');
+                rechazarBtn.className = 'btn btn-small rechazar';
+                rechazarBtn.type = 'button';
+                rechazarBtn.textContent = 'Rechazar';
+
+                aceptarBtn.addEventListener('click', () => {
+                    const vid = this._currentVacanteId;
+                    if (!vid) return;
+                    if (!confirm('¿Aceptar esta postulación?')) return;
+                    this.responderPostulacion(vid, p._id, 'aceptar');
+                });
+
+                rechazarBtn.addEventListener('click', () => {
+                    const vid = this._currentVacanteId;
+                    if (!vid) return;
+                    if (!confirm('¿Rechazar esta postulación?')) return;
+                    this.responderPostulacion(vid, p._id, 'rechazar');
+                });
+
+                c8.appendChild(aceptarBtn);
+                c8.appendChild(rechazarBtn);
+            } else {
+                c8.textContent = '-';
+            }
+
+            tr.appendChild(c1);
+            tr.appendChild(c2);
+            tr.appendChild(c3);
+            tr.appendChild(c4);
+            tr.appendChild(c5);
+            tr.appendChild(c6);
+            tr.appendChild(c7cv);
+            tr.appendChild(c7);
+            tr.appendChild(c8);
+
+            this.tbodyPostulantes.appendChild(tr);
+        });
     }
 
     getPerfilData() {
@@ -796,12 +992,20 @@ class SistemaPublicaciones {
 
     mapVacanteToPublicacion(vacante) {
         const id = vacante && (vacante._id || vacante.id);
+        const postulantesCount = (vacante && (vacante.postulacionesCount ?? vacante.postulantesCount)) != null
+            ? Number(vacante.postulacionesCount ?? vacante.postulantesCount)
+            : 0;
+
+        const numeroVacantes = vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1;
+        const vacantesDisponibles = vacante && vacante.vacantesDisponibles != null
+            ? Number(vacante.vacantesDisponibles)
+            : numeroVacantes;
         return {
             id: id ? String(id) : String(Date.now()),
             titulo: vacante && vacante.titulo ? String(vacante.titulo) : '',
             area: vacante && vacante.area ? String(vacante.area) : '',
-            vacantes: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
-            vacantesDisponibles: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
+            vacantes: numeroVacantes,
+            vacantesDisponibles,
             objetivos: vacante && vacante.objetivos ? String(vacante.objetivos) : '',
             actividades: vacante && vacante.actividades ? String(vacante.actividades) : '',
             requerimientos: vacante && vacante.requerimientos ? String(vacante.requerimientos) : '',
@@ -820,7 +1024,7 @@ class SistemaPublicaciones {
             contactoTelefono: vacante && vacante.telefonoConsulta != null ? String(vacante.telefonoConsulta) : '',
             estado: 'activa',
             fechaCreacion: vacante && (vacante.fechaPublicacion || vacante.createdAt) ? new Date(vacante.fechaPublicacion || vacante.createdAt).toISOString() : new Date().toISOString(),
-            postulantes: [],
+            postulantesCount,
         };
     }
 
@@ -845,7 +1049,6 @@ class SistemaPublicaciones {
             return {
                 ...p,
                 estado: local.estado || p.estado,
-                postulantes: Array.isArray(local.postulantes) ? local.postulantes : p.postulantes,
             };
         });
     }
@@ -905,6 +1108,21 @@ class SistemaPublicaciones {
                 if (e.target === this.modalPublicacion) this.cerrarModal();
             });
         }
+
+        // Cerrar modal de postulantes
+        if (this.cerrarModalPostulantesBtn) {
+            this.cerrarModalPostulantesBtn.addEventListener('click', () => this.cerrarModalPostulantes());
+        }
+        if (this.modalPostulantes) {
+            this.modalPostulantes.addEventListener('click', (e) => {
+                if (e.target === this.modalPostulantes) this.cerrarModalPostulantes();
+            });
+        }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modalPostulantes && !this.modalPostulantes.classList.contains('hidden')) {
+                this.cerrarModalPostulantes();
+            }
+        });
 
         // Botón guardar publicación
         if (this.formPublicacion) {
@@ -1193,7 +1411,9 @@ async guardarPublicacion(e) {
 
     generarHTMLPublicacion(publicacion) {
         const fechaCreacion = new Date(publicacion.fechaCreacion).toLocaleDateString('es-MX');
-        const postulantesCount = publicacion.postulantes ? publicacion.postulantes.length : 0;
+        const postulantesCount = Number(
+            publicacion && (publicacion.postulantesCount ?? (publicacion.postulantes ? publicacion.postulantes.length : 0))
+        ) || 0;
 
         let estadoVacantes = 'disponible';
         if (publicacion.vacantesDisponibles === 0) estadoVacantes = 'lleno';
@@ -1312,26 +1532,75 @@ async guardarPublicacion(e) {
         const publicacion = this.publicaciones.find(p => p.id === id);
         if (!publicacion) return;
 
-        const postulantes = publicacion.postulantes || [];
+        // Guardar para acciones (aceptar/rechazar)
+        this._currentVacanteId = String(id);
 
-        if (postulantes.length === 0) {
-            alert('No hay postulantes para esta publicación');
+        const fallbackTitulo = publicacion.titulo || 'Publicación';
+
+        if (!this.modalPostulantes || !this.tbodyPostulantes) {
+            alert('No se encontró el modal de postulantes en el HTML.');
             return;
         }
 
-        let mensaje = `Postulantes para: ${publicacion.titulo}\n\n`;
-        postulantes.forEach((postulante, index) => {
-            mensaje += `${index + 1}. ${postulante.nombre} - ${postulante.correo}\n`;
-        });
+        // Abrir modal y mostrar loading
+        this.modalPostulantes.classList.remove('hidden');
+        this.setPostulantesModalLoading(fallbackTitulo);
 
-        alert(mensaje);
+        (async () => {
+            const token = getAccessToken();
+            if (!token) {
+                alert('Sesión expirada. Vuelve a iniciar sesión.');
+                return;
+            }
+            if (typeof PROFESSOR_ENDPOINTS === 'undefined' || !PROFESSOR_ENDPOINTS.VACANCY_APPLICANTS) {
+                alert('Falta configuración: PROFESSOR_ENDPOINTS.VACANCY_APPLICANTS');
+                return;
+            }
+
+            try {
+                const url = this.buildUrl(PROFESSOR_ENDPOINTS.VACANCY_APPLICANTS, { id });
+                const { res, data } = await this.fetchJson(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (!res.ok) {
+                    const msg = data && data.message ? data.message : 'No se pudieron obtener los postulantes';
+                    throw new Error(msg);
+                }
+
+                const payload = data && data.data ? data.data : data;
+                const postulaciones = payload && Array.isArray(payload.postulaciones) ? payload.postulaciones : [];
+                const total = payload && payload.total != null ? Number(payload.total) : postulaciones.length;
+
+                // Mantener conteo actualizado en UI/local
+                publicacion.postulantesCount = Number.isFinite(total) ? total : postulaciones.length;
+                localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+                this.mostrarPublicaciones();
+                this.actualizarEstadisticas();
+
+                const titulo = (payload && payload.vacante && payload.vacante.titulo) ? payload.vacante.titulo : publicacion.titulo;
+
+                if (postulaciones.length === 0) {
+                    this.setPostulantesModalEmpty(titulo || fallbackTitulo);
+                    return;
+                }
+
+                this.renderPostulantesTable(titulo || fallbackTitulo, postulaciones);
+            } catch (err) {
+                this.setPostulantesModalEmpty(fallbackTitulo);
+                alert(err && err.message ? err.message : 'No se pudieron obtener los postulantes');
+            }
+        })();
     }
 
     actualizarEstadisticas() {
         const total = this.publicaciones.length;
         const activas = this.publicaciones.filter(p => p.estado === 'activa').length;
         const cerradas = this.publicaciones.filter(p => p.estado === 'cerrada').length;
-        const postulantes = this.publicaciones.reduce((sum, p) => sum + (p.postulantes ? p.postulantes.length : 0), 0);
+        const postulantes = this.publicaciones.reduce((sum, p) => sum + (Number(p && p.postulantesCount) || 0), 0);
 
         if (this.totalPublicaciones) this.totalPublicaciones.textContent = total;
         if (this.activasPublicaciones) this.activasPublicaciones.textContent = activas;
@@ -1375,9 +1644,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 //ALUMNOS
 async function cargarAlumnos() {
-    const token = localStorage.getItem('token');
+    const token = getAccessToken();
+    const endpoint = (typeof PROFESSOR_ENDPOINTS !== 'undefined' && PROFESSOR_ENDPOINTS.MY_STUDENTS)
+        ? PROFESSOR_ENDPOINTS.MY_STUDENTS
+        : 'http://localhost:5000/api/profesor/alumnos';
 
-    const res = await fetch('http://localhost:5000/api/profesor/alumnos', {
+    if (!token) {
+        console.error('Sesión expirada');
+        return;
+    }
+
+    const res = await fetch(endpoint, {
         headers: {
             Authorization: `Bearer ${token}`
         }
@@ -1389,18 +1666,24 @@ async function cargarAlumnos() {
     }
 
     const alumnos = await res.json();
-    const tbody = document.querySelector('#tablaAlumnos tbody');
+    const tbody = document.getElementById('tbodyAlumnos');
+
+    if (!tbody) {
+        console.error('No se encontró tbodyAlumnos');
+        return;
+    }
 
     tbody.innerHTML = '';
 
-    alumnos.forEach(a => {
+    (Array.isArray(alumnos) ? alumnos : []).forEach(a => {
         const tr = document.createElement('tr');
+        const tituloProyecto = (a && (a.tituloProyecto || a.publicacion)) ? String(a.tituloProyecto || a.publicacion) : '-';
         tr.innerHTML = `
             <td>${a.numero}</td>
             <td>${a.boleta}</td>
             <td>${a.nombreCompleto}</td>
             <td>${a.correo}</td>
-            <td>${a.publicacion}</td>
+            <td>${tituloProyecto}</td>
             <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">
                 ${a.estado}
             </td>

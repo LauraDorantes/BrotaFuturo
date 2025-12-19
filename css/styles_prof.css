@@ -396,6 +396,16 @@ h1.titulo-seccion {
     border-bottom: 1px solid #e5e7eb;
 }
 
+/* Botones dentro de tablas (ej: modal postulantes) */
+.tabla-alumnos .btn.btn-small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 6px;
+}
+
 .fila-alumno {
     cursor: pointer;
 }
@@ -1211,11 +1221,11 @@ label[required]::after {
 }
 
 .activo {
-    color: #2e7d32;
+    color: var(--green);
     font-weight: 600;
 }
 
 .finalizado {
-    color: #c62828;
+    color: var(--red);
     font-weight: 600;
 }

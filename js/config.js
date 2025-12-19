@@ -40,8 +40,27 @@ const PROFESSOR_ENDPOINTS = {
     UPDATE_PROFILE: `${API_BASE_URL}/profesor/actualizarPerfil`,
     // Vacantes del profesor (mis publicaciones)
     MY_VACANCIES: `${API_BASE_URL}/profesor/vacantes`,
+    // Postulantes de una vacante del profesor
+    VACANCY_APPLICANTS: `${API_BASE_URL}/profesor/vacantes/:id/postulantes`,
+    // Aceptar/Rechazar postulación
+    ACCEPT_APPLICATION: `${API_BASE_URL}/profesor/vacantes/:vacanteId/postulaciones/:postulacionId/aceptar`,
+    REJECT_APPLICATION: `${API_BASE_URL}/profesor/vacantes/:vacanteId/postulaciones/:postulacionId/rechazar`,
     // Alumnos asociados al profesor
     MY_STUDENTS: `${API_BASE_URL}/profesor/alumnos`,
+};
+
+// Rutas de institución (empresa)
+const INSTITUCION_ENDPOINTS = {
+    UPDATE_PROFILE: `${API_BASE_URL}/institucion/actualizarPerfil`,
+    // Vacantes de la institución (mis publicaciones)
+    MY_VACANCIES: `${API_BASE_URL}/institucion/vacantes`,
+    // Postulantes de una vacante de la institución
+    VACANCY_APPLICANTS: `${API_BASE_URL}/institucion/vacantes/:vacanteId/postulantes`,
+    // Aceptar/Rechazar postulación
+    ACCEPT_APPLICATION: `${API_BASE_URL}/institucion/vacantes/:vacanteId/postulaciones/:postulacionId/aceptar`,
+    REJECT_APPLICATION: `${API_BASE_URL}/institucion/vacantes/:vacanteId/postulaciones/:postulacionId/rechazar`,
+    // Alumnos asociados a la institución
+    MY_STUDENTS: `${API_BASE_URL}/institucion/alumnos`,
 };
 
 // Rutas de vacantes
@@ -83,7 +102,7 @@ const REDIRECT_PAGES = {
     alumno: 'estudiante.html',
     // Abrir directamente el panel de Perfil
     profesor: 'profesor.html#perfil-section',
-    institucion: 'institucion.html',
+    institucion: 'empresa.html',
 };
 
 // Tiempos de expiración

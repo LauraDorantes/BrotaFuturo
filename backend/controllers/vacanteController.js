@@ -130,8 +130,52 @@ exports.crearVacante = async (req, res) => {
 */
 exports.obtenerVacantes = async (req, res) => {
     try {
-        // Obtener todas las vacantes ordenadas por fecha de publicación descendente
-        const vacantes = await Vacante.find({}).sort({ fechaPublicacion: -1 }).lean();
+        // Regla de negocio: "vacantes disponibles" = vacantes con cupo > 0
+        // cupo = numeroVacantes - postulaciones aceptadas
+        // Nota: usamos aggregation para calcularlo en una sola consulta.
+        const pipeline = [
+            { $sort: { fechaPublicacion: -1 } },
+            {
+                $lookup: {
+                    from: 'postulaciones',
+                    localField: '_id',
+                    foreignField: 'vacante',
+                    as: '__postulaciones',
+                },
+            },
+            {
+                $addFields: {
+                    __aceptadasCount: {
+                        $size: {
+                            $filter: {
+                                input: '$__postulaciones',
+                                as: 'p',
+                                cond: { $eq: ['$$p.estado', 'Aceptada'] },
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                $addFields: {
+                    vacantesDisponibles: {
+                        $max: [
+                            {
+                                $subtract: [
+                                    { $ifNull: ['$numeroVacantes', 1] },
+                                    '$__aceptadasCount',
+                                ],
+                            },
+                            0,
+                        ],
+                    },
+                },
+            },
+            { $match: { vacantesDisponibles: { $gt: 0 } } },
+            { $project: { __postulaciones: 0, __aceptadasCount: 0 } },
+        ];
+
+        const vacantes = await Vacante.aggregate(pipeline);
         return res.json(vacantes);
     } catch (err) {
         return res.status(500).json({ message: 'Error al obtener vacantes' });

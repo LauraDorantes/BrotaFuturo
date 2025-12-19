@@ -8,101 +8,102 @@ const Postulacion = require('../models/Postulacion');
 
 /*
     actualizarPerfil
-    Endpoint para que un estudiante actualice su información personal.
-    @param {Object} req.body - Datos a actualizar (nombres, apellidoPaterno, apellidoMaterno, telefono, departamento, rfc, curp, sexo, correo, password)
-    @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
-    @return {Object} - Datos del profesor actualizados o error en caso de fallo.
+    Endpoint para que una institución actualice su información personal.
+    Verifica unicidad de correo, rfc, telefono.
+    @param {Object} req.body - Datos a actualizar (nombre, nombreRepresentante, apellidosRepresentante, correo, password, rfc, telefono, direccion, tipo)
+    @param {String} req.user - Usuario autenticado (institución) dado por el middleware de autenticación
+    @return {Object} - Datos de la institución actualizados o error en caso de fallo.
 */
 exports.actualizarPerfil = async (req, res) => {
     try {
-        const profesor = await Profesor.findById(req.user.id);
-        if (!profesor) {
-            return res.status(404).json({ message: 'Profesor no encontrado' });
+        const institucion = await Institucion.findById(req.user.id);
+        if (!institucion) {
+            return res.status(404).json({ message: 'Institución no encontrada' });
         }
+
         const body = req.body || {};
 
         const correo = body.correo ? String(body.correo).trim() : null;
         const rfc = body.rfc ? String(body.rfc).trim().toUpperCase() : null;
-        const curp = body.curp ? String(body.curp).trim().toUpperCase() : null;
         const telefono = body.telefono !== undefined && body.telefono !== null && String(body.telefono).trim() !== ''
             ? Number(body.telefono)
             : null;
+        const direccion = body.direccion ? String(body.direccion).trim() : null;
         const password = body.password ? String(body.password) : null;
 
         // Unicidad de RFC
-        if (rfc && rfc !== profesor.rfc) {
-            const rfcExistente = await Profesor.findOne({ rfc, _id: { $ne: profesor._id } }).lean();
+        if (rfc && rfc !== institucion.rfc) {
+            const rfcExistente = await Institucion.findOne({ rfc, _id: { $ne: institucion._id } }).lean();
             if (rfcExistente) {
-                return res.status(400).json({ message: 'El RFC ya está en uso por otro profesor' });
+                return res.status(400).json({ message: 'El RFC ya está en uso por otra institución' });
             }
-            profesor.rfc = rfc;
-        }
-
-        // Unicidad de CURP
-        if (curp && curp !== profesor.curp) {
-            const curpExistente = await Profesor.findOne({ curp, _id: { $ne: profesor._id } }).lean();
-            if (curpExistente) {
-                return res.status(400).json({ message: 'La CURP ya está en uso por otro profesor' });
-            }
-            profesor.curp = curp;
+            institucion.rfc = rfc;
         }
 
         // Unicidad de teléfono
-        if (telefono !== null && Number.isFinite(telefono) && telefono !== profesor.telefono) {
-            const telefonoExistente = await Profesor.findOne({ telefono, _id: { $ne: profesor._id } }).lean();
+        if (telefono !== null && Number.isFinite(telefono) && telefono !== institucion.telefono) {
+            const telefonoExistente = await Institucion.findOne({ telefono, _id: { $ne: institucion._id } }).lean();
             if (telefonoExistente) {
-                return res.status(400).json({ message: 'El teléfono ya está en uso por otro profesor' });
+                return res.status(400).json({ message: 'El teléfono ya está en uso por otra institución' });
             }
-            profesor.telefono = telefono;
+            institucion.telefono = telefono;
+        }
+
+        // Unicidad de dirección
+        if (direccion && direccion !== institucion.direccion) {
+            const direccionExistente = await Institucion.findOne({ direccion, _id: { $ne: institucion._id } }).lean();
+            if (direccionExistente) {
+                return res.status(400).json({ message: 'La dirección ya está en uso por otra institución' });
+            }
+            institucion.direccion = direccion;
         }
 
         // Unicidad de correo (política global: no repetir correo entre roles)
-        if (correo && correo !== profesor.correo) {
+        if (correo && correo !== institucion.correo) {
             const [enAlumnos, enProfesores, enInstituciones] = await Promise.all([
                 Alumno.findOne({ correo }).lean(),
-                Profesor.findOne({ correo, _id: { $ne: profesor._id } }).lean(),
-                Institucion.findOne({ correo }).lean(),
+                Profesor.findOne({ correo }).lean(),
+                Institucion.findOne({ correo, _id: { $ne: institucion._id } }).lean(),
             ]);
             if (enAlumnos || enProfesores || enInstituciones) {
                 return res.status(400).json({ message: 'El correo ya está registrado por otro usuario' });
             }
-            profesor.correo = correo;
+            institucion.correo = correo;
         }
 
         // Campos no únicos
-        if (body.nombres) profesor.nombres = String(body.nombres).trim();
-        if (body.apellidoPaterno) profesor.apellidoPaterno = String(body.apellidoPaterno).trim();
-        if (body.apellidoMaterno) profesor.apellidoMaterno = String(body.apellidoMaterno).trim();
-        if (body.departamento) profesor.departamento = String(body.departamento).trim();
-        if (body.sexo) profesor.sexo = String(body.sexo).trim();
+        if (body.nombre) institucion.nombre = String(body.nombre).trim();
+        if (body.nombreRepresentante) institucion.nombreRepresentante = String(body.nombreRepresentante).trim();
+        if (body.apellidosRepresentante) institucion.apellidosRepresentante = String(body.apellidosRepresentante).trim();
+        if (body.tipo) institucion.tipo = String(body.tipo).trim();
 
         // Password (guardar hasheada)
         if (password && password.trim()) {
             const hash = await bcrypt.hash(password, 10);
-            profesor.password = hash;
+            institucion.password = hash;
         }
 
-        await profesor.save();
+        await institucion.save();
 
-        const safeProfesor = profesor.toObject();
-        delete safeProfesor.password;
-        return res.json({ message: 'Perfil actualizado correctamente', data: safeProfesor });
+        const safeInstitucion = institucion.toObject();
+        delete safeInstitucion.password;
+        return res.json({ message: 'Perfil actualizado correctamente', data: safeInstitucion });
     } catch (error) {
-        console.error('Error actualizando perfil:', error);
+        console.error('Error actualizando perfil institución:', error);
         return res.status(500).json({ message: 'Error al actualizar el perfil', error });
     }
 };
 
 /*
     obtenerVacantes
-    Endpoint para que un profesor obtenga las vacantes que ha publicado.
-    @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
-    @return {Object} - Array de vacantes del profesor o error en caso de fallo.
+    Endpoint para que una institución obtenga las vacantes que ha publicado.
+    @param {String} req.user - Usuario autenticado (institución) dado por el middleware de autenticación
+    @return {Object} - Array de vacantes de la institución o error en caso de fallo.
 */
 exports.obtenerVacantes = async (req, res) => {
     try {
-        const profesorId = req.user && req.user.id;
-        if (!profesorId) {
+        const institucionId = req.user && req.user.id;
+        if (!institucionId) {
             return res.status(401).json({ message: 'No autorizado' });
         }
 
@@ -111,8 +112,8 @@ exports.obtenerVacantes = async (req, res) => {
         const pipeline = [
             {
                 $match: {
-                    propietarioTipo: 'Profesor',
-                    propietario: new mongoose.Types.ObjectId(profesorId),
+                    propietarioTipo: 'Institucion',
+                    propietario: new mongoose.Types.ObjectId(institucionId),
                 },
             },
             { $sort: { fechaPublicacion: -1 } },
@@ -159,79 +160,75 @@ exports.obtenerVacantes = async (req, res) => {
         const vacantes = await Vacante.aggregate(pipeline);
         return res.json({ message: 'Vacantes obtenidas correctamente', data: vacantes });
     } catch (err) {
-        console.error('Error obteniendo vacantes del profesor:', err);
+        console.error('Error obteniendo vacantes de la institución:', err);
         return res.status(500).json({ message: 'Error al obtener vacantes' });
     }
-
 };
 
 /*
     obtenerAlumnosSupervisados
-    Endpoint para que un profesor obtenga la lista de alumnos que supervisa o ha supervisado.
-    @param {String} req.user - Usuario autenticado (profesor) dado por el middleware de autenticación
-    @return {Object} - Array de alumnos supervisados por el profesor o error en caso de fallo.
+    Endpoint para que una institución obtenga la lista de alumnos que supervisa o ha supervisado.
+    @param {String} req.user - Usuario autenticado (institución) dado por el middleware de autenticación
+    @return {Object} - Array de alumnos supervisados por la institución o error en caso de fallo.
 */
 //Modifique aquí
 exports.obtenerAlumnosAsociados = async (req, res) => {
     try {
-        const profesorId = req.user && req.user.id;
-        if (!profesorId) {
+        const institucionId = req.user && req.user.id;
+        if (!institucionId) {
             return res.status(401).json({ message: 'No autorizado' });
         }
 
-        const profesor = await Profesor.findById(profesorId)
+        const institucion = await Institucion.findById(institucionId)
             .populate('alumnosAsociados.id', 'boleta nombres apellidoPaterno apellidoMaterno correo')
             .populate('alumnosAsociados.vacante', 'titulo')
             .lean();
 
-        if (!profesor) {
-            return res.status(404).json({ message: 'Profesor no encontrado' });
+        if (!institucion) {
+            return res.status(404).json({ message: 'Institución no encontrada' });
         }
 
-        const asociados = Array.isArray(profesor.alumnosAsociados) ? profesor.alumnosAsociados : [];
+        const asociados = Array.isArray(institucion.alumnosAsociados) ? institucion.alumnosAsociados : [];
 
-        const alumnos = asociados
-            .map((a, index) => {
-                const alumno = a && a.id ? a.id : null;
-                const vacante = a && a.vacante ? a.vacante : null;
-                const tituloProyecto = vacante && vacante.titulo ? String(vacante.titulo) : '-';
-                return {
-                    numero: index + 1,
-                    boleta: alumno && alumno.boleta != null ? alumno.boleta : '-',
-                    nombreCompleto: alumno
-                        ? `${alumno.nombres || ''} ${alumno.apellidoPaterno || ''} ${alumno.apellidoMaterno || ''}`.replace(/\s+/g, ' ').trim()
-                        : '-',
-                    correo: alumno && alumno.correo ? alumno.correo : '-',
-                    // Nuevo nombre explícito
-                    tituloProyecto,
-                    // Alias para compatibilidad con front antiguo
-                    publicacion: tituloProyecto,
-                    estado: a && a.estado ? a.estado : '-',
-                };
-            });
+        const alumnos = asociados.map((a, index) => {
+            const alumno = a && a.id ? a.id : null;
+            const vacante = a && a.vacante ? a.vacante : null;
+            const tituloProyecto = vacante && vacante.titulo ? String(vacante.titulo) : '-';
+            return {
+                numero: index + 1,
+                boleta: alumno && alumno.boleta != null ? alumno.boleta : '-',
+                nombreCompleto: alumno
+                    ? `${alumno.nombres || ''} ${alumno.apellidoPaterno || ''} ${alumno.apellidoMaterno || ''}`.replace(/\s+/g, ' ').trim()
+                    : '-',
+                correo: alumno && alumno.correo ? alumno.correo : '-',
+                // Nuevo nombre explícito
+                tituloProyecto,
+                // Alias para compatibilidad con front antiguo
+                publicacion: tituloProyecto,
+                estado: a && a.estado ? a.estado : '-',
+            };
+        });
 
         return res.json(alumnos);
-
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Error al obtener alumnos' });
     }
-    
 };
 
 /*
     obtenerPostulantesDeVacante
-    Endpoint para que un profesor obtenga los postulantes (postulaciones) de una vacante propia.
+    Endpoint para que una institución obtenga los postulantes (postulaciones) de una vacante propia.
     @param {String} req.params.vacanteId - ID de la vacante
-    @param {String} req.user - Usuario autenticado (profesor)
+    @param {String} req.user - Usuario autenticado (institucion)
     @return {Object} - Array de postulaciones con alumno poblado
 */
 exports.obtenerPostulantesDeVacante = async (req, res) => {
     try {
-        const profesorId = req.user && req.user.id;
+        const institucionId = req.user && req.user.id;
         const vacanteId = req.params && req.params.vacanteId;
 
-        if (!profesorId) {
+        if (!institucionId) {
             return res.status(401).json({ message: 'No autorizado' });
         }
         if (!vacanteId || !mongoose.isValidObjectId(vacanteId)) {
@@ -240,12 +237,12 @@ exports.obtenerPostulantesDeVacante = async (req, res) => {
 
         const vacante = await Vacante.findOne({
             _id: vacanteId,
-            propietarioTipo: 'Profesor',
-            propietario: profesorId,
+            propietarioTipo: 'Institucion',
+            propietario: institucionId,
         }).select('_id titulo').lean();
 
         if (!vacante) {
-            return res.status(404).json({ message: 'Vacante no encontrada para este profesor' });
+            return res.status(404).json({ message: 'Vacante no encontrada para esta institución' });
         }
 
         const postulaciones = await Postulacion.find({ vacante: vacanteId })
@@ -266,25 +263,25 @@ exports.obtenerPostulantesDeVacante = async (req, res) => {
             },
         });
     } catch (err) {
-        console.error('Error obteniendo postulantes de vacante:', err);
+        console.error('Error obteniendo postulantes de vacante (institución):', err);
         return res.status(500).json({ message: 'Error al obtener postulantes' });
     }
 };
 
 /*
     aceptarPostulacionDeVacante
-    Endpoint para que un profesor acepte una postulación de una vacante propia.
+    Endpoint para que una institución acepte una postulación de una vacante propia.
     - Cambia estado a 'Aceptada'
-    - Agrega al alumno a profesor.alumnosAsociados (estado: 'Activo')
+    - Agrega al alumno a institucion.alumnosAsociados (estado: 'Activo')
 */
 exports.aceptarPostulacionDeVacante = async (req, res) => {
     try {
-        const profesorId = req.user && req.user.id;
+        const institucionId = req.user && req.user.id;
         const vacanteId = req.params && req.params.vacanteId;
         const postulacionId = req.params && req.params.postulacionId;
         const body = req.body || {};
 
-        if (!profesorId) return res.status(401).json({ message: 'No autorizado' });
+        if (!institucionId) return res.status(401).json({ message: 'No autorizado' });
         if (!vacanteId || !mongoose.isValidObjectId(vacanteId)) return res.status(400).json({ message: 'vacanteId inválido' });
         if (!postulacionId || !mongoose.isValidObjectId(postulacionId)) return res.status(400).json({ message: 'postulacionId inválido' });
 
@@ -292,12 +289,12 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
 
         const vacante = await Vacante.findOne({
             _id: vacanteId,
-            propietarioTipo: 'Profesor',
-            propietario: profesorId,
+            propietarioTipo: 'Institucion',
+            propietario: institucionId,
         }).select('_id numeroVacantes').lean();
 
         if (!vacante) {
-            return res.status(404).json({ message: 'Vacante no encontrada para este profesor' });
+            return res.status(404).json({ message: 'Vacante no encontrada para esta institución' });
         }
 
         // Validar cupo antes de aceptar
@@ -325,42 +322,42 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
 
         // Convertir en alumno asociado (si no existe ya)
         const alumnoId = postulacion.alumno;
-        await Profesor.updateOne(
-            { _id: profesorId, alumnosAsociados: { $not: { $elemMatch: { id: alumnoId, vacante: vacanteObjectId } } } },
+        await Institucion.updateOne(
+            { _id: institucionId, alumnosAsociados: { $not: { $elemMatch: { id: alumnoId, vacante: vacanteObjectId } } } },
             { $push: { alumnosAsociados: { id: alumnoId, vacante: vacanteObjectId, estado: 'Activo' } } }
         );
 
         return res.json({ message: 'Postulación aceptada', data: { postulacionId: postulacion._id } });
     } catch (err) {
-        console.error('Error aceptando postulación:', err);
+        console.error('Error aceptando postulación (institución):', err);
         return res.status(500).json({ message: 'Error al aceptar la postulación' });
     }
 };
 
 /*
     rechazarPostulacionDeVacante
-    Endpoint para que un profesor rechace una postulación de una vacante propia.
+    Endpoint para que una institución rechace una postulación de una vacante propia.
     - Cambia estado a 'Rechazada'
 */
 exports.rechazarPostulacionDeVacante = async (req, res) => {
     try {
-        const profesorId = req.user && req.user.id;
+        const institucionId = req.user && req.user.id;
         const vacanteId = req.params && req.params.vacanteId;
         const postulacionId = req.params && req.params.postulacionId;
         const body = req.body || {};
 
-        if (!profesorId) return res.status(401).json({ message: 'No autorizado' });
+        if (!institucionId) return res.status(401).json({ message: 'No autorizado' });
         if (!vacanteId || !mongoose.isValidObjectId(vacanteId)) return res.status(400).json({ message: 'vacanteId inválido' });
         if (!postulacionId || !mongoose.isValidObjectId(postulacionId)) return res.status(400).json({ message: 'postulacionId inválido' });
 
         const vacante = await Vacante.findOne({
             _id: vacanteId,
-            propietarioTipo: 'Profesor',
-            propietario: profesorId,
+            propietarioTipo: 'Institucion',
+            propietario: institucionId,
         }).select('_id').lean();
 
         if (!vacante) {
-            return res.status(404).json({ message: 'Vacante no encontrada para este profesor' });
+            return res.status(404).json({ message: 'Vacante no encontrada para esta institución' });
         }
 
         const postulacion = await Postulacion.findOne({ _id: postulacionId, vacante: vacanteId });
@@ -380,7 +377,7 @@ exports.rechazarPostulacionDeVacante = async (req, res) => {
         await postulacion.save();
         return res.json({ message: 'Postulación rechazada', data: { postulacionId: postulacion._id } });
     } catch (err) {
-        console.error('Error rechazando postulación:', err);
+        console.error('Error rechazando postulación (institución):', err);
         return res.status(500).json({ message: 'Error al rechazar la postulación' });
     }
 };
