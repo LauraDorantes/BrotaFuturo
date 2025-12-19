@@ -1,11 +1,6 @@
 :root {
-<<<<<<< HEAD
-    --primario: #4c2882;
-    --secundario: #572364;
-=======
     --primario: #a782e0;
     --secundario: #c7a9f4;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 *{
@@ -16,11 +11,7 @@
 }
 
 body{
-<<<<<<< HEAD
-    background: linear-gradient(45deg,#fb6f92,#ffb3c6,#3b83bd,#191970);
-=======
     background: linear-gradient(45deg,#f68ea8,#ffb3c6,#6cade2,#c47fe9);
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     background-size: 180% 180%;
     animation: fondo-moviendose 10s ease infinite;
 
@@ -49,12 +40,6 @@ body{
     box-shadow: 0 5px 15px rgba(255, 255, 255, 0.35);
     position: relative;
     overflow: hidden;
-<<<<<<< HEAD
-    width: 768px; /* Ancho del formulario */
-    max-width: 100%;
-    /*min-height: 480px;*/ /* Alto del formulaio */
-    height: 550px;
-=======
     width: 900px; 
     max-width: 100%;
     height: 650px; 
@@ -116,7 +101,6 @@ body.modal-open .contenedor_menu .btn {
 
 .contenedor_menu .btn {
     z-index: 9999 !important;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor p{
@@ -162,16 +146,6 @@ body.modal-open .contenedor_menu .btn {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-<<<<<<< HEAD
-    padding: 0 40px;
-    height: 100%;
-}
-
-.contenedor input, select{
-    background-color: #eee;
-    border: none;
-    margin: 8px 0;
-=======
     padding: 50px 40px 20px 40px; 
     height: 100%;
 }
@@ -190,35 +164,24 @@ body.modal-open .contenedor_menu .btn {
     background-color: #eee;
     border: none;
     margin: 6px 0;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     padding: 10px 15px;
     font-size: 14px;
     border-radius: 8px;
     width: 100%;
     outline: none;
-<<<<<<< HEAD
-    /* appearance: none; */
-}
-
-=======
 }
 
 /* CONTENEDORES DE FORMULARIOS */
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .contenedor-form{
     position: absolute;
     top: 0;
     height: 100%;
-<<<<<<< HEAD
-    transition: all 0.6s ease-in-out; /* Animacion para mover la parte blanca */
-=======
     width: 50%;
     transition: all 0.6s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 50; 
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .acceder{
@@ -227,41 +190,6 @@ body.modal-open .contenedor_menu .btn {
     z-index: 2;
 }
 
-<<<<<<< HEAD
-.contenedor.activo .acceder{
-    transform: translateX(100%);
-}
-
-.registro{
-    left: 0;
-    width: 50%;
-    opacity: 0;
-    z-index: 1;
-}
-
-.contenedor.activo .registro{
-    transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
-    /* animation: mover 0.6s; */
-}
-
-@keyframes mover{
-    0%, 49.99%{
-        opacity: 0;
-        z-index: 1;
-    }
-    50%, 100%{
-        opacity: 1;
-        z-index: 5;
-    }
-}
-
-.iconos-redes{
-    margin: 20px 0;
-}
-
-=======
 .registro{
     left: 100%; 
     width: 50%;
@@ -320,7 +248,6 @@ body.modal-open .contenedor_menu .btn {
 }
 
 /* (parte morada) */
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .contenedor-toggle{
     position: absolute;
     top: 0;
@@ -328,23 +255,13 @@ body.modal-open .contenedor_menu .btn {
     width: 50%;
     height: 100%;
     overflow: hidden;
-<<<<<<< HEAD
-    transition: all 0.6s ease-in-out; /* Animacion para mover la parte morada */
-    border-radius: 20px;
-    z-index: 1000;
-=======
     transition: all 0.6s ease-in-out;
     border-radius: 20px;
     z-index: 100; 
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor.activo .contenedor-toggle{
     transform: translateX(-100%);
-<<<<<<< HEAD
-    border-radius: 20px;
-=======
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .toggle{
@@ -356,12 +273,7 @@ body.modal-open .contenedor_menu .btn {
     height: 100%;
     width: 200%;
     transform: translateX(0);
-<<<<<<< HEAD
-    /* Animacion para texto registro */
-    transition: all 0.5s ease;
-=======
     transition: all 0.6s ease-in-out;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor.activo .toggle{
@@ -379,20 +291,11 @@ body.modal-open .contenedor_menu .btn {
     padding: 0 30px;
     text-align: center;
     top: 0;
-<<<<<<< HEAD
-    transform: translateX(0);
-    /* Animacion  para texto iniciar sesion */
-    transition: all 0.6s ease;
-}
-
-.toggle-izq{
-=======
     transition: all 0.6s ease-in-out;
 }
 
 .toggle-izq{
     left: 0;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     transform: translateX(-200%);
 }
 
@@ -405,38 +308,17 @@ body.modal-open .contenedor_menu .btn {
     transform: translateX(0);
 }
 
-<<<<<<< HEAD
-=======
 .contenedor.activo .toggle-der{
     transform: translateX(200%);
 }
 
 /* ESTILOS DE FORMULARIOS */
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .formulario p{
     margin: 0;
     text-align: justify;
     font-size: 13px;
 }
 
-<<<<<<< HEAD
-.formulario__grupo-incorrecto input{
-    border: 3px solid #bb2929;
-}
-
-/* Estilos para mostrar los mensajes de error */
-.formulario__input-error, .oculto, #oculto{
-    display: none;
-}
-
-.formulario__input-error-activo, .visible{
-    display: block;
-}
-
-.contenedor-form.registro{
-    position: relative;
-    overflow: hidden;
-=======
 .formulario__grupo {
     width: 100%;
     margin-bottom: 10px; 
@@ -464,26 +346,10 @@ body.modal-open .contenedor_menu .btn {
 
 .visible{
     display: block;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .btn-toogle-form{
     display: none;
-<<<<<<< HEAD
-    font-size: 18px;
-}
-
-/* Para que se vea en celulares */
-/* Se muestra incorrecto cuando se pasa de celular a PC, ver como solucionarlo */
-@media(max-width: 768px) {
-    .contenedor {
-        width: 85%;
-        min-height: 80%;
-        height: auto;
-        padding: 15px 0;
-        /* max-height: 600px; */
-        overflow-y: auto;
-=======
 }
 
 /* MÓVILES */
@@ -493,7 +359,6 @@ body.modal-open .contenedor_menu .btn {
         height: auto;
         min-height: 500px;
         padding: 15px 0;
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     }
 
     .contenedor-toggle {
@@ -501,49 +366,6 @@ body.modal-open .contenedor_menu .btn {
     }
 
     .contenedor-form {
-<<<<<<< HEAD
-        width: 100%;
-        position: static;
-    }
-
-    .registro, .acceder {
-        opacity: 1 !important;
-        transform: translateX(0) !important;
-        position: relative !important;
-        width: 100% !important;
-        z-index: 2 !important;
-    }
-
-    .contenedor input, .contenedor select{
-        padding: 10px;
-    }
-
-    /* #loginForm{
-        height: 500px;
-    } */
-
-    #registroForm {
-        display: none;
-    }
-
-    .btn-toogle-form {
-        font-size: 14px;
-        margin-top: 15px;
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .btn-toogle-form p{
-        margin: 0;
-        text-align: center;
-        font-size: 14px;
-    }
-
-    .btn-toogle-form button {
-        margin: 0;
-    }
-=======
         position: relative !important;
         width: 100% !important;
         height: auto !important;
@@ -590,16 +412,16 @@ body.modal-open .contenedor_menu .btn {
 .boton-casita {
   display: inline-flex;
   align-items: center;
-  background-color: #ffffff;
-  color: var(--secundario);
+  /* background-color: #9f50ef; */
+  background-color: var(--secundario);
   text-decoration: none;
   padding: 10px 16px;
   border-radius: 6px;
   font-size: 16px;
-  transition: background-color 0.3s ease;
+  transition: transform 0.3s ease;
+    /* background: #9f50ef; */
 }
 
 .boton-casita:hover {
-  transform: scale(1.5);
->>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
+  transform: scale(1.2);
 }
