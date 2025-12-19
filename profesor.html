@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./images/Logo.png">
+    <title>Profesor Inicio</title>
+    <link rel="stylesheet" href="./css/styles_prof.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="navigation">
+            <ul>
+                <li>
+                    <a href="#">
+                        <span class="icon"><ion-icon name="glasses-outline"></ion-icon></span>
+                        <span class="title">Profesores - BrotaFuturo</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="perfil-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="person-circle-outline"></ion-icon></span>
+                        <span class="title">Perfil</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="alumnos-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="school-outline"></ion-icon></span>
+                        <span class="title">Alumnos</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="publicaciones-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="megaphone-outline"></ion-icon></span>
+                        <span class="title">Publicaciones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="notificaciones-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="notifications-circle-outline"></ion-icon></span>
+                        <span class="title">Notificaciones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item" data-section="ayuda-section">
+                    <a href="#">
+                        <span class="icon"><ion-icon name="help-circle-outline"></ion-icon></span>
+                        <span class="title">Ayuda</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="#" id="logoutBtn">
+                        <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
+                        <span class="title">Log out</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="main">
+            <div class="topbar">
+                <div class="toggle">
+                    <ion-icon name="menu-outline"></ion-icon>
+                </div>
+
+                <div class="search">
+                    <label>
+                        <input type="text" placeholder="Search here">
+                        <ion-icon name="search-outline"></ion-icon>
+                    </label>
+                </div>
+                <div class="user">
+                    <img src="./images/userejemplo.png" alt="" width="50px">
+                </div>
+            </div>
+
+            <!-- MI PERFIL -->
+            <section id="Perfil" class="perfil-section hidden">
+                <h2 class="titulo-seccion">Mi Perfil</h2>
+                <div class="perfil-wrap">
+                    <!-- IZQUIERDA -->
+                    <aside class="perfil-card">
+                        <div class="avatar-wrapper">
+                            <img id="perfilAvatar" src="./images/userejemplo.png" alt="Avatar" width="50px">
+                            <label class="avatar-edit">
+                                <input id="avatarInput" type="file" accept="image/*">
+                                <ion-icon name="pencil-outline"></ion-icon>
+                            </label>
+                        </div>
+
+                        <h2 id="displayName">Nombre Apellido</h2>
+
+                        <div class="profile-actions">
+                            <button id="editBtn" class="btn">Editar</button>
+                        </div>
+                    </aside>
+
+                    <!-- DERECHA -->
+                    <main class="perfil-details">
+                        <!-- FORMULARIO -->
+                        <form id="perfilForm" class="hidden">
+
+                            <div class="row">
+                                <label>Nombre
+                                    <input id="nombreInput" type="text" placeholder="Nombre" required>
+                                </label>
+
+                                <label>Apellido Paterno
+                                    <input id="aPaternoInput" type="text" placeholder="Apellido Paterno" required>
+                                </label>
+
+                                <label>Apellido Materno
+                                    <input id="aMaternoInput" type="text" placeholder="Apellido Materno">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Correo electrónico
+                                    <input id="emailInput" type="email" placeholder="tu@ipn.mx" required>
+                                </label>
+
+                                <label>Teléfono
+                                    <input id="phoneInput" type="tel" placeholder="55 0000 0000">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Departamento
+                                    <input id="deptInput" type="text" placeholder="Departamento o área">
+                                </label>
+
+                                <label>Sexo
+                                    <select id="sexoInput">
+                                        <option value="">Seleccione...</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Masculino">Masculino</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>RFC
+                                    <input id="rfcInput" type="text" placeholder="Ej: DOLJ930521ABC" maxlength="13">
+                                </label>
+
+                                <label>CURP
+                                    <input id="curpInput" type="text" placeholder="Ej: ISA029291MDFXXXXX" maxlength="18">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Contraseña actual
+                                    <input id="currentPasswordInput" type="password" placeholder="********">
+                                </label>
+
+                                <label>Nueva contraseña
+                                    <input id="newPasswordInput" type="password" placeholder="********">
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn">Guardar</button>
+                                <button id="cancelBtn" type="button" class="btn outline">Cancelar</button>
+                            </div>
+
+                        </form>
+
+                        <!-- LECTURA -->
+                        <section id="perfilReadOnly" class="perfil-readonly">
+                            <h3>Datos personales</h3>
+                            <p><strong>Nombre:</strong> <span id="ro_nombre">-</span></p>
+                            <p><strong>Apellido Paterno:</strong> <span id="ro_aPaterno">-</span></p>
+                            <p><strong>Apellido Materno:</strong> <span id="ro_aMaterno">-</span></p>
+                            <p><strong>Sexo:</strong> <span id="ro_sexo">-</span></p>
+
+                            <h3>Contacto</h3>
+                            <p><strong>Correo:</strong> <span id="ro_email">-</span></p>
+                            <p><strong>Teléfono:</strong> <span id="ro_phone">-</span></p>
+
+                            <h3>Laboral</h3>
+                            <p><strong>Departamento:</strong> <span id="ro_dept">-</span></p>
+
+                            <h3>Documentos</h3>
+                            <p><strong>RFC:</strong> <span id="ro_rfc">-</span></p>
+                            <p><strong>CURP:</strong> <span id="ro_curp">No subido</span></p>
+                        </section>
+
+                    </main>
+                </div>
+            </section>
+
+            <!--ALUMNOS-->
+            <section class="alumnos-section hidden">
+                <h2 class="titulo-seccion">Mis Alumnos de Servicio Social</h2>
+                <div class="tabla-container">
+                    <table class="tabla-alumnos">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Boleta</th>
+                                <th>Nombre Completo</th>
+                                <th>Correo</th>
+                                <th>Título del proyecto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyAlumnos"></tbody>
+                    </table>
+                </div>
+
+                <div id="modalAlumno" class="modal hidden">
+                    <div class="modal-content">
+                        <span id="cerrarModalAlum" class="close">&times;</span>
+
+                        <h3 class="modal-datos">Información del Alumno</h3>
+                        <div class="modal-datos">
+                            <p><strong>Nombre Completo:</strong> <span id="m_nombre"> </span></p>
+                            <p><strong>Correo:</strong> <span id="m_correo"> </span></p>
+                            <p><strong>Teléfono:</strong> <span id="m_telefono"> </span></p>
+                            <p><strong>Boleta:</strong> <span id="m_boleta"> </span></p>
+                            <p><strong>Carrera:</strong> <span id="m_carrera"> </span></p>
+                            <p><strong>Créditos:</strong> <span id="m_creditos"> </span></p>
+                            <p><strong>Publicación asociada:</strong> <span id="m_publicacion"> </span></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            
+            <!-- PUBLICACIONES -->
+            <section id="publicaciones-section" class="publicaciones-section hidden">
+                <div class="publicaciones-header">
+                    <h2 class="titulo-seccion">Mis Publicaciones de Servicio Social</h2>
+                    <button id="crearPublicacionBtn" class="btn btn-primary">
+                        <ion-icon name="add-circle-outline"></ion-icon> Crear Nueva Publicación
+                    </button>
+                </div>
+
+                <!-- Lista de publicaciones existentes -->
+                <div class="publicaciones-lista" id="listaPublicaciones">
+                    <div class="publicacion-card">
+                        <div class="publicacion-header">
+                            <h3>Desarrollo de aplicación web para gestión escolar</h3>
+                            <span class="publicacion-estado activa">Activa</span>
+                        </div>
+                        <div class="publicacion-info">
+                            <p><strong>Área:</strong> Desarrollo de Software</p>
+                            <p><strong>Vacantes:</strong> 2/3</p>
+                            <p><strong>Fecha límite:</strong> 15 de diciembre 2025</p>
+                        </div>
+                        <div class="publicacion-actions">
+                            <button class="btn btn-small ver-postulantes">
+                                <ion-icon name="people-outline"></ion-icon> Ver postulantes (5)
+                            </button>
+                            <button class="btn btn-small outline editar-publicacion">
+                                <ion-icon name="pencil-outline"></ion-icon> Editar
+                            </button>
+                            <button class="btn btn-small outline eliminar-publicacion">
+                                <ion-icon name="trash-outline"></ion-icon> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modalPublicacion" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalPub" class="close">&times;</span>
+
+                        <h3 id="modalTitulo">Crear Nueva Publicación</h3>
+
+                        <form id="formPublicacion">
+                            <!-- Información Básica -->
+                            <div class="form-section">
+                                <h4>Información Básica</h4>
+                                <div class="row">
+                                    <label>Título de la publicación
+                                        <input type="text" id="tituloPub"
+                                            placeholder="Ej: Desarrollo de X" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Área
+                                        <select id="areaPub" required>
+                                            <option value="">Seleccionar área</option>
+
+                                            <option value="fundamentos-programacion">Fundamentos de Programación
+                                            </option>
+                                            <option value="paradigmas-programacion">Paradigmas de Programación</option>
+                                            <option value="algoritmos-estructuras-datos">Algoritmos y Estructuras de
+                                                Datos</option>
+                                            <option value="analisis-diseno-algoritmos">Análisis y Diseño de Algoritmos
+                                            </option>
+                                            <option value="ingenieria-software">Ingeniería de Software</option>
+                                            <option value="analisis-diseno-sistemas">Análisis y Diseño de Sistemas
+                                            </option>
+                                            <option value="desarrollo-aplicaciones-moviles">Desarrollo de Aplicaciones
+                                                Móviles</option>
+                                            <option value="desarrollo-software">Desarrollo de Software</option>
+                                            <option value="procesamiento-digital-software">Procesamiento Digital de
+                                                Software</option>
+
+                                            <option value="sistemas-operativos">Sistemas Operativos</option>
+                                            <option value="sistemas-distribuidos">Sistemas Distribuidos</option>
+                                            <option value="administracion-servicios-red">Administración de Servicios en
+                                                Red</option>
+                                            <option value="redes-computadoras">Redes de Computadoras</option>
+                                            <option value="sistemas-chip">Sistemas en Chip</option>
+
+                                            <option value="bases-datos">Bases de Datos</option>
+
+                                            <option value="inteligencia-artificial">Inteligencia Artificial</option>
+
+                                            <option value="teoria-computacion">Teoría de la Computación</option>
+                                            <option value="compiladores">Compiladores</option>
+
+                                            <option value="algebra-lineal">Álgebra Lineal</option>
+                                            <option value="calculo-aplicado">Cálculo Aplicado</option>
+                                            <option value="matematicas-ingenieria">Matemáticas para la Ingeniería
+                                            </option>
+                                            <option value="probabilidad-estadistica">Probabilidad y Estadística</option>
+
+                                            <option value="ingenieria-etica-sociedad">Ingeniería, Ética y Sociedad
+                                            </option>
+                                            <option value="comunicacion-oral-escrita">Comunicación Oral y Escrita
+                                            </option>
+                                            <option value="fundamentos-economicos">Fundamentos Económicos</option>
+
+                                            <option value="mecanica-electromagnetismo">Mecánica y Electromagnetismo
+                                            </option>
+
+                                            <option value="metodos-numericos">Métodos Numéricos</option>
+                                            <option value="sistemas-embebidos">Sistemas Embebidos</option>
+                                            <option value="seguridad-informatica">Seguridad Informática</option>
+                                            <option value="computo-nube">Computación en la Nube</option>
+                                            <option value="mineria-datos">Minería de Datos</option>
+
+                                            <option value="otro">Otra área no listada</option>
+                                        </select>
+                                    </label>
+
+                                    <label>Número de vacantes
+                                        <input type="number" id="vacantesPub" min="1" max="10" value="1" required>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="form-section">
+                                <h4>Descripción del Proyecto</h4>
+                                <label>Objetivos del servicio social
+                                    <textarea id="objetivosPub" rows="3"
+                                        placeholder="Describe los objetivos principales del proyecto..."
+                                        required></textarea>
+                                </label>
+
+                                <label>Actividades a realizar
+                                    <textarea id="actividadesPub" rows="3"
+                                        placeholder="Detalla las actividades que realizará el alumno..."
+                                        required></textarea>
+                                </label>
+
+                                <label>Requerimientos específicos
+                                    <textarea id="requerimientosPub" rows="2"
+                                        placeholder="Equipo especial, software específico, etc." required></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Requisitos del Alumno -->
+                            <div class="form-section">
+                                <h4>Requisitos para el Alumno</h4>
+                                <div class="row">
+                                    <label>Carrera(s) requerida(s)
+                                        <select id="carrerasPub" multiple>
+                                            <option value="sistemas">Ingeniería en Sistemas Computacionales</option>
+                                            <option value="inteligencia-artificial">Ingeniería en Inteligencia
+                                                Artificial</option>
+                                            <option value="ciencia-datos">Licenciatura en Ciencia de Datos</option>
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    
+                                </div>
+
+                                <div class="row">
+                                    <label>Conocimientos técnicos requeridos
+                                        <input type="text" id="conocimientosPub"
+                                            placeholder="Ej: Java, Python, C" required>
+                                    </label>
+                                </div>
+
+                                <label>Habilidades deseables
+                                    <textarea id="habilidadesPub" rows="2"
+                                        placeholder="Trabajo en equipo, liderazgo, investigación..." required></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Información Logística -->
+                            <div class="form-section">
+                                <h4>Información Logística</h4>
+                                <div class="row">
+                                    <label>Modalidad*
+                                        <select id="modalidadPub" required>
+                                            <option value="">Seleccionar modalidad</option>
+                                            <option value="presencial">Presencial</option>
+                                            <option value="remoto">Remoto</option>
+                                            <option value="hibrido">Híbrido</option>
+                                        </select>
+                                    </label>
+
+                                    <label>Horario estimado (horas semanales)
+                                        <input type="number" id="horasPub" min="1" max="40" value="10" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Fecha de inicio
+                                        <input type="date" id="fechaInicioPub" required>
+                                    </label>
+
+                                    <label>Fecha límite de postulación
+                                        <input type="date" id="fechaLimitePub" required>
+                                    </label>
+                                </div>
+
+                                <div class="row">
+                                    <label>Duración estimada (meses)
+                                        <input type="number" id="duracionPub" min="1" max="12" value="6" required>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Beneficios para el Alumno -->
+                            <div class="form-section">
+                                <h4>Beneficios para el Alumno</h4>
+                                <div class="beneficios-grid">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="certificacion">
+                                        <span>Certificación al término</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="cartarecomendacion">
+                                        <span>Carta de recomendación</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" name="beneficios" value="experiencialaboral">
+                                        <span>Experiencia laboral comprobable</span>
+                                    </label>
+                                </div>
+
+                                <label>Otros beneficios
+                                    <textarea id="otrosBeneficiosPub" rows="2"
+                                        placeholder="Especificar otros beneficios no listados..."></textarea>
+                                </label>
+                            </div>
+
+                            <!-- Contacto -->
+                            <div class="form-section">
+                                <h4>Contacto e Información Adicional</h4>
+                                <div class="row">
+                                    <label>Correo para consultas
+                                        <input type="email" id="contactoEmailPub" placeholder="tu@ipn.mx" required readonly>
+                                    </label>
+
+                                    <label>Teléfono de contacto
+                                        <input type="tel" id="contactoTelefonoPub" placeholder="55 0000 0000" required readonly>
+                                    </label>
+                                </div>
+
+                                <label>Información adicional
+                                    <textarea id="infoAdicionalPub" rows="3"
+                                        placeholder="Información complementaria, observaciones, etc."></textarea>
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Publicar</button>
+                                <button type="button" id="cancelarPublicacionBtn" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Modal: Postulantes por publicación -->
+                <div id="modalPostulantes" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span class="close">&times;</span>
+
+                        <h3 id="postulantesTitulo">Postulantes</h3>
+
+                        <div class="modal-datos">
+                            <p><strong>Publicación:</strong> <span id="postulantesVacante">-</span></p>
+                            <p><strong>Total:</strong> <span id="postulantesTotal">0</span></p>
+                        </div>
+
+                        <div class="tabla-container">
+                            <table class="tabla-alumnos">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Correo</th>
+                                        <th>Boleta</th>
+                                        <th>Carrera</th>
+                                        <th>Créditos</th>
+                                        <th>CV</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyPostulantes"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--NOTIFICACIONES-->
+            <section id="notificaciones-section" class="notificaciones-section hidden">
+                <div class="notificaciones-header">
+                    <h2 class="titulo-seccion">Notificaciones</h2>
+                    <button id="nuevoMensajeProfBtn" class="btn btn-primary">
+                        <ion-icon name="add-circle-outline"></ion-icon> Nuevo Mensaje
+                    </button>
+                </div>
+                <div id="listaNotificaciones" class="notificaciones-lista">
+                    <div class="loading-message">Cargando notificaciones...</div>
+                </div>
+
+                <!-- Modal para ver mensaje -->
+                <div id="modalNotificacion" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalNoti" class="close">&times;</span>
+                        <h3 id="modalNotificacionTitulo">Mensaje</h3>
+                        <div id="modalNotificacionContenido" class="modal-datos">
+                            <!-- Contenido dinámico -->
+                        </div>
+                        <div class="modal-actions">
+                            <button id="btnResponderMensaje" class="btn btn-primary">Responder</button>
+                            <button id="btnCerrarMensaje" class="btn outline">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para nuevo mensaje -->
+                <div id="modalNuevoMensajeProf" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalMensajeProf" class="close">&times;</span>
+                        <h3>Nuevo Mensaje</h3>
+                        <form id="formNuevoMensajeProf">
+                            <div class="form-section">
+                                <label>Destinatario (Estudiante)
+                                    <select id="destinatarioEstudiante" required>
+                                        <option value="">Seleccionar estudiante...</option>
+                                    </select>
+                                    <small>Solo puedes enviar mensajes a estudiantes postulados a tus vacantes</small>
+                                </label>
+                                <label>Asunto
+                                    <input type="text" id="mensajeAsuntoProf" placeholder="Asunto del mensaje" required>
+                                </label>
+                                <label>Contenido
+                                    <textarea id="mensajeContenidoProf" rows="6" placeholder="Escribe tu mensaje..." required></textarea>
+                                </label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                                <button type="button" id="cancelarMensajeProfBtn" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+          <section class="ayuda-section hidden" id="ayuda-section">
+            <div class="cardHeader" style="margin-bottom: 20px;">
+                <h2 class="titulo-seccion">Centro de Ayuda y Soporte</h2>
+            </div>
+
+            <div class="details" style="grid-template-columns: 1fr; margin-bottom: 20px;">
+                <div class="recentOrders">
+                    <div class="cardHeader">
+                        <h2>¿Cuál es el proceso a seguir?</h2>
+                    </div>
+                    <div class="ayuda-contenido" style="text-align: center; padding: 20px;">
+                        <img src="./images/DFProfe.png" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="cardBox" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 20px;">
+                <div class="card card-button-mail" onclick="enviarReporteAlumnos()">
+                    <div>
+                        <div class="numbers">Enviar Lista Oficial</div>
+                        <div class="cardName">Mandar nombres de alumnos por correo a coordinación</div>
+                    </div>
+                    <div class="iconBx">
+                        <ion-icon name="mail-unread-outline"></ion-icon>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="details" style="grid-template-columns: 1fr;">
+                <div class="recentOrders">
+                    <div class="cardHeader">
+                        <h2>¿Cómo funciona el envío?</h2>
+                    </div>
+                    <div style="padding: 20px; font-size: 1.1rem; line-height: 1.6; color: var(--black1);">
+                        <p>Al hacer clic en el botón superior <strong>"Enviar Lista Oficial"</strong>, el sistema generará automáticamente un resumen de:</p>
+                        <ul style="margin: 15px 0; padding-left: 20px;">
+                            <li><strong>Tus proyectos:</strong> Títulos y áreas registradas.</li>
+                            <li><strong>Alumnos:</strong> Listado con nombres y correos de los seleccionados.</li>
+                            <li><strong>Firma:</strong> Se incluirá tu nombre y departamento extraído de "Mi Perfil".</li>
+                        </ul>
+                        <p style="background: #fdf6e3; padding: 10px; border-left: 4px solid #f39c12; border-radius: 4px; font-size: 0.95rem;">
+                            <ion-icon name="information-circle-outline"></ion-icon> 
+                            <em>Se abrirá tu aplicación de correo (Outlook, Gmail o Mail) para que revises todo antes de enviarlo.</em>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        </div>
+
+    </div>
+
+    <script src="./js/config.js"></script>
+    <script src="./js/scripts_prof.js"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</body>
+
+</html>

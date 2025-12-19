@@ -2,89 +2,910 @@ const contenedor = document.getElementById('contenedor');
 const registroBtn = document.getElementById('registro');
 const accederBtn = document.getElementById('acceder');
 
-const formulario = document.getElementById('formulario');
-const inputs = document.querySelectorAll('#formulario input');
+// Helpers de autenticación (requiere que js/config.js se cargue antes)
+function getSelectedUserType() {
+    const el = document.getElementById('selected-user-type');
+    return el ? String(el.textContent || '').trim() : '';
+}
 
-const campos =
-{
+function showInlineLoginError(message) {
+    const el = document.getElementById('loginError');
+    if (!el) return;
+    if (!message) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+    }
+    el.textContent = message;
+    el.style.display = 'block';
+}
+
+async function safeReadJson(response) {
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
+}
+
+function saveAuthToStorage(authResponse) {
+    if (!authResponse) return;
+    const { accessToken, refreshToken, user } = authResponse;
+    if (typeof STORAGE_KEYS === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: STORAGE_KEYS. Revisa que se cargue js/config.js antes de este script.');
+    }
+    if (accessToken) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+    if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    if (user?.role) localStorage.setItem(STORAGE_KEYS.USER_ROLE, user.role);
+    if (user?.id) localStorage.setItem(STORAGE_KEYS.USER_ID, user.id);
+    if (user?.correo) localStorage.setItem(STORAGE_KEYS.USER_EMAIL, user.correo);
+}
+
+function redirectAfterAuth(role) {
+    const roleKey = String(role || '').toLowerCase();
+    if (typeof REDIRECT_PAGES === 'undefined') {
+        throw new Error('Falta configuraci\u00f3n: REDIRECT_PAGES. Revisa que se cargue js/config.js antes de este script.');
+    }
+    if (REDIRECT_PAGES[roleKey]) {
+        window.location.href = REDIRECT_PAGES[roleKey];
+        return;
+    }
+}
+
+function normalizeAlumnoPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        boleta: Number(fd.get('boleta')),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+        creditos: Number(fd.get('creditos')),
+        carrera: String(fd.get('carrera') || '').trim(),
+    };
+}
+
+function normalizeProfesorPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const sexo = String(fd.get('sexo') || '').trim();
+    const sexoNormalizado = sexo === 'Masculino' || sexo === 'Femenino' ? sexo : '';
+
+    const departamentoSelect = formulario.querySelector("select[name='carrera']");
+    const departamentoValue = String(fd.get('carrera') || '').trim();
+    const departamentoLabel =
+        departamentoSelect && departamentoSelect.selectedIndex > 0
+            ? String(departamentoSelect.options[departamentoSelect.selectedIndex].text || '').trim()
+            : '';
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombres: String(fd.get('nombre') || '').trim(),
+        apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
+        apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
+        departamento: (departamentoLabel || departamentoValue),
+        rfc: String(fd.get('rfc') || '').trim().toUpperCase(),
+        curp: String(fd.get('curp') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        sexo: sexoNormalizado,
+    };
+}
+
+function normalizeInstitucionPayload(formulario) {
+    const fd = new FormData(formulario);
+
+    const tipoRaw = String(fd.get('tipo') || '').trim().toLowerCase();
+    const tipoNormalizado =
+        tipoRaw === 'publica' || tipoRaw === 'pública'
+            ? 'Publica'
+            : (tipoRaw === 'privada' ? 'Privada' : '');
+
+    return {
+        correo: String(fd.get('correo') || '').trim(),
+        password: String(fd.get('contrasena') || ''),
+        nombre: String(fd.get('nombre') || '').trim(),
+        nombreRepresentante: String(fd.get('representanteNombre') || '').trim(),
+        apellidosRepresentante: String(fd.get('representanteApellidos') || '').trim(),
+        rfc: String(fd.get('rfc') || '').trim().toUpperCase(),
+        telefono: Number(fd.get('telefono')),
+        direccion: String(fd.get('direccion') || '').trim(),
+        tipo: tipoNormalizado,
+    };
+}
+
+async function postJson(url, body) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await safeReadJson(res);
+    if (!res.ok) {
+        const message = data?.message || `Error HTTP ${res.status}`;
+        const err = new Error(message);
+        err.status = res.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}
+
+const campos = {
     boleta: false,
     nombre: false,
+    apellidoPaterno: false,
+    apellidoMaterno: false,
     telefono: false,
     curp: false,
     correo: false,
-    contasena: false,
+    contrasena: false,
     sexo: false,
     carrera: false,
-    semestre: false,
-    concurso: false
+    creditos: false,
+    rfc: false,
+    representante: false,
+    representanteNombre: false,
+    representanteApellidos: false,
+    direccion: false,
+    tipo: false
 }
 
-const expresiones =
-{
-    boleta:/^(\d{10}|(PE|PM)\d{8})$/, //10 numeros o PE|PM seguido de 8 numeros
-    nombre:/^[a-zA-ZÀ-ÿ\s]{1,40}$/, //Letras y espacios, pueden llevar acentos
-    telefono: /^\d{7,10}$/, //Solo digitos, maximo 10
+const expresiones = {
+    boleta: /^(\d{10}|(PE|PM)\d{8})$/,
+    nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+    telefono: /^\d{7,10}$/,
     curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
-    correo:/^[a-zA-Z0-9_.+-]+@alumno.ipn.mx$/,
-    contrasena:/^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/, //Al menos una mayuscula, miniuscula, un digito un caracter especial. Minimo 6 caracteres de largo
-    // correo: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/,
+    correoAlumno: /^[a-zA-Z0-9_.+-]+@alumno\.ipn\.mx$/,
+    correoProfe: /^[a-zA-Z0-9_.+-]+@ipn\.mx$/,
+    correoGeneral: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/,
+    rfc: /^[A-Z]{3,4}\d{6}[A-Z0-9]{3}$/i,
+    contrasena: /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/,
 }
 
-registroBtn.addEventListener('click', () =>
-{
-    contenedor.classList.add("activo");
-});
+function tipoUsuario(type) {
+    document.getElementById('selected-user-type').textContent = type;
+    
+    if (type === "Alumno") {
+        mostrarRegistroForm();
+        mostrarFormularioAlumno();
+    } else if (type === "Profesor") {
+        mostrarRegistroForm();
+        mostrarFormularioProfesor();
+    } else if (type === "Institucion/Empresa") {
+        mostrarRegistroForm();
+        mostrarFormularioInstitucion();
+    } else if (type === "Administrador") {
+        console.log("Tipo de usuario: Administrador");
+        mostrarInicioSesion();
+    } else {
+        mostrarInicioSesion();
+    }
+}
 
-accederBtn.addEventListener('click', () =>
-{
-    contenedor.classList.remove("activo");
-});
+// Función para mostrar solo el formulario de alumno
+function mostrarFormularioAlumno() {
+    const alumnoForm = document.getElementById("registroForm");
+    const profeForm = document.getElementById("registroProfe");
+    const institucionForm = document.getElementById("registroInstitucion");
+    
+    alumnoForm.classList.remove("activo");
+    profeForm.classList.remove("activo");
+    if (institucionForm) institucionForm.classList.remove("activo");
+    
+    // Activar solo el formulario de alumno
+    alumnoForm.classList.add("activo");
+    document.getElementById('selected-user-type').textContent = "Alumno";
+}
 
-function ocultarMostrar()
-{
-        event.preventDefault();
-        const textoVisible = document.getElementById("visible");
-        const textoOculto = document.getElementById("oculto");
-        const btn_toogle_form = document.getElementById("btn-toogle-form");
+// Función para mostrar solo el formulario de profesor
+function mostrarFormularioProfesor() {
+    const alumnoForm = document.getElementById("registroForm");
+    const profeForm = document.getElementById("registroProfe");
+    const institucionForm = document.getElementById("registroInstitucion");
+    
+    alumnoForm.classList.remove("activo");
+    profeForm.classList.remove("activo");
+    if (institucionForm) institucionForm.classList.remove("activo");
+    
+    // Activar solo el formulario de profesor
+    profeForm.classList.add("activo");
+    document.getElementById('selected-user-type').textContent = "Profesor";
+}
 
-        const estilo = window.getComputedStyle(textoOculto);
-        const estilo_btn = window.getComputedStyle(btn_toogle_form);
+// Función para mostrar solo el formulario de institución
+function mostrarFormularioInstitucion() {
+    const alumnoForm = document.getElementById("registroForm");
+    const profeForm = document.getElementById("registroProfe");
+    const institucionForm = document.getElementById("registroInstitucion");
+    
+    // Remover activo de todos
+    alumnoForm.classList.remove("activo");
+    profeForm.classList.remove("activo");
+    if (institucionForm) institucionForm.classList.remove("activo");
+    
+    // Activar solo el formulario de institución
+    institucionForm.classList.add("activo");
+    document.getElementById('selected-user-type').textContent = "Institución/Empresa";
+}
 
-        if (estilo.display == "none")
-        {
-            textoVisible.style.display = "none";
-            btn_toogle_form.style.display = "none";
-            textoOculto.style.display = "block";
+// Función para validar si todos los campos requeridos están completos
+function validarFormularioCompleto(tipo) {
+    if (tipo === 'Alumno') {
+        return campos.boleta && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && 
+               campos.telefono && campos.curp && 
+               campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.creditos;
+    } else if (tipo === 'Profesor') {
+        return campos.rfc && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && campos.telefono && campos.curp && 
+               campos.correo && campos.contrasena && campos.sexo && campos.carrera;
+    } else if (tipo === 'Institucion') {
+        return campos.nombre && campos.rfc && campos.representanteNombre && campos.representanteApellidos && campos.telefono && 
+               campos.correo && campos.contrasena && campos.tipo && campos.direccion;
+    }
+    return false;
+}
 
+function confirmarAlumno(event) {
+    if (event) event.preventDefault();
+    
+    // Validar que todos los campos estén completos antes de proceder
+    if (!validarFormularioCompleto('Alumno')) {
+        const mensajeError = document.getElementById('mensaje_errorAlumno');
+        if (mensajeError) {
+            mensajeError.innerHTML = "<br>Por favor complete todos los campos correctamente antes de continuar";
+            mensajeError.style.display = "block";
+
+            const primerError = document.querySelector('#formularioAlumno .formulario__grupo-incorrecto');
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
-        else
-        {
-            textoVisible.style.display = "block";
-            textoOculto.style.display = "none";
+        return;
+    }
+    
+    validarYConfirmar('Alumno', 'formularioAlumno', 'confirmacionAlumno', 'datosAlumno', 'mensaje_errorAlumno');
+}
 
-            if(estilo_btn.fontSize != "18px")
-                btn_toogle_form.style.display = "flex"; //Se pone flex porque el div de btn_toogle_form tiene display: flex
+function confirmarProfe(event) {
+    if (event) event.preventDefault();
+    
+    // Validar que todos los campos estén completos antes de proceder
+    if (!validarFormularioCompleto('Profesor')) {
+        const mensajeError = document.getElementById('mensaje_errorProfe');
+        if (mensajeError) {
+            mensajeError.innerHTML = "<br>Por favor complete todos los campos correctamente antes de continuar";
+            mensajeError.style.display = "block";
+            
+            const primerError = document.querySelector('#formularioProfesor .formulario__grupo-incorrecto');
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
+        return;
+    }
+    
+    validarYConfirmar('Profesor', 'formularioProfesor', 'confirmacionProfe', 'datosProfe', 'mensaje_errorProfe');
+}
+
+function confirmarInstitucion(event) {
+    if (event) event.preventDefault();
+    
+    // Validar que todos los campos estén completos antes de proceder
+    if (!validarFormularioCompleto('Institucion')) {
+        const mensajeError = document.getElementById('mensaje_errorInstitucion');
+        if (mensajeError) {
+            mensajeError.innerHTML = "<br>Por favor complete todos los campos correctamente antes de continuar";
+            mensajeError.style.display = "block";
+            
+            const primerError = document.querySelector('#formularioInstitucion .formulario__grupo-incorrecto');
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        return;
+    }
+    
+    validarYConfirmarInstitucion();
+}
+
+function validarYConfirmarInstitucion() {
+    const formulario = document.getElementById('formularioInstitucion');
+    if (!formulario) {
+        console.error('Formulario de institución no encontrado');
+        return;
+    }
+
+    const mensajeError = document.getElementById('mensaje_errorInstitucion');
+    if (mensajeError) {
+        mensajeError.style.display = "none";
+    }
+    
+    mostrarModalConfirmacion('Institucion', formulario);
+}
+
+function marcarCampoInvalido(input) {
+    if (!input) return;
+    const grupo = input.closest('.formulario__grupo');
+    if (grupo) {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        const error = grupo.querySelector('.formulario__input-error');
+        if (error) {
+            error.classList.add('formulario__input-error-activo');
+        }
+    }
+}
+
+// Función para mostrar inicio de sesión
+function mostrarInicioSesion() {
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.style.display = "flex";
+    }
+    
+    // Ocultar todos los formularios de registro usando clases
+    const alumnoForm = document.getElementById("registroForm");
+    const profeForm = document.getElementById("registroProfe");
+    const institucionForm = document.getElementById("registroInstitucion");
+    
+    if (alumnoForm) alumnoForm.classList.remove("activo");
+    if (profeForm) profeForm.classList.remove("activo");
+    if (institucionForm) institucionForm.classList.remove("activo");
+    
+    if (contenedor) {
+        contenedor.classList.remove("activo");
+    }
+    
+    document.getElementById('selected-user-type').textContent = "Seleccione tipo de usuario";
+}
+
+// Función para mostrar el contenedor de registro
+function mostrarRegistroForm() {
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.style.display = "none";
+    }
+    
+    if (contenedor) {
+        contenedor.classList.add("activo");
+    }
 }
 
 function mostrarRegistro() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registroForm').style.display = 'block';
+    tipoUsuario('Alumno');
 }
 
-function mostrarInicio() {
-    document.getElementById('registroForm').style.display = 'none';
-    document.getElementById('loginForm').style.display = 'block';
+// Event listeners para los botones del toggle
+function inicializarEventListeners() {
+    if (registroBtn) {
+        registroBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            tipoUsuario('Alumno');
+        });
+    }
+
+    if (accederBtn) {
+        accederBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            mostrarInicioSesion();
+        });
+    }
 }
 
+function ocultarMostrarAlumno(event) {
+    if (event) event.preventDefault();
+    const textoVisible = document.getElementById("visibleAlumno");
+    const textoOculto = document.getElementById("ocultoAlumno");
+
+    if (textoVisible && textoOculto) {
+        if (textoOculto.style.display === "none" || !textoOculto.style.display) {
+            textoVisible.style.display = "none";
+            textoOculto.style.display = "block";
+        } else {
+            textoVisible.style.display = "block";
+            textoOculto.style.display = "none";
+        }
+    }
+}
+
+function ocultarMostrarProfe(event) {
+    if (event) event.preventDefault();
+    const textoVisible = document.getElementById("visibleProfe");
+    const textoOculto = document.getElementById("ocultoProfe");
+
+    if (textoVisible && textoOculto) {
+        if (textoOculto.style.display === "none" || !textoOculto.style.display) {
+            textoVisible.style.display = "none";
+            textoOculto.style.display = "block";
+        } else {
+            textoVisible.style.display = "block";
+            textoOculto.style.display = "none";
+        }
+    }
+}
+
+function ocultarMostrarInstitucion(event) {
+    if (event) event.preventDefault();
+    const textoVisible = document.getElementById("visibleInstitucion");
+    const textoOculto = document.getElementById("ocultoInstitucion");
+
+    if (textoVisible && textoOculto) {
+        if (textoOculto.style.display === "none" || !textoOculto.style.display) {
+            textoVisible.style.display = "none";
+            textoOculto.style.display = "block";
+        } else {
+            textoVisible.style.display = "block";
+            textoOculto.style.display = "none";
+        }
+    }
+}
+
+function editarFormulario(tipo) {
+    if (tipo === 'Alumno') {
+        document.getElementById('confirmacionAlumno').style.display = "none";
+        document.getElementById('datosAlumno').innerHTML = "";
+        document.getElementById('mensaje_errorAlumno').style.display = "none";
+        ocultarMostrarAlumno();
+        document.getElementById('formularioAlumno').reset();
+        resetearCamposValidacion('formularioAlumno');
+        resetearEstadoCampos('Alumno');
+    } else if (tipo === 'Profesor') {
+        document.getElementById('confirmacionProfe').style.display = "none";
+        document.getElementById('datosProfe').innerHTML = "";
+        document.getElementById('mensaje_errorProfe').style.display = "none";
+        ocultarMostrarProfe();
+        document.getElementById('formularioProfesor').reset();
+        resetearCamposValidacion('formularioProfesor');
+        resetearEstadoCampos('Profesor');
+    } else if (tipo === 'Institucion') {
+        document.getElementById('confirmacionInstitucion').style.display = "none";
+        document.getElementById('datosInstitucion').innerHTML = "";
+        document.getElementById('mensaje_errorInstitucion').style.display = "none";
+        ocultarMostrarInstitucion();
+        document.getElementById('formularioInstitucion').reset();
+        resetearCamposValidacion('formularioInstitucion');
+        resetearEstadoCampos('Institucion');
+    }
+}
+
+function resetearEstadoCampos(tipo) {
+    if (tipo === 'Alumno') {
+        campos.boleta = false;
+        campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
+        campos.telefono = false;
+        campos.curp = false;
+        campos.correo = false;
+        campos.contrasena = false;
+        campos.sexo = false;
+        campos.carrera = false;
+        campos.creditos = false;
+    } else if (tipo === 'Profesor') {
+        campos.rfc = false;
+        campos.nombre = false;
+        campos.apellidoPaterno = false;
+        campos.apellidoMaterno = false;
+        campos.telefono = false;
+        campos.curp = false;
+        campos.correo = false;
+        campos.contrasena = false;
+        campos.sexo = false;
+        campos.carrera = false;
+    } else if (tipo === 'Institucion') {
+        campos.nombre = false;
+        campos.rfc = false;
+        campos.representante = false;
+        campos.representanteNombre = false;
+        campos.representanteApellidos = false;
+        campos.telefono = false;
+        campos.correo = false;
+        campos.contrasena = false;
+        campos.tipo = false;
+        campos.direccion = false;
+    }
+}
+
+function resetearCamposValidacion(formId) {
+    const formulario = document.getElementById(formId);
+    if (!formulario) return;
+    
+    const grupos = formulario.querySelectorAll('.formulario__grupo');
+    grupos.forEach(grupo => {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        const error = grupo.querySelector('.formulario__input-error');
+        if (error) {
+            error.classList.remove('formulario__input-error-activo');
+        }
+    });
+}
+
+function validarYConfirmar(tipo, formularioId, confirmacionId, datosId, errorId) {
+    const formulario = document.getElementById(formularioId);
+    
+    // Confirmación
+    document.getElementById(errorId).style.display = "none";
+    mostrarModalConfirmacion(tipo, formulario);
+}
+
+// Función para mostrar modal de Bootstrap con los datos
+function mostrarModalConfirmacion(tipo, formulario) {
+    // Crear el contenido del modal según el tipo de usuario
+    let titulo = '';
+    let contenido = '';
+    const nombre = formulario.nombre ? formulario.nombre.value : '';
+
+    if (tipo === 'Alumno') {
+        titulo = 'Confirmación de Registro - Alumno';
+        contenido = generarContenidoAlumno(formulario);
+    } else if (tipo === 'Profesor') {
+        titulo = 'Confirmación de Registro - Profesor';
+        contenido = generarContenidoProfesor(formulario);
+    } else if (tipo === 'Institucion') {
+        titulo = 'Confirmación de Registro - Institución/Empresa';
+        contenido = generarContenidoInstitucion(formulario);
+    }
+
+    // Crear o actualizar el modal
+    let modal = document.getElementById('modalConfirmacion');
+    if (!modal) {
+        // Crear el modal si no existe
+        modal = document.createElement('div');
+        modal.id = 'modalConfirmacion';
+        modal.className = 'modal fade';
+        modal.tabIndex = '-1';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitulo">${titulo}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="modalCuerpo">
+                        ${contenido}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Editar Datos</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmarEnvio">Confirmar y Enviar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    } else {
+        // Actualizar el contenido del modal existente
+        document.getElementById('modalTitulo').textContent = titulo;
+        document.getElementById('modalCuerpo').innerHTML = contenido;
+    }
+
+    // Configurar el evento del botón de confirmar
+    const btnConfirmar = document.getElementById('btnConfirmarEnvio');
+    btnConfirmar.onclick = async function() {
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Enviando...';
+        try {
+            await enviarFormulario(tipo, formulario);
+            // Cerrar el modal
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            modalInstance.hide();
+            // Mostrar mensaje de éxito
+            mostrarMensajeExito(tipo);
+        } catch (e) {
+            const message = e?.message || 'No se pudo completar el registro';
+            if (tipo === 'Alumno') {
+                const mensajeError = document.getElementById('mensaje_errorAlumno');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            } else if (tipo === 'Profesor') {
+                const mensajeError = document.getElementById('mensaje_errorProfe');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            } else if (tipo === 'Institucion') {
+                const mensajeError = document.getElementById('mensaje_errorInstitucion');
+                if (mensajeError) {
+                    mensajeError.textContent = message;
+                    mensajeError.style.display = 'block';
+                }
+            }
+            console.error(e);
+        } finally {
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'Confirmar y Enviar';
+        }
+    };
+
+    // Mostrar el modal
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+}
+
+// Función para generar el contenido del modal para Alumno
+function generarContenidoAlumno(formulario) {
+    return `
+        <div class="alert alert-info">
+            <strong>Hola ${formulario.nombre.value}</strong>, por favor verifica que tus datos estén correctos:
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Boleta:</strong> ${formulario.boleta.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
+                <p><strong>CURP:</strong> ${formulario.curp.value}</p>
+                <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Correo:</strong> ${formulario.correo.value}</p>
+                <p><strong>Sexo:</strong> ${formulario.sexo.options[formulario.sexo.selectedIndex].text}</p>
+                <p><strong>Carrera:</strong> ${formulario.carrera.options[formulario.carrera.selectedIndex].text}</p>
+                <p><strong>Créditos:</strong> ${formulario.creditos.value}</p>
+            </div>
+        </div>
+    `;
+}
+
+// Función para generar el contenido del modal para Profesor
+function generarContenidoProfesor(formulario) {
+    return `
+        <div class="alert alert-info">
+            <strong>Hola ${formulario.nombre.value}</strong>, por favor verifica que tus datos estén correctos:
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>RFC:</strong> ${formulario.rfc.value}</p>
+                <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
+                <p><strong>CURP:</strong> ${formulario.curp.value}</p>
+                <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Correo:</strong> ${formulario.correo.value}</p>
+                <p><strong>Sexo:</strong> ${formulario.sexo.options[formulario.sexo.selectedIndex].text}</p>
+                <p><strong>Área/Departamento:</strong> ${formulario.carrera.options[formulario.carrera.selectedIndex].text}</p>
+            </div>
+        </div>
+    `;
+}
+
+// Función para generar el contenido del modal para Institución
+function generarContenidoInstitucion(formulario) {
+    const nombre = formulario.querySelector("[name='nombre']");
+    const rfc = formulario.querySelector("[name='rfc']");
+    const representanteNombre = formulario.querySelector("[name='representanteNombre']");
+    const representanteApellidos = formulario.querySelector("[name='representanteApellidos']");
+    const telefono = formulario.querySelector("[name='telefono']");
+    const correo = formulario.querySelector("[name='correo']");
+    const direccion = formulario.querySelector("[name='direccion']");
+    const tipo = formulario.querySelector("[name='tipo']");
+
+    return `
+        <div class="alert alert-info">
+            <strong>Confirmación de Registro Institucional</strong>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Nombre de la Institución:</strong> ${nombre.value}</p>
+                <p><strong>RFC:</strong> ${rfc.value}</p>
+                <p><strong>Representante:</strong> ${representanteNombre.value} ${representanteApellidos.value}</p>
+                <p><strong>Teléfono:</strong> ${telefono.value}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Correo:</strong> ${correo.value}</p>
+                <p><strong>Dirección:</strong> ${direccion.value}</p>
+                <p><strong>Tipo de Institución:</strong> ${tipo.options[tipo.selectedIndex].text}</p>
+            </div>
+        </div>
+    `;
+}
+
+// Función para enviar el formulario (simulación)
+async function enviarFormulario(tipo, formulario) {
+    console.log(`Enviando formulario de ${tipo}:`, formulario);
+
+    if (tipo === 'Alumno') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_ALUMNO) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeAlumnoPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_ALUMNO, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'alumno');
+        return;
+    }
+
+    if (tipo === 'Profesor') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_PROFESOR) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeProfesorPayload(formulario);
+        if (!payload.sexo) {
+            throw new Error('Seleccione Masculino o Femenino');
+        }
+        if (!payload.departamento) {
+            throw new Error('Seleccione un Área o Departamento');
+        }
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+        if (!payload.nombres || !payload.apellidoPaterno || !payload.apellidoMaterno) {
+            throw new Error('Nombre y apellidos son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_PROFESOR, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'profesor');
+        return;
+    }
+
+    if (tipo === 'Institucion') {
+        if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.REGISTER_INSTITUCION) {
+            throw new Error('Falta cargar la configuración de API (js/config.js)');
+        }
+
+        const payload = normalizeInstitucionPayload(formulario);
+
+        if (!payload.nombre) throw new Error('El nombre de la institución es obligatorio');
+        if (!payload.nombreRepresentante || !payload.apellidosRepresentante) {
+            throw new Error('El nombre y apellidos del representante son obligatorios');
+        }
+        if (!payload.rfc) throw new Error('RFC es obligatorio');
+        if (!payload.direccion) throw new Error('Dirección es obligatoria');
+        if (!payload.tipo) throw new Error('Seleccione Pública o Privada');
+        if (!payload.correo || !payload.password) {
+            throw new Error('Correo y contraseña son obligatorios');
+        }
+
+        const auth = await postJson(AUTH_ENDPOINTS.REGISTER_INSTITUCION, payload);
+        saveAuthToStorage(auth);
+        redirectAfterAuth(auth?.user?.role || 'institucion');
+        return;
+    }
+
+    throw new Error('Tipo de registro no soportado');
+}
+
+async function loginAlumno(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_ALUMNO) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_ALUMNO, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'alumno');
+}
+
+async function loginProfesor(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_PROFESOR) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_PROFESOR, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'profesor');
+}
+
+async function loginInstitucion(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.LOGIN_INSTITUCION) {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+    const auth = await postJson(AUTH_ENDPOINTS.LOGIN_INSTITUCION, { correo, password });
+    saveAuthToStorage(auth);
+    redirectAfterAuth(auth?.user?.role || 'institucion');
+}
+
+async function loginByRoleAuto(correo, password) {
+    if (typeof AUTH_ENDPOINTS === 'undefined') {
+        throw new Error('Falta cargar la configuración de API (js/config.js)');
+    }
+
+    const attempts = [
+        { name: 'alumno', url: AUTH_ENDPOINTS.LOGIN_ALUMNO },
+        { name: 'profesor', url: AUTH_ENDPOINTS.LOGIN_PROFESOR },
+        { name: 'institucion', url: AUTH_ENDPOINTS.LOGIN_INSTITUCION },
+    ].filter((x) => !!x.url);
+
+    for (const attempt of attempts) {
+        try {
+            const auth = await postJson(attempt.url, { correo, password });
+            saveAuthToStorage(auth);
+            redirectAfterAuth(auth?.user?.role || attempt.name);
+            return;
+        } catch (err) {
+            // Si es 401, probamos con el siguiente tipo.
+            if (err?.status === 401) continue;
+            throw err;
+        }
+    }
+
+    throw new Error('Credenciales inválidas');
+}
+
+// Función para mostrar mensaje de éxito
+function mostrarMensajeExito(tipo) {
+    // Crear toast de Bootstrap para mostrar mensaje de éxito
+    const toastContainer = document.getElementById('toastContainer');
+    let toast = document.getElementById('toastExito');
+    
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toastExito';
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    Registro completado exitosamente
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        if (!toastContainer) {
+            const newContainer = document.createElement('div');
+            newContainer.id = 'toastContainer';
+            newContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            newContainer.appendChild(toast);
+            document.body.appendChild(newContainer);
+        } else {
+            toastContainer.appendChild(toast);
+        }
+    }
+
+    const toastInstance = new bootstrap.Toast(toast);
+    toastInstance.show();
+
+    // Resetear el formulario después de 2 segundos
+    setTimeout(() => {
+        if (tipo === 'Alumno') {
+            document.getElementById('formularioAlumno').reset();
+            resetearEstadoCampos('Alumno');
+            resetearCamposValidacion('formularioAlumno');
+        } else if (tipo === 'Profesor') {
+            document.getElementById('formularioProfesor').reset();
+            resetearEstadoCampos('Profesor');
+            resetearCamposValidacion('formularioProfesor');
+        } else if (tipo === 'Institucion') {
+            document.getElementById('formularioInstitucion').reset();
+            resetearEstadoCampos('Institucion');
+            resetearCamposValidacion('formularioInstitucion');
+        }
+    }, 2000);
+}
+
+// Resto del código permanece igual...
 const validarFormulario = (e) => {
-    switch(e.target.name)
-    {
+    const campo = e.target.name;
+    
+    switch(campo) {
         case "boleta":
             validarCampo(expresiones.boleta, e.target, 'boleta');
             break;
         case "nombre":
             validarCampo(expresiones.nombre, e.target, 'nombre');
+            break;
+        case "apellidoPaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoPaterno');
+            break;
+        case "apellidoMaterno":
+            validarCampo(expresiones.nombre, e.target, 'apellidoMaterno');
+            break;
+        case "creditos":
+            validarCreditos(e.target);
             break;
         case "curp":
             validarCampo(expresiones.curp, e.target, 'curp');
@@ -93,83 +914,262 @@ const validarFormulario = (e) => {
             validarCampo(expresiones.telefono, e.target, 'telefono');
             break;
         case "correo":
-            validarCampo(expresiones.correo, e.target, 'correo');
+            const formulario = e.target.closest('form');
+            if (formulario && formulario.id === 'formularioAlumno') {
+                validarCampo(expresiones.correoAlumno, e.target, 'correo');
+            } else if (formulario && formulario.id === 'formularioProfesor') {
+                validarCampo(expresiones.correoProfe, e.target, 'correo');
+            } else if (formulario && formulario.id === 'formularioInstitucion') {
+                validarCampo(expresiones.correoGeneral, e.target, 'correo');
+            }
             break;
         case "contrasena":
             validarCampo(expresiones.contrasena, e.target, 'contrasena');
             break;
-        
+        case "rfc":
+            validarCampo(expresiones.rfc, e.target, 'rfc');
+            break;
+        case "representanteNombre":
+            validarCampo(expresiones.nombre, e.target, 'representanteNombre');
+            break;
+        case "representanteApellidos":
+            validarCampo(expresiones.nombre, e.target, 'representanteApellidos');
+            break;
+        case "direccion":
+            // Para dirección, solo validamos que no esté vacía
+            const grupoDireccion = e.target.closest('.formulario__grupo');
+            if (!grupoDireccion) return;
+            const errorElementDireccion = grupoDireccion.querySelector('.formulario__input-error');
+            
+            if (e.target.value.trim() !== '') {
+                grupoDireccion.classList.remove('formulario__grupo-incorrecto');
+                if (errorElementDireccion) {
+                    errorElementDireccion.classList.remove('formulario__input-error-activo');
+                }
+                campos.direccion = true;
+            } else {
+                grupoDireccion.classList.add('formulario__grupo-incorrecto');
+                if (errorElementDireccion) {
+                    errorElementDireccion.classList.add('formulario__input-error-activo');
+                }
+                campos.direccion = false;
+            }
+            break;
     }
 }
 
-const validarCampo = (expresion, input, campo) =>
-{
-    if(expresion.test(input.value)) //Valido
-    {
-        document.getElementById(`grupo__${campo}`).classList.remove('formulario__grupo-incorrecto');
-        document.querySelector(`#grupo__${campo} .formulario__input-error`).classList.remove('formulario__input-error-activo');
+const validarCampo = (expresion, input, campo) => {
+    const grupo = input.closest('.formulario__grupo');
+    if (!grupo) return;
+    
+    const errorElement = grupo.querySelector('.formulario__input-error');
+    
+    if (expresion.test(input.value)) {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        if (errorElement) {
+            errorElement.classList.remove('formulario__input-error-activo');
+        }
         campos[campo] = true;
-    }
-    else //No valido
-    {
-        document.getElementById(`grupo__${campo}`).classList.add('formulario__grupo-incorrecto');
-        document.querySelector(`#grupo__${campo} .formulario__input-error`).classList.add('formulario__input-error-activo');
+    } else {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        if (errorElement) {
+            errorElement.classList.add('formulario__input-error-activo');
+        }
         campos[campo] = false;
     }
 }
 
-inputs.forEach((input) => {
-    input.addEventListener('input', validarFormulario);
-    // input.addEventListener('blur', validarFormulario);
-});
-
-function confirmar()
-{
-    event.preventDefault();
-
-    if(formulario.sexo.value != "Sexo" && formulario.semestre.value != "Semestre" && formulario.carrera.value != "Carrera" && formulario.concurso.value != "Concurso")
-    {
-        campos.sexo = true;
-        campos.semestre = true;
-        campos.carrera = true;
-        campos.concurso = true;
+const validarCreditos = (input) => {
+    const valor = parseInt(input.value);
+    const grupo = input.closest('.formulario__grupo');
+    if (!grupo) return;
+    
+    const errorElement = grupo.querySelector('.formulario__input-error');
+    
+    if (!isNaN(valor) && valor >= 0 && valor <= 387) {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        grupo.classList.add('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.remove('formulario__input-error-activo');
+        campos['creditos'] = true;
+    } else {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        grupo.classList.remove('formulario__grupo-correcto');
+        if(errorElement) errorElement.classList.add('formulario__input-error-activo');
+        campos['creditos'] = false;
     }
-    else
-    {
-        campos.sexo = false;
-        campos.semestre = false;
-        campos.carrera = false;
-        campos.concurso = false;
-    }
+}
 
-    if(campos.boleta && campos.nombre && campos.telefono && campos.curp && campos.correo && campos.contrasena && campos.sexo && campos.semestre && campos.carrera && campos.concurso)
-    {
-        document.getElementById('mensaje_error').classList.remove('visible');
-
-        const nombre = document.getElementById('nombre').value;
-        document.getElementById('datos').innerHTML = `<br>Hola ${nombre}, por favor verifica que los datos estén correctos:`;
-
-        const elementos = Array.from(formulario.elements);
-        elementos.forEach(elemento => {
-            const campo =  elemento.name.charAt(0).toUpperCase() + elemento.name.slice(1); //Los 'name' de los input estan en minusculas,
-            //la linea de arriba define una variable que pone la primera letra del 'name' en mayuscula y lo demas en miscula, ejemplo: boleta -> Boleta.
-            if(elemento.value)
-            document.getElementById('datos').innerHTML += "<br>"+campo+": "+elemento.value;
+function inicializarValidacionFormularios() {
+    const inputsAlumno = document.querySelectorAll('#formularioAlumno input');
+    const inputsProfe = document.querySelectorAll('#formularioProfesor input');
+    const inputsInstitucion = document.querySelectorAll('#formularioInstitucion input');
+    
+    inputsAlumno.forEach(input => {
+        input.addEventListener('input', validarFormulario);
+        input.addEventListener('blur', validarFormulario);
+    });
+    
+    inputsProfe.forEach(input => {
+        input.addEventListener('input', validarFormulario);
+        input.addEventListener('blur', validarFormulario);
+    });
+    
+    inputsInstitucion.forEach(input => {
+        input.addEventListener('input', validarFormulario);
+        input.addEventListener('blur', validarFormulario);
+    });
+    
+    const selectsAlumno = document.querySelectorAll('#formularioAlumno select');
+    const selectsProfe = document.querySelectorAll('#formularioProfesor select');
+    const selectsInstitucion = document.querySelectorAll('#formularioInstitucion select');
+    
+    selectsAlumno.forEach(select => {
+        select.addEventListener('change', function() {
+            validarSelects('Alumno');
         });
+    });
+    
+    selectsProfe.forEach(select => {
+        select.addEventListener('change', function() {
+            validarSelects('Profesor');
+        });
+    });
+    
+    selectsInstitucion.forEach(select => {
+        select.addEventListener('change', function() {
+            validarSelects('Institucion');
+        });
+    });
+}
 
-        document.getElementById('confirmacion').classList.add('visible');   
-    }
-    else
-    {
-        editar();
-        document.getElementById('mensaje_error').innerHTML = "<br>Por favor revise los datos introducidos";
-        document.getElementById('mensaje_error').classList.add('visible');
+function validarSelects(tipo) {
+    if (tipo === 'Alumno') {
+        const formulario = document.getElementById('formularioAlumno');
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
+    } else if (tipo === 'Profesor') {
+        const formulario = document.getElementById('formularioProfesor');
+        if (!formulario) return;
+
+        const sexoSelect = formulario.querySelector("select[name='sexo']");
+        const carreraSelect = formulario.querySelector("select[name='carrera']");
+
+        const sexoValido = !!sexoSelect && sexoSelect.selectedIndex > 0;
+        const carreraValida = !!carreraSelect && carreraSelect.selectedIndex > 0;
+
+        campos.sexo = sexoValido;
+        campos.carrera = carreraValida;
+
+        if (sexoSelect) actualizarEstiloSelect(sexoSelect, sexoValido);
+        if (carreraSelect) actualizarEstiloSelect(carreraSelect, carreraValida);
+    } else if (tipo === 'Institucion') {
+        const formulario = document.getElementById('formularioInstitucion');
+        if (!formulario) return;
+
+        const tipoSelect = formulario.querySelector("select[name='tipo']");
+        const tipoValido = !!tipoSelect && tipoSelect.selectedIndex > 0;
+
+        campos.tipo = tipoValido;
+        if (tipoSelect) actualizarEstiloSelect(tipoSelect, tipoValido);
     }
 }
 
-function editar() //Borra y oculta el contenido que muestra los datos introducidos para su verificacion
-{
-    // event.preventDefault();
-    document.getElementById('datos').innerHTML = ""; //Borra el contenido
-    document.getElementById('confirmacion').classList.remove('visible'); //Oculta el contenido
+function actualizarEstiloSelect(select, valido) {
+    const grupo = select.closest('.formulario__grupo');
+    if (!grupo) return;
+    
+    if (valido) {
+        grupo.classList.remove('formulario__grupo-incorrecto');
+        const error = grupo.querySelector('.formulario__input-error');
+        if (error) {
+            error.classList.remove('formulario__input-error-activo');
+        }
+    } else {
+        grupo.classList.add('formulario__grupo-incorrecto');
+        const error = grupo.querySelector('.formulario__input-error');
+        if (error) {
+            error.classList.add('formulario__input-error-activo');
+        }
+    }
 }
+
+function inicializarEnvioFormularios() {
+    const formularioAlumno = document.getElementById('formularioAlumno');
+    const formularioProfesor = document.getElementById('formularioProfesor');
+    const formularioInstitucion = document.getElementById('formularioInstitucion');
+    
+    if (formularioAlumno) {
+        formularioAlumno.addEventListener('submit', function(e) {
+            e.preventDefault();
+            confirmarAlumno(e);
+        });
+    }
+    
+    if (formularioProfesor) {
+        formularioProfesor.addEventListener('submit', function(e) {
+            e.preventDefault();
+            confirmarProfe(e);
+        });
+    }
+    
+    if (formularioInstitucion) {
+        formularioInstitucion.addEventListener('submit', function(e) {
+            e.preventDefault();
+            confirmarInstitucion(e);
+        });
+    }
+}
+
+function inicializarLogin() {
+    const formLogin = document.getElementById('formLogin');
+    if (!formLogin) return;
+
+    formLogin.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        showInlineLoginError('');
+
+        const correo = String(document.getElementById('loginCorreo')?.value || '').trim();
+        const password = String(document.getElementById('loginPassword')?.value || '');
+
+        if (!correo || !password) {
+            showInlineLoginError('Ingrese correo y contraseña');
+            return;
+        }
+
+        const submitBtn = formLogin.querySelector("button[type='submit']");
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+            await loginByRoleAuto(correo, password);
+        } catch (err) {
+            showInlineLoginError(err?.message || 'Credenciales inválidas');
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM cargado - inicializando formularios');
+    
+    // Configuración inicial correcta
+    mostrarInicioSesion();
+    
+    console.log('Configuración inicial: Login visible, Registro oculto');
+    
+    // Inicializar event listeners después de que el DOM esté listo
+    inicializarEventListeners();
+    inicializarValidacionFormularios();
+    inicializarEnvioFormularios();
+    inicializarLogin();
+});

@@ -1,168 +1,340 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="icon" href="img/icono.png">
-
-    <link rel="stylesheet" href="css/styles_login.css">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
-
-    <title>ProFuturo</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=arrow_forward_ios" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=touch_app" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <title>Inicio</title>
+    <link rel="icon" href="./images/Logo.png" type="image/x-icon">
+    <link rel="stylesheet" href="./css/styles.css"/>
 </head>
+    
 <body>
-    <div class="contenedor" id="contenedor">
-        <div class="contenedor-form registro" id="registroForm">
-            <form class="formulario" id="formulario">
-                <div id="visible" style="width: 100%; text-align: center;">
-                    <h3>Datos Personales</h3>
-                    <span>Por favor complete el siguiente formulario</span>
+    <nav>
+        <img class="logo" src="./images/BrotaFuturo.png" alt="BrotaFuturo">
+        <ul>
+            <li><a href="#" data-target="inicio">Inicio</a></li>
+            <li><a href="#" data-target="aplicaciones">Aliados</a></li>
+            <li><a href="#" data-target="ejemplos">Nuestra App</a></li>
+            <li><a href="#" data-target="contacto">Contáctanos</a></li>
+        </ul>
+        <a href="login.html">
+            <button type="button">Mi Cuenta</button>
+        </a>
+    </nav>
 
-                    <!-- Boleta -->
-                    <div class="formulario__grupo" id="grupo__boleta">
-                        <input type="text" name="boleta" placeholder="No. de Boleta" maxlength="10">
-                        <p class="formulario__input-error">Verifique su boleta</p>
+    <div class="contenedorgeneral">
+        <div class="contenedor1" id="inicio">
+            <h1>BrotaFuturo</h1>
+        </div>
+        <div class="contenedor-columnas" id="inicio">
+            <div class="contenedordiv">
+                <section class="Nosotros">
+                    <h2> 🌱 Visión</h2>
+                    <div class="vision">
+                        <p>Brindar a los estudiantes de la ESCOM una plataforma centralizada, 
+                            confiable y accesible que facilite la búsqueda, postulación y gestión 
+                            de vacantes de servicio social y estancias profesionales, fortaleciendo 
+                            la vinculación entre alumnos, profesores y empresas mediante herramientas 
+                            tecnológicas seguras, intuitivas y orientadas al desarrollo académico y 
+                            profesional.</p>
                     </div>
+                </section>
+            </div>
 
-                    <!-- Nombre -->
-                    <div class="formulario__grupo" id="grupo__nombre">
-                        <input type="text" id="nombre" name="nombre" placeholder="Nombre completo">
-                        <p class="formulario__input-error">El nombre solo puede tener letras</p>
+            <div class="contenedordiv">
+                <section class="Nosotros">
+                    <h2>🚀 Misión</h2>
+                    <div class="vision">
+                        <p>Convertirse en la plataforma líder de vinculación académica y profesional 
+                             del IPN, expandiéndose posteriormente a otras instituciones educativas 
+                             del país. BrotaFuturo aspira a ser un referente nacional en la gestión 
+                             de oportunidades formativas, impulsando el crecimiento profesional de los 
+                             estudiantes y promoviendo relaciones sólidas entre la academia y el sector 
+                             productivo mediante soluciones tecnológicas innovadoras y socialmente responsables.</p>
                     </div>
-                    
-                    <!-- Sexo -->
-                    <div class="formulario__grupo" id="grupo__sexo">
-                        <select name="sexo">
-                            <option disabled selected>Sexo</option>
-                            <option value="masculino">Masculino</option>
-                            <option value="femenino">Femenino</option>
-                            <option value="otro">Otro</option>
-                        </select>
-                    </div>
+                </section>
+            </div>
+        </div>
+    
 
-                    <!-- CURP -->
-                    <div class="formulario__grupo" id="grupo__curp">
-                        <input type="text" name="curp" placeholder="CURP" maxlength="18">
-                        <p class="formulario__input-error">Verifique su CURP por favor</p>
-                    </div>
+        <div class="contenedor1" id="inicio">
+            <section class="NuestroLogo">
+                <h2>🎓 Nuestro Logo</h2>
+                <div class="nuestrologo">
+                    <p>El logo de BrotaFuturo fue elegido porque representa de forma clara la esencia del proyecto: 
+                        la unión entre educación, tecnología y crecimiento profesional. El edificio central simboliza 
+                        a la ESCOM como origen académico; el birrete y el globo reflejan la formación universitaria 
+                        con visión global; y el engrane que rodea la imagen destaca el enfoque tecnológico y la innovación. 
+                        La tipografía combina profesionalismo y modernidad: “BROTA” en negro transmite solidez, mientras 
+                        “FUTURO” en púrpura expresa creatividad y proyección. </p>
+                    <img src="./images/Logo2.png" alt="Logo BrotaFuturo" />
+                </div>
+            </section>
+        </div> 
+        
+        <div class="contenedor1" id="inicio">
+            <section class="Mision">
+                <h2>🌟 Estadísticas Rápidas</h2>
 
-                    <!-- Telefono -->
-                    <div class="formulario__grupo" id="grupo__telefono">
-                        <input type="tel" name="telefono" placeholder="Teléfono" maxlength="10">
-                        <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; width: 100%;">
-                        <select id="semestre" name="semestre">
-                            <option disabled selected>Semestre</option>
-                            <option value="uno">1</option>
-                            <option value="dos">2</option>
-                            <option value="tres">3</option>
-                            <option value="cuatro">4</option>
-                            <option value="cinco">5</option>
-                            <option value="tres">6</option>
-                            <option value="tres">7</option>
-                            <option value="tres">8</option>
-                        </select>
+                <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px;">
 
-                        <select id="carrera" name="carrera">
-                            <option disabled selected>Carrera</option>
-                            <option value="ISC">ISC</option>
-                            <option value="IIA">IIA</option>
-                            <option value="LCD">LCD</option>
-                        </select>
-                    </div>
-
-                    <select id="concurso" name="concurso" required>
-                        <option disabled selected>Concurso</option>
-                        <option value="cuno">Concurso 1</option>
-                        <option value="cdos">Concurso 2</option>
-                        <option value="ctres">Concurso 3</option>
-                    </select>            
-
-
-                    <div style="display: flex; gap: 20px; justify-content: center;">
-                        <button onclick="ocultarMostrar();">Siguiente</button>
-                        <button type="reset" onclick="editar();">Limpiar</button>
-                    </div>
+                <div style="background:white; padding:20px; width:220px; border-radius:10px; 
+                            box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="font-size:40px; margin:0;">120+</h3>
+                    <p style="margin-top:10px; font-size:16px;">Vacantes activas</p>
                 </div>
 
-                <div id="oculto" style="text-align: center;">
-                    <h3>Datos de Cuenta</h3>
-
-                    <div class="formulario__grupo" id="grupo__correo">
-                        <input type="email" name="correo" placeholder="Correo">
-                        <p class="formulario__input-error">El correo debe ser el institucional (@laumno.ipn.mx)</p>
-                    </div>
-
-                    <div class="formulario__grupo" id="grupo__contrasena">
-                        <input type="text" name="contrasena" placeholder="Contraseña">
-                        <p class="formulario__input-error">La contraseña debe tener mínimo 6 caracteres, que incluya una
-                        mayúscula, un dígito y un carácter especial.</p>
-                    </div>
-
-                    <div style="display: flex; gap: 20px; justify-content: center;">
-                        <button onclick="ocultarMostrar();">Atrás</button>
-                        <button type="reset" onclick="editar();">Limpiar</button>
-                        <button onclick="confirmar();">Enviar</button>
-                    </div>
-
-                    <div class="oculto" id="confirmacion">
-                        <p id="datos"></p>
-                        <button type="submit">Sí</button>
-                        <button onclick="ocultarMostrar(); editar();">Editar</button>
-                    </div>
-
-                    <p class="oculto" id="mensaje_error" style="color: red;"></p>
+                <div style="background:white; padding:20px; width:220px; border-radius:10px; 
+                            box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="font-size:40px; margin:0;">45+</h3>
+                    <p style="margin-top:10px; font-size:16px;">Profesores registrados</p>
                 </div>
 
-                <div class="btn-toogle-form" id="btn-toogle-form">
-                    <p>¿Ya tienes una cuenta?</p>
-                    <button type="button" onclick="mostrarInicio()">Iniciar Sesión</button>
-                </div>
-            </form>
-        </div> <!-- .registro -->
-
-        <div class="contenedor-form acceder" id="loginForm">
-            <form>
-                <h1>Iniciar Sesión</h1>
-
-                <span>Ingresar con Correo y Contraseña</span><br>
-
-                <input type="email" placeholder="Ingrese su Correo">
-                <input type="text" placeholder="Ingrese su Contraseña">
-                <a href="#">Cambiar Contraseña</a>
-
-                <button>Iniciar Sesión</button>
-
-                <div class="btn-toogle-form">
-                    <p>¿No tienes una cuenta?</p>
-                    <button type="button" onclick="mostrarRegistro()">Registrarse</button>
-                </div>
-            </form>
-        </div> <!-- .acceder -->
-
-        <div class="contenedor-toggle">
-            <div class="toggle">
-                <div class="toggle-panel toggle-izq">
-                    <h1>¿Ya tienes una cuenta?<br></h1>
-                    <p>Inicia sesión con Correo y Contraseña</p>
-                    <button class="hidden" id="acceder">Iniciar Sesión</button>
+                <div style="background:white; padding:20px; width:220px; border-radius:10px; 
+                            box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="font-size:40px; margin:0;">30+</h3>
+                    <p style="margin-top:10px; font-size:16px;">Empresas verificadas</p>
                 </div>
 
-                <div class="toggle-panel toggle-der">
-                    <h1>¿No tienes una cuenta?</h1>
-                    <p>Regístrate aquí</p>
-                    <button class="hidden" id="registro">Registrarse</button>
+                <div style="background:white; padding:20px; width:220px; border-radius:10px; 
+                            box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <h3 style="font-size:40px; margin:0;">500+</h3>
+                    <p style="margin-top:10px; font-size:16px;">Estudiantes beneficiados</p>
                 </div>
-            </div> <!-- .toggle -->
-        </div> <!-- .contenedor-toggle -->
-    </div> <!-- .contenedor -->
 
-    <script src="js/scripts.js"></script>
+                </div>
+            </section>
+        </div>
+
+        <div class="contenedor1" id="inicio">
+            <section class="Versus">
+                <h2>🏢 BrotaFuturo V.S. Others</h2>
+                <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Ventajas competitivas</th>
+                        <th>Desventajas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>BrotaFuturo</td>
+                        <td>
+                        Plataforma enfocada específicamente en estudiantes del IPN/ESCOM para servicio social y estancias profesionales, 
+                        integrando vacantes de profesores y empresas en un solo lugar. Centraliza información dispersa, incorpora filtros 
+                        por perfil académico y necesidades del estudiante, y al estar diseñada desde la perspectiva estudiantil, 
+                        prioriza la usabilidad, claridad del proceso y alineación con la normativa del IPN.
+                        </td>
+                        <td>
+                        En etapa inicial, con menor reconocimiento de marca que plataformas consolidadas. 
+                        Su alcance comienza limitado a una comunidad específica (ESCOM/IPN) y requiere esfuerzos de vinculación con empresas 
+                        y adopción institucional para consolidar su base de vacantes y usuarios activos.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Computrabajo</td>
+                        <td>
+                        Destaca por su gran cantidad de vacantes, su amplia base de empresas y su fuerte reconocimiento de marca, 
+                        siendo atractiva para universitarios necesitados de vacantes para realizar su servicio social o estancia profesional.
+                        </td>
+                        <td>
+                        Esta página no está hecha para estudiantes. Hay pocas ofertas útiles, muchas no son de fiar o están mal explicadas, 
+                        y está tan llena de cosas que no son relevantes, dificultando encontrar una oferta adecuada.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Sistema Institucional de Servicio Social (SISS) - IPN</td>
+                        <td>
+                        Es la plataforma oficial del IPN para gestionar el servicio social, lo que garantiza validez en los trámites 
+                        y centraliza programas de todas las escuelas, permitiendo registrar vacantes y darles seguimiento bajo un marco normativo.
+                        </td>
+                        <td>
+                        La plataforma tiene una interfaz poco clara, vacantes con información incompleta y sin filtros ni apoyo, 
+                        lo que obliga a los estudiantes a buscar en redes sociales y la hace ver más burocrática que práctica.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>LinkedIn</td>
+                        <td>
+                        Es el estándar global para conexiones profesionales. Permite validar la reputación de la empresa, 
+                        contactar directamente a reclutadores y acceder a estancias en empresas tecnológicas de alto nivel 
+                        que no usan bolsas de trabajo comunes.
+                        </td>
+                        <td>
+                        No está diseñada para la normativa del servicio social del IPN. Puede resultar intimidante para estudiantes sin 
+                        experiencia previa, y la alta competencia con profesionales experimentados dificulta que sus perfiles destaquen.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>OCC</td>
+                        <td>
+                        La publicación y búsqueda de vacantes de servicio social y prácticas profesionales tienen una amplia visibilidad 
+                        y tiene herramientas tecnológicas como IA para la descripción de vacantes.
+                        </td>
+                        <td>
+                        No muestra vacantes para hacer servicio social con profesores. Hay vacantes engañosas o prácticas fraudulentas 
+                        por parte de algunas empresas que utilizan la plataforma. No todas las empresas cumplen la normativa de servicio social del IPN.
+                        </td>
+                    </tr>
+                </tbody>
+                </table>
+            </section>
+        </div>
+        
+        <div class="contenedor1" id="aplicaciones" style="display:none;">
+            <h2>Aliados y Recursos</h2>
+            <div class="cards_wrapper">
+                <a class="card" href="https://serviciosocial.ipn.mx/infoServSoc/InfoServSocListaPerfiles.do"
+                    target="_blank" rel="noopener">
+                <h5>SISS Servicio Social IPN</h5>
+
+                <div class="card_media">
+                    <img src="./images/Ap1.png" alt="SISS IPN">
+                </div>
+
+                <div class="card_desc">
+                    <p>Plataforma oficial del IPN para consultar vacantes de servicio social.
+                    Permite filtrar por carrera</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://www.linkedin.com/jobs/search/?keywords=servicio%20social%20sistemas&location=M%C3%A9xico"
+                    target="_blank" rel="noopener">
+                <h5>LinkedIn Servicio Social</h5>
+
+                <div class="card_media">
+                    <img src="./images/Ap2.jpeg" alt="LinkedIn búsqueda servicio social sistemas">
+                </div>
+
+                <div class="card_desc">
+                    <p>Búsqueda preparada en LinkedIn con opciones de prácticas, servicio social y empleos en el área de Sistemas</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://forms.office.com/Pages/ResponsePage.aspx?id=qwlRHxTeDUmUlY4walkHKCwbYzIMImhPvBqO9mfO-p5UQk1YSllaVEs5OVVBSEVXWU1BWVhOTlkxTy4u&origin=QRCode"
+                    target="_blank" rel="noopener">
+                <h5>Banco de talento</h5>
+
+                <div class="card_media">
+                    <img src="./images/talento.png" alt="Banco de talento">
+                </div>
+
+                <div class="card_desc">
+                    <p>Formulario para egresados que buscan oportunidades de servicio social y estancias profesionales</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://forms.office.com/Pages/ResponsePage.aspx?id=H0Xg4YTOhEe018gQvI9maOIv-Ef9T2hDoiAXTG7cFhFUNEhOTFFEV0VRUEVISzlBM0FDUEJQSlpGVi4u"
+                    target="_blank" rel="noopener">
+                <h5>Netlogistik</h5>
+
+                <div class="card_media">
+                    <img src="./images/netlogistik.png" alt="Netlogistik">
+                </div>
+
+                <div class="card_desc">
+                    <p>Oportunidades de servicio social y estancias profesionales con Netlogistik, empresa aliada de BrotaFuturo</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://careers.emeal.nttdata.com/s/evento/a06KA000002LCjvYAG"
+                    target="_blank" rel="noopener">
+                <h5>NTT Data</h5>
+
+                <div class="card_media">
+                    <img src="./images/nttdata.png" alt="NTT Data">
+                </div>
+
+                <div class="card_desc">
+                    <p>Explora oportunidades de carrera y eventos especiales con NTT Data, líder en servicios tecnológicos</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://www.accenture.com/mx-es/careers"
+                    target="_blank" rel="noopener">
+                <h5>Accenture</h5>
+
+                <div class="card_media">
+                    <img src="./images/accenture.png" alt="Accenture">
+                </div>
+
+                <div class="card_desc">
+                    <p>Descubre oportunidades de carrera con Accenture, consultoría global de tecnología y servicios profesionales</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://www.tfaforms.com/5115099"
+                    target="_blank" rel="noopener">
+                <h5>InRoads</h5>
+
+                <div class="card_media">
+                    <img src="./images/inroads.png" alt="InRoads">
+                </div>
+
+                <div class="card_desc">
+                    <p>Accede a oportunidades de servicio social y estancias profesionales a través de InRoads</p>
+                </div>
+                </a>
+
+                <a class="card" href="https://reclutamiento.kpmg.com.mx/pbtOfertaLista.asp"
+                    target="_blank" rel="noopener">
+                <h5>Reclutamiento KPMG</h5>
+
+                <div class="card_media">
+                    <img src="./images/kpmg.png" alt="Reclutamiento KPMG">
+                </div>
+
+                <div class="card_desc">
+                    <p>Explora vacantes y oportunidades profesionales con KPMG, una de las firmas líderes en auditoría y consultoría</p>
+                </div>
+                </a>
+
+            </div>
+        </div>
+
+        <div class="contenedor1" id="ejemplos" style="display:none;">
+            <h2>BrotaFuturo App</h2>
+        </div>
+
+        <div class="contenedor1" id="contacto" style="display:none;">
+            <div class="contacto">
+                <div class="contacto-container">
+                    <form id="formContacto">
+                        <div class="form-group">
+                            <label for="nombre">Nombre completo</label>
+                            <input type="text" id="nombre" name="nombre" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mensaje">Mensaje o comentario</label>
+                            <textarea id="mensaje" name="mensaje" required></textarea>
+                        </div>
+
+                        <button class="btnContacto" type="submit">Enviar mensaje</button>
+                    </form>
+                </div>
+                <div class="imagen-contacto">
+                    <video autoplay loop muted>
+                        <source src="./images/MascotaV2.mp4" type="video/mp4">
+                        Tu navegador no soporta el elemento de video.
+                    </video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>

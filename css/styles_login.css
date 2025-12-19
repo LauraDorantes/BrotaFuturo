@@ -1,6 +1,11 @@
 :root {
+<<<<<<< HEAD
     --primario: #4c2882;
     --secundario: #572364;
+=======
+    --primario: #a782e0;
+    --secundario: #c7a9f4;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 *{
@@ -11,7 +16,11 @@
 }
 
 body{
+<<<<<<< HEAD
     background: linear-gradient(45deg,#fb6f92,#ffb3c6,#3b83bd,#191970);
+=======
+    background: linear-gradient(45deg,#f68ea8,#ffb3c6,#6cade2,#c47fe9);
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     background-size: 180% 180%;
     animation: fondo-moviendose 10s ease infinite;
 
@@ -40,10 +49,74 @@ body{
     box-shadow: 0 5px 15px rgba(255, 255, 255, 0.35);
     position: relative;
     overflow: hidden;
+<<<<<<< HEAD
     width: 768px; /* Ancho del formulario */
     max-width: 100%;
     /*min-height: 480px;*/ /* Alto del formulaio */
     height: 550px;
+=======
+    width: 900px; 
+    max-width: 100%;
+    height: 650px; 
+}
+
+.modal {
+    z-index: 10000 !important;
+}
+
+.modal-backdrop {
+    z-index: 9999 !important;
+}
+
+body.modal-open .contenedor_menu {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.modal-content {
+    z-index: 10001 !important;
+}
+
+/*
+    IMPORTANTE:
+    No ocultar todos los .btn cuando hay un modal abierto,
+    porque también desaparecen los botones del modal (Confirmar/Editar).
+    Solo se oculta el menú (dropdown) superior.
+*/
+body.modal-open .contenedor_menu .dropdown-menu,
+body.modal-open .contenedor_menu .btn {
+        display: none !important;
+}
+
+.contenedor_menu{
+    position: absolute;
+    top: 20px;
+    right: -100%;
+    width: 40%; 
+    z-index: 9999;
+    border-radius: 10px;
+    padding: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.6s ease-in-out;
+}
+
+.contenedor.activo .contenedor_menu {
+    opacity: 1;
+    pointer-events: auto;
+    right: 40px;
+    transition-delay: 0.2s;
+}
+
+.contenedor_menu .dropdown-menu {
+    z-index: 10000 !important;
+}
+
+.contenedor_menu .btn {
+    z-index: 9999 !important;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor p{
@@ -89,6 +162,7 @@ body{
     align-items: center;
     justify-content: center;
     flex-direction: column;
+<<<<<<< HEAD
     padding: 0 40px;
     height: 100%;
 }
@@ -97,19 +171,54 @@ body{
     background-color: #eee;
     border: none;
     margin: 8px 0;
+=======
+    padding: 50px 40px 20px 40px; 
+    height: 100%;
+}
+
+/* Evita que el menú absoluto cubra el título del registro */
+.contenedor.activo .formulario-registro form {
+    padding-top: 90px;
+}
+
+/* Reduce el espacio entre los últimos campos y los botones (Alumno) */
+#formularioAlumno #visibleAlumno .d-flex.gap-2 button {
+    margin-top: 0;
+}
+
+.contenedor input, select{
+    background-color: #eee;
+    border: none;
+    margin: 6px 0;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     padding: 10px 15px;
     font-size: 14px;
     border-radius: 8px;
     width: 100%;
     outline: none;
+<<<<<<< HEAD
     /* appearance: none; */
 }
 
+=======
+}
+
+/* CONTENEDORES DE FORMULARIOS */
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .contenedor-form{
     position: absolute;
     top: 0;
     height: 100%;
+<<<<<<< HEAD
     transition: all 0.6s ease-in-out; /* Animacion para mover la parte blanca */
+=======
+    width: 50%;
+    transition: all 0.6s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50; 
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .acceder{
@@ -118,6 +227,7 @@ body{
     z-index: 2;
 }
 
+<<<<<<< HEAD
 .contenedor.activo .acceder{
     transform: translateX(100%);
 }
@@ -151,6 +261,66 @@ body{
     margin: 20px 0;
 }
 
+=======
+.registro{
+    left: 100%; 
+    width: 50%;
+    z-index: 1;
+}
+
+.contenedor.activo .acceder{
+    transform: translateX(-100%);
+}
+
+.contenedor.activo .registro{
+    transform: translateX(-100%); 
+    z-index: 2;
+}
+
+.formulario-registro {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Por defecto ocultos */
+    align-items: center;
+    justify-content: center;
+}
+
+/* REGLAS PARA CADA FORMULARIO */
+#registroForm {
+    display: none !important;
+}
+
+#registroProfe {
+    display: none !important;
+}
+
+#registroInstitucion {
+    display: none !important;
+}
+
+/* MOSTRAR FORMULARIOS ACTIVOS */
+#registroForm.activo {
+    display: flex !important;
+}
+
+#registroProfe.activo {
+    display: flex !important;
+}
+
+#registroInstitucion.activo {
+    display: flex !important;
+}
+
+/* OCULTAR LOGIN CUANDO EL CONTENEDOR ESTÁ ACTIVO */
+.contenedor.activo #loginForm {
+    display: none !important;
+}
+
+/* (parte morada) */
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .contenedor-toggle{
     position: absolute;
     top: 0;
@@ -158,14 +328,23 @@ body{
     width: 50%;
     height: 100%;
     overflow: hidden;
+<<<<<<< HEAD
     transition: all 0.6s ease-in-out; /* Animacion para mover la parte morada */
     border-radius: 20px;
     z-index: 1000;
+=======
+    transition: all 0.6s ease-in-out;
+    border-radius: 20px;
+    z-index: 100; 
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor.activo .contenedor-toggle{
     transform: translateX(-100%);
+<<<<<<< HEAD
     border-radius: 20px;
+=======
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .toggle{
@@ -177,8 +356,12 @@ body{
     height: 100%;
     width: 200%;
     transform: translateX(0);
+<<<<<<< HEAD
     /* Animacion para texto registro */
     transition: all 0.5s ease;
+=======
+    transition: all 0.6s ease-in-out;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .contenedor.activo .toggle{
@@ -196,12 +379,20 @@ body{
     padding: 0 30px;
     text-align: center;
     top: 0;
+<<<<<<< HEAD
     transform: translateX(0);
     /* Animacion  para texto iniciar sesion */
     transition: all 0.6s ease;
 }
 
 .toggle-izq{
+=======
+    transition: all 0.6s ease-in-out;
+}
+
+.toggle-izq{
+    left: 0;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     transform: translateX(-200%);
 }
 
@@ -214,12 +405,21 @@ body{
     transform: translateX(0);
 }
 
+<<<<<<< HEAD
+=======
+.contenedor.activo .toggle-der{
+    transform: translateX(200%);
+}
+
+/* ESTILOS DE FORMULARIOS */
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 .formulario p{
     margin: 0;
     text-align: justify;
     font-size: 13px;
 }
 
+<<<<<<< HEAD
 .formulario__grupo-incorrecto input{
     border: 3px solid #bb2929;
 }
@@ -236,10 +436,40 @@ body{
 .contenedor-form.registro{
     position: relative;
     overflow: hidden;
+=======
+.formulario__grupo {
+    width: 100%;
+    margin-bottom: 10px; 
+}
+
+.formulario__grupo-incorrecto input,
+.formulario__grupo-incorrecto select{
+    border: 3px solid #bb2929;
+}
+
+.formulario__input-error {
+    display: none;
+    color: #bb2929;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.formulario__input-error-activo{
+    display: block;
+}
+
+.oculto, #oculto{
+    display: none;
+}
+
+.visible{
+    display: block;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }
 
 .btn-toogle-form{
     display: none;
+<<<<<<< HEAD
     font-size: 18px;
 }
 
@@ -253,6 +483,17 @@ body{
         padding: 15px 0;
         /* max-height: 600px; */
         overflow-y: auto;
+=======
+}
+
+/* MÓVILES */
+@media screen and (max-width: 767px) {
+    .contenedor {
+        width: 95%;
+        height: auto;
+        min-height: 500px;
+        padding: 15px 0;
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
     }
 
     .contenedor-toggle {
@@ -260,6 +501,7 @@ body{
     }
 
     .contenedor-form {
+<<<<<<< HEAD
         width: 100%;
         position: static;
     }
@@ -301,4 +543,63 @@ body{
     .btn-toogle-form button {
         margin: 0;
     }
+=======
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        left: 0 !important;
+        transform: none !important;
+        opacity: 1 !important;
+    }
+
+    .acceder, .registro {
+        position: relative !important;
+        width: 100% !important;
+        left: 0 !important;
+        transform: none !important;
+    }
+
+    .contenedor.activo .acceder,
+    .contenedor.activo .registro {
+        transform: none !important;
+    }
+
+    .btn-toogle-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+    .contenedor_menu {
+        position: relative;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 10px auto;
+        width: 90%;
+        opacity: 1 !important;
+    }
+
+    .contenedor form{
+        padding: 50px 20px 20px 20px; /* Padding optimizado para móvil */
+    }
+}
+
+.boton-casita {
+  display: inline-flex;
+  align-items: center;
+  background-color: #ffffff;
+  color: var(--secundario);
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.boton-casita:hover {
+  transform: scale(1.5);
+>>>>>>> b8c14c9025f906e3b49b9de212fffff8ac5ee301
 }

@@ -1,0 +1,12 @@
+# Dependencias
+node_modules/
+#package-lock.json
+
+# Archivos de entorno
+.env
+
+# Scripts (de Windows)
+*.bat
+
+# Credenciales de Google
+credenciales-google.json

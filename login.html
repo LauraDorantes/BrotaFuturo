@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="images/Logo.png">
+    <link rel="stylesheet" href="css/styles_login.css">
+    <link rel="stylesheet" href="css/styles_menu.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <title>BrotaFuturo-Login/Register</title>
+</head>
+<body>
+    <div class="contenedor" id="contenedor">
+        <!-- Menú de Usuario -->
+        <div class="contenedor_menu" style="margin-bottom: 20px;" id="menuUsuario">
+            <button
+                class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center"
+                type="button" id="userTypeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <span id="selected-user-type">Seleccione tipo de usuario</span>
+            </button>
+            <ul class="dropdown-menu w-100 p-3" aria-labelledby="userTypeDropdown">
+                <li>
+                    <h6 class="dropdown-header bg-light text-dark text-center rounded p-2 mb-2">Usuario</h6>
+                </li>
+                <li class="mb-2"><button type="button" class="dropdown-item rounded p-3 border-0"
+                        onclick="tipoUsuario('Alumno')"><i class="bi bi-person-fill me-2"></i>Alumno</button></li>
+                <li class="mb-2"><button type="button" class="dropdown-item rounded p-3 border-0"
+                        onclick="tipoUsuario('Profesor')"><i class="bi bi-person-workspace me-2"></i>Profesores</button>
+                </li>
+                <li class="mb-2"><button type="button" class="dropdown-item rounded p-3 border-0"
+                        onclick="tipoUsuario('Institucion/Empresa')"><i
+                            class="bi bi-building me-2"></i>Instituciones/Empresas</button></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li class="mb-2"><button type="button"
+                        class="dropdown-item rounded p-3 border-0 text-danger fw-semibold"
+                        onclick="tipoUsuario('Administrador')"><i
+                            class="bi bi-shield-fill-check me-2"></i>Administrador</button></li>
+            </ul>
+        </div>
+
+         <div class="contenedor-form acceder" id="loginForm">
+            <form id="formLogin">
+                <h1>Iniciar Sesión</h1>
+
+                <span>Ingresar con Correo y Contraseña</span><br>
+
+                <input id="loginCorreo" name="correo" type="email" placeholder="Ingrese su Correo" autocomplete="username">
+                <input id="loginPassword" name="password" type="password" placeholder="Ingrese su Contraseña" autocomplete="current-password">
+                <p id="loginError" class="text-danger mt-2" style="display:none;"></p>
+                <a href="#">Cambiar Contraseña</a>
+
+                <button type="submit">Iniciar Sesión</button>
+
+                <div class="btn-toogle-form">
+                    <p>¿No tienes una cuenta?</p>
+                    <button type="button" onclick="mostrarRegistro()">Registrarse</button>
+                </div>
+            </form>
+        </div> 
+
+        <div class="contenedor-form registro" id="registroContainer">
+            <!-- FORMULARIO DE ALUMNO -->
+            <div class="formulario-registro" id="registroForm">
+                <form class="formulario container" id="formularioAlumno">
+                    <div id="visibleAlumno">
+                        <h2 class="text-center mb-4">Registro de Alumno</h2>
+                        <p class="text-center mb-4">Por favor complete el siguiente formulario para Alumno</p>
+
+                        <!-- Boleta -->
+                        <div class="formulario__grupo" id="grupo__boleta">
+                            <input type="text" class="form-control" name="boleta" placeholder="No. de Boleta" maxlength="10">
+                            <p class="formulario__input-error">Verifique su boleta</p>
+                        </div>
+
+                        <!-- Nombre(s) -->
+                        <div class="formulario__grupo" id="grupo__nombreAlumno">
+                            <input type="text" class="form-control" id="nombreAlumno" name="nombre" placeholder="Nombre(s)">
+                            <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoPaterno">
+                                    <input type="text" class="form-control" name="apellidoPaterno" placeholder="Apellido Paterno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoMaterno">
+                                    <input type="text" class="form-control" name="apellidoMaterno" placeholder="Apellido Materno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sexo -->
+                        <div class="formulario__grupo" id="grupo__sexoAlumno">
+                            <select name="sexo" class="form-select">
+                                <option disabled selected>Sexo</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
+                        </div>
+
+                        <!-- CURP -->
+                        <div class="formulario__grupo" id="grupo__curpAlumno">
+                            <input type="text" class="form-control" name="curp" placeholder="CURP" maxlength="18">
+                            <p class="formulario__input-error">Verifique su CURP por favor</p>
+                        </div>
+
+                        <!-- Telefono -->
+                        <div class="formulario__grupo" id="grupo__telefonoAlumno">
+                            <input type="tel" class="form-control" name="telefono" placeholder="Teléfono" maxlength="10">
+                            <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__creditos">
+                                    <input type="number" class="form-control" name="creditos" placeholder="Créditos" min="0" max="387">
+                                    <p class="formulario__input-error">Debe ser entre 0 y 387</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__carreraAlumno">
+                                    <select id="carreraAlumno" name="carrera" class="form-select">
+                                        <option disabled selected>Carrera</option>
+                                        <option value="ISC">ISC</option>
+                                        <option value="IIA">IIA</option>
+                                        <option value="LCD">LCD</option>
+                                    </select>
+                                    <p class="formulario__input-error">Seleccione una carrera</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-primary" onclick="ocultarMostrarAlumno();">Siguiente</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                        </div>
+                    </div>
+
+                    <div id="ocultoAlumno" class="oculto">
+                        <h2 class="text-center mb-4">Datos de Cuenta - Alumno</h2>
+
+                        <div class="formulario__grupo" id="grupo__correoAlumno">
+                            <input type="email" class="form-control" name="correo" placeholder="Correo">
+                            <p class="formulario__input-error">El correo debe ser el institucional (@alumno.ipn.mx)</p>
+                        </div>
+
+                        <div class="formulario__grupo" id="grupo__contrasenaAlumno">
+                            <input type="password" class="form-control" name="contrasena" placeholder="Contraseña">
+                            <p class="formulario__input-error">La contraseña debe tener mínimo 6 caracteres, que incluya
+                                una mayúscula, un dígito y un carácter especial.</p>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" onclick="ocultarMostrarAlumno();">Atrás</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmarAlumno();">Enviar</button>
+                        </div>
+
+                        <div class="oculto mt-3" id="confirmacionAlumno">
+                            <p id="datosAlumno" class="text-center"></p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" class="btn btn-success">Sí</button>
+                                <button type="button" class="btn btn-warning" onclick="editarFormulario('Alumno')">Editar</button>
+                            </div>
+                        </div>
+
+                        <p class="oculto text-center mt-3" id="mensaje_errorAlumno" style="color: red;"></p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- FORMULARIO DE PROFESOR -->
+            <div class="formulario-registro" id="registroProfe">
+                <form class="formulario container" id="formularioProfesor">
+                    <div id="visibleProfe">
+                        <h2 class="text-center mb-4">Registro de Profesor</h2>
+                        <p class="text-center mb-4">Por favor complete el siguiente formulario para Profesor</p>
+
+                        <!-- RFC -->
+                        <div class="formulario__grupo" id="grupo__rfc">
+                            <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
+                            <p class="formulario__input-error">Verifique su RFC</p>
+                        </div>
+
+                        <!-- Nombre(s) -->
+                        <div class="formulario__grupo" id="grupo__nombreProfe">
+                            <input type="text" class="form-control" id="nombreProfe" name="nombre" placeholder="Nombre(s)">
+                            <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoPaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoPaterno" placeholder="Apellido Paterno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoMaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoMaterno" placeholder="Apellido Materno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sexo -->
+                        <div class="formulario__grupo" id="grupo__sexoProfe">
+                            <select name="sexo" class="form-select">
+                                <option disabled selected>Sexo</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
+                        </div>
+
+                        <!-- CURP -->
+                        <div class="formulario__grupo" id="grupo__curpProfe">
+                            <input type="text" class="form-control" name="curp" placeholder="CURP" maxlength="18">
+                            <p class="formulario__input-error">Verifique su CURP por favor</p>
+                        </div>
+
+                        <!-- Telefono -->
+                        <div class="formulario__grupo" id="grupo__telefonoProfe">
+                            <input type="tel" class="form-control" name="telefono" placeholder="Teléfono" maxlength="10">
+                            <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                        </div>
+
+                        <div class="formulario__grupo" id="grupo__carreraProfe">
+                            <select id="carreraProfe" name="carrera" class="form-select">
+                                <option disabled selected>Área o Departamento</option>
+                                <option value="formacionBasica">Departamento de Formación Básica</option>
+                                <option value="cienciasIngComputacion">Departamento de Ciencias e Ingeniería de la
+                                    Computación</option>
+                                <option value="ingSistemasComputacionales">Departamento de Ingeniería en Sistemas
+                                    Computacionales</option>
+                                <option value="formacionIntegralInstitucional">Departamento de Formación Integral e
+                                    Institucional</option>
+                                <option value="evaluacionSeguimientoAcademico">Departamento de Evaluación y Seguimiento
+                                    Académico</option>
+                                <option value="innovacionEducativa">Departamento de Innovación Educativa</option>
+                                <option value="unidadTecnologiaEducativa">Unidad de Tecnología Educativa y Campus
+                                    Virtual</option>
+                                <option value="colegioProfesores">Colegio de Profesores</option>
+                                <option value="posgrado">Departamento de Posgrado</option>
+                                <option value="investigacion">Departamento de Investigación</option>
+                                <option value="gestionEscolar">Departamento de Gestión Escolar</option>
+                                <option value="serviciosEstudiantiles">Departamento de Servicios Estudiantiles</option>
+                                <option value="extensionApoyosEducativos">Departamento de Extensión y Apoyos Educativos
+                                </option>
+                                <option value="unidadPolitecnicaIntegracionSocial">Unidad Politécnica de Integración
+                                    Social</option>
+                                <option value="capitalHumano">Departamento de Capital Humano</option>
+                                <option value="recursosFinancieros">Departamento de Recursos Financieros</option>
+                                <option value="recursosMaterialesServicios">Departamento de Recursos Materiales y
+                                    Servicios</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-primary" onclick="ocultarMostrarProfe();">Siguiente</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                        </div>
+                    </div>
+
+                    <div id="ocultoProfe" class="oculto">
+                        <h2 class="text-center mb-4">Datos de Cuenta - Profesor</h2>
+
+                        <div class="formulario__grupo" id="grupo__correoProfe">
+                            <input type="email" class="form-control" name="correo" placeholder="Correo">
+                            <p class="formulario__input-error">El correo debe ser el institucional (@ipn.mx)</p>
+                        </div>
+
+                        <div class="formulario__grupo" id="grupo__contrasenaProfe">
+                            <input type="password" class="form-control" name="contrasena" placeholder="Contraseña">
+                            <p class="formulario__input-error">La contraseña debe tener mínimo 6 caracteres, que incluya
+                                una mayúscula, un dígito y un carácter especial.</p>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" onclick="ocultarMostrarProfe();">Atrás</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmarProfe();">Enviar</button>
+                        </div>
+
+                        <div class="oculto mt-3" id="confirmacionProfe">
+                            <p id="datosProfe" class="text-center"></p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" class="btn btn-success">Sí</button>
+                                <button type="button" class="btn btn-warning" onclick="editarFormulario('Profesor')">Editar</button>
+                            </div>
+                        </div>
+
+                        <p class="oculto text-center mt-3" id="mensaje_errorProfe" style="color: red;"></p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- FORMULARIO DE INSTITUCIÓN / EMPRESA -->
+            <div class="formulario-registro" id="registroInstitucion">
+                <form class="formulario container" id="formularioInstitucion">
+                    <div id="visibleInstitucion">
+                        <h2 class="text-center mb-4">Registro de Institución/Empresa</h2>
+                        <p class="text-center mb-4">Por favor complete el siguiente formulario para Institución/Empresa</p>
+
+                        <!-- Nombre de la Institución/Empresa -->
+                        <div class="formulario__grupo" id="grupo__nombreInstitucion">
+                            <input type="text" class="form-control" id="nombreInstitucion" name="nombre"
+                                placeholder="Nombre de la Institución o Empresa">
+                            <p class="formulario__input-error">Ingrese un nombre válido</p>
+                        </div>
+
+                        <!-- Representante Legal -->
+                        <div class="formulario__grupo" id="grupo__representanteNombre">
+                            <input type="text" class="form-control" name="representanteNombre" placeholder="Nombre(s) del Representante">
+                            <p class="formulario__input-error">El nombre solo puede contener letras</p>
+                        </div>
+
+                        <div class="formulario__grupo" id="grupo__representanteApellidos">
+                            <input type="text" class="form-control" name="representanteApellidos" placeholder="Apellidos del Representante">
+                            <p class="formulario__input-error">Los apellidos solo pueden contener letras</p>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <!-- RFC -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__rfcInstitucion">
+                                    <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
+                                    <p class="formulario__input-error">Verifique su RFC</p>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__telefonoInstitucion">
+                                    <input type="tel" class="form-control" name="telefono" placeholder="Teléfono de contacto" maxlength="10">
+                                    <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dirección -->
+                        <div class="formulario__grupo" id="grupo__direccionInstitucion">
+                            <input type="text" class="form-control" name="direccion" placeholder="Dirección completa">
+                        </div>
+
+                        <!-- Tipo de Institución -->
+                        <div class="formulario__grupo" id="grupo__tipoInstitucion">
+                            <select name="tipo" class="form-select">
+                                <option disabled selected>Tipo de Institución</option>
+                                <option value="publica">Pública</option>
+                                <option value="privada">Privada</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-primary" onclick="ocultarMostrarInstitucion();">Siguiente</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                        </div>
+                    </div>
+
+                    <!-- Datos de cuenta -->
+                    <div id="ocultoInstitucion" class="oculto">
+                        <h2 class="text-center mb-4">Datos de Cuenta - Institución/Empresa</h2>
+
+                        <div class="formulario__grupo" id="grupo__correoInstitucion">
+                            <input type="email" class="form-control" name="correo" placeholder="Correo">
+                            <p class="formulario__input-error">Ingrese un correo válido</p>
+                        </div>
+
+                        <div class="formulario__grupo" id="grupo__contrasenaInstitucion">
+                            <input type="password" class="form-control" name="contrasena" placeholder="Contraseña">
+                            <p class="formulario__input-error">La contraseña debe tener mínimo 6 caracteres, incluir una
+                                mayúscula, un dígito y un carácter especial.</p>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="button" class="btn btn-secondary" onclick="ocultarMostrarInstitucion();">Atrás</button>
+                            <button type="reset" class="btn btn-secondary">Limpiar</button>
+                            <button type="button" class="btn btn-primary" onclick="confirmarInstitucion();">Enviar</button>
+                        </div>
+
+                        <div class="oculto mt-3" id="confirmacionInstitucion">
+                            <p id="datosInstitucion" class="text-center"></p>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" class="btn btn-success">Sí</button>
+                                <button type="button" class="btn btn-warning" onclick="editarFormulario('Institucion')">Editar</button>
+                            </div>
+                        </div>
+
+                        <p class="oculto text-center mt-3" id="mensaje_errorInstitucion" style="color: red;"></p>
+                    </div>
+                </form>
+            </div>
+        </div> <!-- .contenedor-form registro -->
+
+        <!-- (PARTE MORADA) -->
+        <div class="contenedor-toggle">
+            <div class="toggle">
+                <div class="toggle-panel toggle-izq">
+                    <h1>¿Ya tienes una cuenta?<br></h1>
+                    <p>Inicia sesión con Correo y Contraseña</p>
+                    <button class="hidden btn btn-light" id="acceder">Iniciar Sesión</button>
+                </div>
+
+                <div class="toggle-panel toggle-der">
+                    <h1>¿No tienes una cuenta?</h1>
+                    <p>Regístrate aquí</p>
+                    <button class="hidden btn btn-light" id="registro">Registrarse</button>
+                </div>
+            </div> <!-- .toggle -->
+        </div> <!-- .contenedor-toggle -->
+
+    </div> <!-- .contenedor -->
+    <br>
+    <div>
+        <a href="index.html" class="boton-casita">
+            <i class="fas fa-home"></i>
+        </a>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/scripts_login.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
