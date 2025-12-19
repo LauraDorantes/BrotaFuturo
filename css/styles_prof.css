@@ -1221,11 +1221,11 @@ label[required]::after {
 }
 
 .activo {
-    color: #2e7d32;
+    color: var(--green);
     font-weight: 600;
 }
 
 .finalizado {
-    color: #c62828;
+    color: var(--red);
     font-weight: 600;
 }
