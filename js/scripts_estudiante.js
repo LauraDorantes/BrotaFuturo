@@ -19,13 +19,101 @@
  * URL base de la API
  * Cambiar según el entorno (desarrollo/producción)
  */
-const API_BASE_URL = 'http://localhost:3000/api';
+// Si existe js/config.js, usa API_BASE_URL; si no, usa el fallback.
+const API_BASE_URL_ESTUDIANTE = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL)
+    ? API_BASE_URL
+    : 'http://localhost:5000/api';
+
+function resolveEndpoint(template, params = {}) {
+    if (typeof template !== 'string') return template;
+    return template.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, key) => {
+        const value = params[key];
+        return value !== undefined && value !== null ? encodeURIComponent(String(value)) : `:${key}`;
+    });
+}
+
+function withQuery(url, query = {}) {
+    const entries = Object.entries(query).filter(([, v]) => v !== undefined && v !== null && String(v) !== '');
+    if (entries.length === 0) return url;
+    const qs = entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join('&');
+    return `${url}${url.includes('?') ? '&' : '?'}${qs}`;
+}
+
+function requireConfigValue(objectName, obj, prop) {
+    if (!obj || typeof obj[prop] !== 'string' || !obj[prop]) {
+        throw new Error(`Falta configuraci\u00f3n: ${objectName}.${prop}. Revisa que se cargue js/config.js antes de este script.`);
+    }
+    return obj[prop];
+}
 
 /**
  * Almacenamiento del token de autenticación y datos del usuario
  */
-let authToken = localStorage.getItem('authToken');
-let refreshToken = localStorage.getItem('refreshToken');
+function storageGet(key) {
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function storageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // noop
+    }
+}
+
+function storageRemove(key) {
+    try {
+        localStorage.removeItem(key);
+    } catch {
+        // noop
+    }
+}
+
+// Compatibilidad: si existe js/config.js, usamos STORAGE_KEYS; si no, usamos strings.
+function getAccessToken() {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    return storageGet(key);
+}
+
+function setAccessToken(token) {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    if (!token) {
+        storageRemove(key);
+        return;
+    }
+    storageSet(key, token);
+}
+
+function getRefreshToken() {
+    const key = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.REFRESH_TOKEN) ? STORAGE_KEYS.REFRESH_TOKEN : 'refreshToken';
+    return storageGet(key);
+}
+
+function clearAuthStorage() {
+    const accessKey = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) ? STORAGE_KEYS.ACCESS_TOKEN : 'accessToken';
+    const refreshKey = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.REFRESH_TOKEN) ? STORAGE_KEYS.REFRESH_TOKEN : 'refreshToken';
+    storageRemove(accessKey);
+    storageRemove(refreshKey);
+    // Limpieza extra por si quedaron llaves antiguas
+    storageRemove('authToken');
+    storageRemove('refreshToken');
+    if (typeof STORAGE_KEYS !== 'undefined') {
+        if (STORAGE_KEYS.USER_ROLE) storageRemove(STORAGE_KEYS.USER_ROLE);
+        if (STORAGE_KEYS.USER_ID) storageRemove(STORAGE_KEYS.USER_ID);
+        if (STORAGE_KEYS.USER_EMAIL) storageRemove(STORAGE_KEYS.USER_EMAIL);
+    } else {
+        storageRemove('userRole');
+        storageRemove('userId');
+        storageRemove('userEmail');
+    }
+}
+
+let authToken = getAccessToken();
+let refreshToken = getRefreshToken();
 let currentUser = null;
 
 // ============================================
@@ -44,13 +132,21 @@ async function fetchAPI(url, options = {}) {
         ...options.headers
     };
 
+    // Sin token, no hay sesión: redirigir al login.
+    authToken = getAccessToken();
+    refreshToken = getRefreshToken();
+
     // Agregar token de autenticación si está disponible
     if (authToken) {
         headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
+        const requestUrl = (typeof url === 'string' && /^https?:\/\//i.test(url))
+            ? url
+            : `${API_BASE_URL_ESTUDIANTE}${url}`;
+
+        const response = await fetch(requestUrl, {
             ...options,
             headers
         });
@@ -60,9 +156,17 @@ async function fetchAPI(url, options = {}) {
             const newToken = await refreshAuthToken();
             if (newToken) {
                 headers['Authorization'] = `Bearer ${newToken}`;
-                return await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
+                const retryResponse = await fetch(requestUrl, { ...options, headers });
+
+                if (!retryResponse.ok) {
+                    const retryErrorData = await retryResponse.json().catch(() => ({ message: 'Error en la petición' }));
+                    throw new Error(retryErrorData.message || `Error ${retryResponse.status}: ${retryResponse.statusText}`);
+                }
+
+                return await retryResponse.json();
             } else {
                 // Si no se puede refrescar, redirigir al login
+                clearAuthStorage();
                 window.location.href = 'login.html';
                 return;
             }
@@ -86,7 +190,9 @@ async function fetchAPI(url, options = {}) {
  */
 async function refreshAuthToken() {
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        const refreshUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'REFRESH_TOKEN');
+
+        const response = await fetch(refreshUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: refreshToken })
@@ -95,7 +201,7 @@ async function refreshAuthToken() {
         if (response.ok) {
             const data = await response.json();
             authToken = data.accessToken;
-            localStorage.setItem('authToken', authToken);
+            setAccessToken(authToken);
             return authToken;
         }
     } catch (error) {
@@ -128,6 +234,14 @@ function showSuccess(message) {
  * Configurar navegación lateral y toggle
  */
 document.addEventListener('DOMContentLoaded', () => {
+    // Si no hay tokens, no hay sesión.
+    authToken = getAccessToken();
+    refreshToken = getRefreshToken();
+    if (!authToken && !refreshToken) {
+        window.location.href = 'login.html';
+        return;
+    }
+
     // Navegación hover
     let list = document.querySelectorAll(".navigation li");
     
@@ -154,11 +268,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Cambiar entre secciones
     document.querySelectorAll(".nav-item").forEach(item => {
-        item.addEventListener("click", () => {
+        item.addEventListener("click", (e) => {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
             const sectionClass = item.getAttribute("data-section");
             
             // Ocultar todas las secciones
-            document.querySelectorAll("section").forEach(sec => {
+            // Solo ocultar paneles principales, no sub-secciones internas (ej: #perfilReadOnly)
+            document.querySelectorAll(".main > section").forEach(sec => {
                 sec.classList.add("hidden");
             });
             
@@ -188,6 +304,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarPostulaciones();
             } else if (sectionClass === 'mensajes-section') {
                 cargarMensajesRecibidos();
+            } else if (sectionClass === 'perfil-section') {
+                // Volver a mostrar el perfil (y asegurar el estado de lectura)
+                const perfilForm = document.getElementById('perfilForm');
+                const perfilReadOnly = document.getElementById('perfilReadOnly');
+                if (perfilForm) perfilForm.classList.add('hidden');
+                if (perfilReadOnly) perfilReadOnly.classList.remove('hidden');
+                cargarPerfil();
             }
         });
     });
@@ -196,11 +319,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {
-            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('refreshToken');
-                window.location.href = 'login.html';
-            }
+            clearAuthStorage();
+            window.location.href = 'login.html';
         });
     }
 
@@ -252,7 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 async function cargarPerfil() {
     try {
-        const data = await fetchAPI('/auth/me');
+        const meUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'GET_USER');
+
+        const data = await fetchAPI(meUrl);
         
         if (data.user) {
             currentUser = data.user;
@@ -323,7 +445,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón editar
     if (editBtn) {
-        editBtn.addEventListener('click', () => {
+        editBtn.addEventListener('click', async () => {
+            // Asegura que el formulario tenga los datos más recientes
+            if (!currentUser) {
+                await cargarPerfil();
+            } else {
+                mostrarPerfil(currentUser);
+            }
             perfilForm.classList.remove('hidden');
             perfilReadOnly.classList.add('hidden');
         });
@@ -342,33 +470,179 @@ document.addEventListener('DOMContentLoaded', () => {
     if (perfilForm) {
         perfilForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            const markInvalid = (el) => {
+                if (!el) return;
+                el.classList.add('input-invalid');
+                if (typeof el.focus === 'function') el.focus();
+            };
+            const clearInvalid = (el) => {
+                if (!el) return;
+                el.classList.remove('input-invalid');
+            };
+
+            const elNombre = document.getElementById('nombreInput');
+            const elAPaterno = document.getElementById('aPaternoInput');
+            const elAMaterno = document.getElementById('aMaternoInput');
+            const elCorreo = document.getElementById('emailInput');
+            const elTelefono = document.getElementById('phoneInput');
+            const elBoleta = document.getElementById('boletaInput');
+            const elSexo = document.getElementById('sexoInput');
+            const elCarrera = document.getElementById('carreraInput');
+            const elCreditos = document.getElementById('creditosInput');
+            const elCurp = document.getElementById('curpInput');
+
+            // Limpia marcas previas
+            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elSexo, elCarrera, elCreditos, elCurp]
+                .filter(Boolean)
+                .forEach(clearInvalid);
+
+            // Quitar marca al editar
+            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elCreditos, elCurp]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('input', () => clearInvalid(el), { once: true }));
+            [elSexo, elCarrera]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('change', () => clearInvalid(el), { once: true }));
+
+            // Validaciones alineadas con scripts_login.js
+            const expresiones = {
+                boleta: /^(\d{10})$/,
+                nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+                telefono: /^\d{7,10}$/,
+                curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
+                correoAlumno: /^[a-zA-Z0-9_.+-]+@alumno\.ipn\.mx$/,
+            };
+
+            const nombresRaw = String(document.getElementById('nombreInput').value || '').trim();
+            const apellidoPaternoRaw = String(document.getElementById('aPaternoInput').value || '').trim();
+            const apellidoMaternoRaw = String(document.getElementById('aMaternoInput').value || '').trim();
+            const correoRaw = String(document.getElementById('emailInput').value || '').trim();
+            const telefonoDigits = String(document.getElementById('phoneInput').value || '').replace(/\D/g, '');
+            const boletaDigits = String(document.getElementById('boletaInput').value || '').replace(/\D/g, '');
+            const sexoRaw = String(document.getElementById('sexoInput').value || '').trim();
+            const carreraRaw = String(document.getElementById('carreraInput').value || '').trim();
+            const creditosRaw = String(document.getElementById('creditosInput').value || '').trim();
+            const curpRaw = String(document.getElementById('curpInput').value || '').trim().toUpperCase();
+
+            const creditosNum = creditosRaw === '' ? NaN : Number(creditosRaw);
+
+            if (!nombresRaw || !expresiones.nombre.test(nombresRaw)) {
+                markInvalid(elNombre);
+                showError('Nombres inválidos');
+                return;
+            }
+            if (!apellidoPaternoRaw || !expresiones.nombre.test(apellidoPaternoRaw)) {
+                markInvalid(elAPaterno);
+                showError('Apellido paterno inválido');
+                return;
+            }
+            if (!apellidoMaternoRaw || !expresiones.nombre.test(apellidoMaternoRaw)) {
+                markInvalid(elAMaterno);
+                showError('Apellido materno inválido');
+                return;
+            }
+            if (!correoRaw || !expresiones.correoAlumno.test(correoRaw)) {
+                markInvalid(elCorreo);
+                showError('Correo inválido (usa @alumno.ipn.mx)');
+                return;
+            }
+            if (!telefonoDigits || !expresiones.telefono.test(telefonoDigits)) {
+                markInvalid(elTelefono);
+                showError('Teléfono inválido (7 a 10 dígitos)');
+                return;
+            }
+            if (!boletaDigits || !expresiones.boleta.test(boletaDigits)) {
+                markInvalid(elBoleta);
+                showError('Boleta inválida (10 dígitos)');
+                return;
+            }
+            if (!sexoRaw || (sexoRaw !== 'Masculino' && sexoRaw !== 'Femenino')) {
+                markInvalid(elSexo);
+                showError('Selecciona un sexo válido');
+                return;
+            }
+            if (!carreraRaw || (carreraRaw !== 'ISC' && carreraRaw !== 'IIA' && carreraRaw !== 'LCD')) {
+                markInvalid(elCarrera);
+                showError('Selecciona una carrera válida');
+                return;
+            }
+            if (!Number.isFinite(creditosNum) || creditosNum < 0 || creditosNum > 387) {
+                markInvalid(elCreditos);
+                showError('Créditos inválidos (0 a 387)');
+                return;
+            }
+            if (!curpRaw || !expresiones.curp.test(curpRaw)) {
+                markInvalid(elCurp);
+                showError('CURP inválida');
+                return;
+            }
             
             // TODO: Implementar actualización de perfil cuando exista el endpoint
             // Por ahora solo guardamos en localStorage como ejemplo
             const formData = {
-                nombres: document.getElementById('nombreInput').value,
-                apellidoPaterno: document.getElementById('aPaternoInput').value,
-                apellidoMaterno: document.getElementById('aMaternoInput').value,
-                correo: document.getElementById('emailInput').value,
-                telefono: document.getElementById('phoneInput').value,
-                sexo: document.getElementById('sexoInput').value,
-                carrera: document.getElementById('carreraInput').value,
-                creditos: parseInt(document.getElementById('creditosInput').value)
+                nombres: nombresRaw,
+                apellidoPaterno: apellidoPaternoRaw,
+                apellidoMaterno: apellidoMaternoRaw,
+                correo: correoRaw,
+                telefono: Number(telefonoDigits),
+                boleta: Number(boletaDigits),
+                sexo: sexoRaw,
+                carrera: carreraRaw,
+                creditos: Number(creditosNum),
+                curp: curpRaw,
             };
+
+            const currentPasswordEl = document.getElementById('currentPasswordInput');
+            const newPasswordEl = document.getElementById('newPasswordInput');
+            const currentPassword = currentPasswordEl ? String(currentPasswordEl.value || '') : '';
+            const newPassword = newPasswordEl ? String(newPasswordEl.value || '') : '';
+
+            // Misma regla que en login/registro (scripts_login.js)
+            const STRONG_PASSWORD_REGEX = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/;
 
             try {
                 // Llamada a la API para actualizar el perfil
-                const response = await fetchAPI('/alumnos/perfil', { 
+                const profileUrl = requireConfigValue('STUDENT_ENDPOINTS', (typeof STUDENT_ENDPOINTS !== 'undefined' ? STUDENT_ENDPOINTS : null), 'PROFILE');
+
+                const response = await fetchAPI(profileUrl, { 
                     method: 'PUT', 
                     body: JSON.stringify(formData) 
                 });
-                
-                if (response.user) {
-                    currentUser = response.user;
+
+                const updatedUser = response?.data || response?.user;
+                if (updatedUser) {
+                    currentUser = updatedUser;
+
+                    // Cambio de contraseña (opcional)
+                    if (newPassword.trim()) {
+                        if (!currentPassword.trim()) {
+                            showError('Para cambiar la contraseña, ingresa tu contraseña actual');
+                            return;
+                        }
+
+                        if (!STRONG_PASSWORD_REGEX.test(newPassword)) {
+                            showError('La nueva contraseña debe tener al menos 6 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 símbolo');
+                            return;
+                        }
+
+                        const changePasswordUrl = requireConfigValue('AUTH_ENDPOINTS', (typeof AUTH_ENDPOINTS !== 'undefined' ? AUTH_ENDPOINTS : null), 'CHANGE_PASSWORD');
+                        await fetchAPI(changePasswordUrl, {
+                            method: 'PUT',
+                            body: JSON.stringify({
+                                currentPassword: currentPassword,
+                                newPassword: newPassword,
+                            }),
+                        });
+
+                        if (currentPasswordEl) currentPasswordEl.value = '';
+                        if (newPasswordEl) newPasswordEl.value = '';
+                    }
+
                     showSuccess('Perfil actualizado correctamente');
                     perfilForm.classList.add('hidden');
                     perfilReadOnly.classList.remove('hidden');
-                    mostrarPerfil(response.user);
+                    mostrarPerfil(updatedUser);
                 }
             } catch (error) {
                 showError(error.message || 'Error al actualizar el perfil');
@@ -416,17 +690,43 @@ async function subirCV(file) {
         const formData = new FormData();
         formData.append('cvFile', file);
 
-        const url = currentUser && currentUser.cvID 
-            ? '/alumnos/actualizarCV' 
-            : '/alumnos/subirCV';
+        const studentEndpoints = (typeof STUDENT_ENDPOINTS !== 'undefined') ? STUDENT_ENDPOINTS : null;
+        const isUpdate = Boolean(currentUser && currentUser.cvID);
+        const url = isUpdate
+            ? requireConfigValue('STUDENT_ENDPOINTS', studentEndpoints, 'UPDATE_CV')
+            : requireConfigValue('STUDENT_ENDPOINTS', studentEndpoints, 'UPLOAD_CV');
 
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            method: url.includes('actualizar') ? 'PUT' : 'POST',
-            headers: {
-                'Authorization': `Bearer ${authToken}`
-            },
-            body: formData
-        });
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        // Siempre toma el token más reciente (por si hubo refresh)
+        authToken = getAccessToken();
+        refreshToken = getRefreshToken();
+
+        const doUpload = async (token) => {
+            const headers = {};
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            return await fetch(url, {
+                method,
+                headers,
+                body: formData,
+            });
+        };
+
+        let response = await doUpload(authToken);
+
+        // Si expira el accessToken, refrescar y reintentar una vez
+        if (response.status === 401 && refreshToken) {
+            const newToken = await refreshAuthToken();
+            if (newToken) {
+                response = await doUpload(newToken);
+            }
+        }
+
+        if (response.status === 401) {
+            clearAuthStorage();
+            window.location.href = 'login.html';
+            return;
+        }
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Error al subir CV' }));
@@ -467,7 +767,8 @@ async function cargarVacantes() {
     listaVacantes.innerHTML = '<div class="loading-message">Cargando vacantes...</div>';
 
     try {
-        const vacantes = await fetchAPI('/vacantes');
+        const vacantesUrl = requireConfigValue('VACANCY_ENDPOINTS', (typeof VACANCY_ENDPOINTS !== 'undefined' ? VACANCY_ENDPOINTS : null), 'GET_VACANCIES');
+        const vacantes = await fetchAPI(vacantesUrl);
         
         if (!vacantes || vacantes.length === 0) {
             listaVacantes.innerHTML = '<div class="no-publicaciones"><p>No hay vacantes disponibles en este momento</p></div>';
@@ -494,11 +795,14 @@ async function cargarVacantes() {
  */
 function crearCardVacante(vacante) {
     const card = document.createElement('div');
-    card.className = `vacante-card ${vacante.propietarioTipo.toLowerCase()}`;
+    const propietarioTipo = String(vacante && vacante.propietarioTipo ? vacante.propietarioTipo : '');
+    card.className = `vacante-card ${propietarioTipo ? propietarioTipo.toLowerCase() : ''}`;
     card.dataset.vacanteId = vacante._id;
 
-    const tipoLabel = vacante.propietarioTipo === 'Profesor' ? 'Profesor' : 'Empresa/Institución';
-    const tipoClass = vacante.propietarioTipo === 'Profesor' ? 'profesor' : 'institucion';
+    const tipoLabel = propietarioTipo === 'Profesor' ? 'Profesor' : 'Empresa/Institución';
+    const tipoClass = propietarioTipo === 'Profesor' ? 'profesor' : 'institucion';
+
+    const descripcionCorta = getVacanteDescripcion(vacante);
 
     card.innerHTML = `
         <div class="vacante-tipo ${tipoClass}">${tipoLabel}</div>
@@ -506,9 +810,10 @@ function crearCardVacante(vacante) {
             <h3>${vacante.titulo || 'Sin título'}</h3>
         </div>
         <div class="publicacion-info">
-            <p><strong>Descripción:</strong> ${(vacante.descripcion || '').substring(0, 100)}${vacante.descripcion && vacante.descripcion.length > 100 ? '...' : ''}</p>
-            ${vacante.salario ? `<p><strong>Salario:</strong> $${vacante.salario.toLocaleString()}</p>` : ''}
-            <p><strong>Fecha publicación:</strong> ${new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES')}</p>
+            <p><strong>Descripción:</strong> ${descripcionCorta.substring(0, 100)}${descripcionCorta.length > 100 ? '...' : ''}</p>
+            <p><strong>Área:</strong> ${vacante.area || '-'}</p>
+            <p><strong>Vacantes:</strong> ${vacante.numeroVacantes != null ? vacante.numeroVacantes : '-'}</p>
+            <p><strong>Fecha publicación:</strong> ${vacante.fechaPublicacion ? new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES') : '-'}</p>
         </div>
         <div class="publicacion-actions">
             <button class="btn btn-primary ver-vacante" data-vacante-id="${vacante._id}">
@@ -568,7 +873,8 @@ function filtrarVacantes(vacantes) {
     if (buscarTexto) {
         vacantesFiltradas = vacantesFiltradas.filter(v => 
             (v.titulo && v.titulo.toLowerCase().includes(buscarTexto)) ||
-            (v.descripcion && v.descripcion.toLowerCase().includes(buscarTexto))
+            (getVacanteDescripcion(v).toLowerCase().includes(buscarTexto)) ||
+            (v.area && String(v.area).toLowerCase().includes(buscarTexto))
         );
     }
 
@@ -588,8 +894,94 @@ function filtrarVacantes(vacantes) {
  * @param {object} vacante - Datos de la vacante
  */
 function mostrarDetalleVacante(vacante) {
-    // Implementar modal con detalles completos si es necesario
-    alert(`Título: ${vacante.titulo}\n\nDescripción: ${vacante.descripcion}\n\nRequisitos: ${vacante.requisitos?.join(', ')}`);
+    mostrarModalDetalleVacante(vacante);
+}
+
+function mostrarModalDetalleVacante(vacante) {
+    const modal = document.getElementById('modalDetalleVacante');
+    const content = document.getElementById('detalleVacanteContent');
+    if (!modal || !content) {
+        // fallback si no existe el modal
+        return;
+    }
+
+    const titulo = vacante && vacante.titulo ? vacante.titulo : 'Sin título';
+    const tipo = vacante && vacante.propietarioTipo ? vacante.propietarioTipo : '-';
+
+    const area = vacante && vacante.area ? vacante.area : '-';
+    const vacantesNum = (vacante && vacante.numeroVacantes != null) ? vacante.numeroVacantes : '-';
+    const modalidad = vacante && vacante.modalidad ? vacante.modalidad : '-';
+    const horas = (vacante && vacante.horasSemanal != null) ? vacante.horasSemanal : '-';
+    const duracion = (vacante && vacante.duracionMeses != null) ? vacante.duracionMeses : '-';
+
+    const fechaInicio = vacante && vacante.fechaInicio ? new Date(vacante.fechaInicio).toLocaleDateString('es-ES') : '-';
+    const fechaLimite = vacante && vacante.fechaLimite ? new Date(vacante.fechaLimite).toLocaleDateString('es-ES') : '-';
+    const fechaPublicacion = vacante && vacante.fechaPublicacion ? new Date(vacante.fechaPublicacion).toLocaleDateString('es-ES') : '-';
+
+    const descripcion = getVacanteDescripcion(vacante);
+    const requisitos = getVacanteRequisitosTexto(vacante);
+    const beneficios = getVacanteBeneficiosTexto(vacante);
+    const contacto = getVacanteContactoTexto(vacante);
+
+    content.innerHTML = `
+        <div class="form-section">
+            <h4>${escapeHtml(titulo)}</h4>
+            <p><strong>Tipo:</strong> ${escapeHtml(tipo)}</p>
+            <p><strong>Área:</strong> ${escapeHtml(area)}</p>
+            <p><strong>Vacantes:</strong> ${escapeHtml(String(vacantesNum))}</p>
+            <p><strong>Modalidad:</strong> ${escapeHtml(String(modalidad))}</p>
+            <p><strong>Horas semanales:</strong> ${escapeHtml(String(horas))}</p>
+            <p><strong>Duración (meses):</strong> ${escapeHtml(String(duracion))}</p>
+            <p><strong>Fecha inicio:</strong> ${escapeHtml(String(fechaInicio))}</p>
+            <p><strong>Fecha límite:</strong> ${escapeHtml(String(fechaLimite))}</p>
+            <p><strong>Fecha publicación:</strong> ${escapeHtml(String(fechaPublicacion))}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Descripción / Objetivos</h4>
+            <p>${escapeHtml(descripcion || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Requisitos</h4>
+            <p>${escapeHtml(requisitos || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Beneficios</h4>
+            <p>${escapeHtml(beneficios || '-')}</p>
+        </div>
+
+        <div class="form-section">
+            <h4>Contacto</h4>
+            <p>${escapeHtml(contacto || '-')}</p>
+        </div>
+    `;
+
+    const cerrarBtn = document.getElementById('cerrarModalDetalleVacante');
+    const close = () => modal.classList.add('hidden');
+    if (cerrarBtn) cerrarBtn.onclick = close;
+    modal.onclick = (e) => {
+        if (e.target === modal) close();
+    };
+    window.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') {
+            close();
+            window.removeEventListener('keydown', onEsc);
+        }
+    });
+
+    modal.classList.remove('hidden');
+}
+
+function escapeHtml(value) {
+    const s = String(value == null ? '' : value);
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**
@@ -603,13 +995,15 @@ function abrirModalPostulacion(vacante) {
 
     if (!modal || !vacanteInfo) return;
 
-    // Mostrar información de la vacante
+    // Mostrar información de la vacante (compatible con modelos antiguos y el actual)
+    const descripcion = getVacanteDescripcion(vacante);
+    const requisitos = getVacanteRequisitosTexto(vacante);
     vacanteInfo.innerHTML = `
         <h4>${vacante.titulo}</h4>
         <p><strong>Tipo:</strong> ${vacante.propietarioTipo}</p>
-        <p><strong>Descripción:</strong> ${vacante.descripcion}</p>
-        ${vacante.requisitos && vacante.requisitos.length > 0 ? 
-            `<p><strong>Requisitos:</strong> ${vacante.requisitos.join(', ')}</p>` : ''}
+        <p><strong>Área:</strong> ${vacante.area || '-'}</p>
+        <p><strong>Descripción:</strong> ${descripcion || '-'}</p>
+        ${requisitos ? `<p><strong>Requisitos:</strong> ${requisitos}</p>` : ''}
     `;
 
     // Guardar ID de la vacante en el formulario
@@ -643,6 +1037,53 @@ function abrirModalPostulacion(vacante) {
     };
 }
 
+function getVacanteDescripcion(v) {
+    if (!v) return '';
+    // Soporte para modelo anterior
+    if (typeof v.descripcion === 'string' && v.descripcion.trim()) return v.descripcion.trim();
+
+    const parts = [];
+    if (typeof v.objetivos === 'string' && v.objetivos.trim()) parts.push(`Objetivos: ${v.objetivos.trim()}`);
+    if (typeof v.actividades === 'string' && v.actividades.trim()) parts.push(`Actividades: ${v.actividades.trim()}`);
+    if (typeof v.requerimientos === 'string' && v.requerimientos.trim()) parts.push(`Requerimientos: ${v.requerimientos.trim()}`);
+    return parts.join(' | ');
+}
+
+function getVacanteRequisitosTexto(v) {
+    if (!v) return '';
+    // Modelo anterior: requisitos como array o string
+    if (Array.isArray(v.requisitos)) return v.requisitos.filter(Boolean).join(', ');
+    if (typeof v.requisitos === 'string' && v.requisitos.trim()) return v.requisitos.trim();
+
+    const parts = [];
+    if (typeof v.carreraRequerida === 'string' && v.carreraRequerida.trim()) parts.push(`Carrera: ${v.carreraRequerida.trim()}`);
+    if (typeof v.conocimientosTecnicos === 'string' && v.conocimientosTecnicos.trim()) parts.push(`Conocimientos: ${v.conocimientosTecnicos.trim()}`);
+    if (typeof v.habilidades === 'string' && v.habilidades.trim()) parts.push(`Habilidades: ${v.habilidades.trim()}`);
+    if (typeof v.requerimientos === 'string' && v.requerimientos.trim()) parts.push(`Requerimientos: ${v.requerimientos.trim()}`);
+    return parts.join(' | ');
+}
+
+function getVacanteBeneficiosTexto(v) {
+    if (!v) return '';
+    if (Array.isArray(v.beneficiosAlumno) && v.beneficiosAlumno.length) {
+        return v.beneficiosAlumno.filter(Boolean).join(', ');
+    }
+    if (Array.isArray(v.beneficios) && v.beneficios.length) {
+        return v.beneficios.filter(Boolean).join(', ');
+    }
+    return '';
+}
+
+function getVacanteContactoTexto(v) {
+    if (!v) return '';
+    const email = v.correoConsulta || v.contactoEmail || '';
+    const tel = v.telefonoConsulta || v.contactoTelefono || '';
+    const parts = [];
+    if (email) parts.push(String(email));
+    if (tel) parts.push(String(tel));
+    return parts.join(' | ');
+}
+
 /**
  * Crear una nueva postulación
  * @param {string} vacanteId - ID de la vacante
@@ -650,7 +1091,8 @@ function abrirModalPostulacion(vacante) {
  */
 async function crearPostulacion(vacanteId, mensaje = '') {
     try {
-        const data = await fetchAPI('/postulaciones', {
+        const createUrl = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'CREATE_APPLICATION');
+        const data = await fetchAPI(createUrl, {
             method: 'POST',
             body: JSON.stringify({
                 vacanteId,
@@ -680,7 +1122,8 @@ async function cargarPostulaciones() {
 
     try {
         const estadoFiltro = document.getElementById('filtroEstadoPostulacion')?.value || '';
-        const url = estadoFiltro ? `/postulaciones/mis-postulaciones?estado=${estadoFiltro}` : '/postulaciones/mis-postulaciones';
+        const baseUrl = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'MY_APPLICATIONS');
+        const url = withQuery(baseUrl, { estado: estadoFiltro });
         
         const postulaciones = await fetchAPI(url);
 
@@ -825,7 +1268,9 @@ function mostrarDetallePostulacion(postulacion) {
  */
 async function cancelarPostulacion(postulacionId) {
     try {
-        await fetchAPI(`/postulaciones/${postulacionId}`, {
+        const template = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'DELETE_APPLICATION');
+        const url = resolveEndpoint(template, { id: postulacionId });
+        await fetchAPI(url, {
             method: 'DELETE'
         });
     } catch (error) {
@@ -882,7 +1327,8 @@ async function cargarMensajesRecibidos() {
     listaMensajes.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
 
     try {
-        const data = await fetchAPI('/mensajes/recibidos?limit=50');
+        const inboxBase = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'INBOX');
+        const data = await fetchAPI(withQuery(inboxBase, { limit: 50 }));
         const mensajes = data.mensajes || [];
 
         if (mensajes.length === 0) {
@@ -910,7 +1356,8 @@ async function cargarMensajesEnviados() {
     listaMensajes.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
 
     try {
-        const data = await fetchAPI('/mensajes/enviados?limit=50');
+        const sentBase = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'SENT');
+        const data = await fetchAPI(withQuery(sentBase, { limit: 50 }));
         const mensajes = data.mensajes || [];
 
         if (mensajes.length === 0) {
@@ -966,7 +1413,9 @@ function crearItemMensaje(mensaje, tipo) {
  */
 async function mostrarDetalleMensaje(mensajeId) {
     try {
-        const mensaje = await fetchAPI(`/mensajes/${mensajeId}`);
+        const template = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'GET_MESSAGE');
+        const url = resolveEndpoint(template, { id: mensajeId });
+        const mensaje = await fetchAPI(url);
         const detalle = document.getElementById('mensajeDetalle');
 
         if (!detalle) return;
@@ -1224,7 +1673,8 @@ async function enviarMensaje(datosMensaje) {
             body.relacionadoConId = datosMensaje.relacionadoConId;
         }
 
-        await fetchAPI('/mensajes', {
+        const createUrl = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'CREATE_MESSAGE');
+        await fetchAPI(createUrl, {
             method: 'POST',
             body: JSON.stringify(body)
         });

@@ -108,6 +108,110 @@ function showSuccess(message) {
 
 let list = document.querySelectorAll(".navigation li");
 
+// Preferir claves centralizadas (definidas en js/config.js)
+const PROFESOR_PROFILE_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PROFILE)
+    ? STORAGE_KEYS.PROFESOR_PROFILE
+    : 'perfilData';
+
+const PROFESOR_PUBLICACIONES_KEY = (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.PROFESOR_PUBLICACIONES)
+    ? STORAGE_KEYS.PROFESOR_PUBLICACIONES
+    : 'publicaciones';
+
+function getAccessToken() {
+    try {
+        if (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.ACCESS_TOKEN) {
+            return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        }
+    } catch { /* noop */ }
+    return localStorage.getItem('accessToken');
+}
+
+function getStoredUserRole() {
+    try {
+        if (typeof STORAGE_KEYS !== 'undefined' && STORAGE_KEYS.USER_ROLE) {
+            return localStorage.getItem(STORAGE_KEYS.USER_ROLE);
+        }
+    } catch { /* noop */ }
+    return localStorage.getItem('userRole');
+}
+
+function clearAuthStorage() {
+    const keys = (typeof STORAGE_KEYS !== 'undefined')
+        ? [STORAGE_KEYS.ACCESS_TOKEN, STORAGE_KEYS.REFRESH_TOKEN, STORAGE_KEYS.USER_ROLE, STORAGE_KEYS.USER_ID, STORAGE_KEYS.USER_EMAIL]
+        : ['accessToken', 'refreshToken', 'userRole', 'userId', 'userEmail'];
+    keys.filter(Boolean).forEach((k) => localStorage.removeItem(k));
+}
+
+function redirectToLogin() {
+    window.location.href = 'login.html';
+}
+
+async function fetchMe() {
+    const token = getAccessToken();
+    if (!token) return null;
+    if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.GET_USER) return null;
+
+    const res = await fetch(AUTH_ENDPOINTS.GET_USER, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!res.ok) return null;
+    try {
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
+
+function mapApiProfesorToPerfilData(apiUser) {
+    if (!apiUser) return {};
+    return {
+        nombre: apiUser.nombres || '',
+        aPaterno: apiUser.apellidoPaterno || '',
+        aMaterno: apiUser.apellidoMaterno || '',
+        email: apiUser.correo || '',
+        phone: apiUser.telefono != null ? String(apiUser.telefono) : '',
+        dept: apiUser.departamento || '',
+        sexo: apiUser.sexo || '',
+        rfc: apiUser.rfc || '',
+        curp: apiUser.curp || '',
+    };
+}
+
+async function updateProfesorPerfil(payload) {
+    const token = getAccessToken();
+    if (!token) throw new Error('Sin token');
+    if (typeof PROFESSOR_ENDPOINTS === 'undefined' || !PROFESSOR_ENDPOINTS.UPDATE_PROFILE) {
+        throw new Error('Falta configuraci\u00f3n: PROFESSOR_ENDPOINTS.UPDATE_PROFILE');
+    }
+
+    const res = await fetch(PROFESSOR_ENDPOINTS.UPDATE_PROFILE, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload || {}),
+    });
+
+    let data = null;
+    try {
+        data = await res.json();
+    } catch {
+        data = null;
+    }
+
+    if (!res.ok) {
+        const msg = data && data.message ? data.message : 'Error al actualizar perfil';
+        throw new Error(msg);
+    }
+
+    return data;
+}
+
 function activeLink() {
     list.forEach((item) => {
         item.classList.remove("hovered");
@@ -126,6 +230,7 @@ toggle.onclick = function () {
     main.classList.toggle("active");
 }
 
+<<<<<<< HEAD
 // CAMBIAR SECCIONES 
 document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
@@ -148,143 +253,430 @@ document.querySelectorAll(".nav-item").forEach(item => {
         if (sectionClass === 'notificaciones-section') {
             cargarNotificaciones();
         }
+=======
+function showSection(sectionClass) {
+    if (!sectionClass) return;
+
+    // Solo ocultar los paneles principales (evitar ocultar secciones internas como #perfilReadOnly)
+    document.querySelectorAll(".main > section").forEach(sec => {
+        sec.classList.add("hidden");
+>>>>>>> 795554e226ae306df66176467e32d299b482cadb
     });
+
+    const sectionToShow = document.querySelector(`.${sectionClass}`);
+    if (sectionToShow) {
+        sectionToShow.classList.remove("hidden");
+    }
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.classList.add('hidden');
+    });
+}
+
+function getSectionFromHash() {
+    const hash = String(window.location.hash || '').replace('#', '').trim();
+    if (!hash) return null;
+    // Permitimos usar el hash como clase de sección (ej: #perfil-section)
+    if (document.querySelector(`.${hash}`)) return hash;
+    // Fallback: si usan el id en el hash, intentamos mapearlo a la sección contenedora
+    const byId = document.getElementById(hash);
+    if (byId && byId.tagName && byId.tagName.toLowerCase() === 'section') {
+        const cls = Array.from(byId.classList).find(c => c.endsWith('-section'));
+        return cls || null;
+    }
+    return null;
+}
+
+// CAMBIAR SECCIONES
+document.querySelectorAll(".nav-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        const sectionClass = item.getAttribute("data-section");
+        if (sectionClass) {
+            history.replaceState(null, '', `#${sectionClass}`);
+        }
+        showSection(sectionClass);
+    });
+});
+
+// Sección inicial: Perfil (o la que venga en el hash)
+document.addEventListener("DOMContentLoaded", () => {
+    // Guard simple: si no hay sesión válida, regresar al login
+    const role = String(getStoredUserRole() || '').toLowerCase();
+    const token = getAccessToken();
+    if (!token || (role && role !== 'profesor')) {
+        clearAuthStorage();
+        redirectToLogin();
+        return;
+    }
+
+    // Logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            clearAuthStorage();
+            redirectToLogin();
+        });
+    }
+
+    showSection(getSectionFromHash() || 'perfil-section');
 });
 
 
 //MI PERFIL
-document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
+        const editBtn = document.getElementById("editBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const perfilForm = document.getElementById("perfilForm");
+        const perfilReadOnly = document.getElementById("perfilReadOnly");
+        const avatarInput = document.getElementById("avatarInput");
+        const perfilAvatar = document.getElementById("perfilAvatar");
 
-    const editBtn = document.getElementById("editBtn");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const perfilForm = document.getElementById("perfilForm");
-    const perfilReadOnly = document.getElementById("perfilReadOnly");
-    const avatarInput = document.getElementById("avatarInput");
-    const perfilAvatar = document.getElementById("perfilAvatar");
+        const nombreInput = document.getElementById("nombreInput");
+        const aPaternoInput = document.getElementById("aPaternoInput");
+        const aMaternoInput = document.getElementById("aMaternoInput");
+        const emailInput = document.getElementById("emailInput");
+        const phoneInput = document.getElementById("phoneInput");
+        const deptInput = document.getElementById("deptInput");
+        const sexoInput = document.getElementById("sexoInput");
+        const rfcInput = document.getElementById("rfcInput");
+        const curpInput = document.getElementById("curpInput");
+        const currentPasswordInput = document.getElementById("currentPasswordInput");
+        const newPasswordInput = document.getElementById("newPasswordInput");
 
-    const nombreInput = document.getElementById("nombreInput");
-    const aPaternoInput = document.getElementById("aPaternoInput");
-    const aMaternoInput = document.getElementById("aMaternoInput");
-    const emailInput = document.getElementById("emailInput");
-    const phoneInput = document.getElementById("phoneInput");
-    const deptInput = document.getElementById("deptInput");
-    const sexoInput = document.getElementById("sexoInput");
-    const rfcInput = document.getElementById("rfcInput");
-    const curpInput = document.getElementById("curpInput");
-    const passInput = document.getElementById("passInput");
+        const ro_nombre = document.getElementById("ro_nombre");
+        const ro_aPaterno = document.getElementById("ro_aPaterno");
+        const ro_aMaterno = document.getElementById("ro_aMaterno");
+        const ro_sexo = document.getElementById("ro_sexo");
+        const ro_email = document.getElementById("ro_email");
+        const ro_phone = document.getElementById("ro_phone");
+        const ro_dept = document.getElementById("ro_dept");
+        const ro_rfc = document.getElementById("ro_rfc");
+        const ro_curp = document.getElementById("ro_curp");
+        const displayName = document.getElementById("displayName");
 
-    const ro_nombre = document.getElementById("ro_nombre");
-    const ro_aPaterno = document.getElementById("ro_aPaterno");
-    const ro_aMaterno = document.getElementById("ro_aMaterno");
-    const ro_sexo = document.getElementById("ro_sexo");
-    const ro_email = document.getElementById("ro_email");
-    const ro_phone = document.getElementById("ro_phone");
-    const ro_dept = document.getElementById("ro_dept");
-    const ro_rfc = document.getElementById("ro_rfc");
-    const ro_curp = document.getElementById("ro_curp");
+        if (!perfilForm || !perfilReadOnly) return;
 
-    const displayName = document.getElementById("displayName");
+        function loadPerfil() {
+            const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
 
-    function loadPerfil() {
-        const data = JSON.parse(localStorage.getItem("perfilData")) || {};
+            if (perfilAvatar && data.avatar) perfilAvatar.src = data.avatar;
 
-        if (data.avatar) perfilAvatar.src = data.avatar;
+            if (nombreInput) nombreInput.value = data.nombre || "";
+            if (aPaternoInput) aPaternoInput.value = data.aPaterno || "";
+            if (aMaternoInput) aMaternoInput.value = data.aMaterno || "";
+            if (emailInput) emailInput.value = data.email || "";
+            if (phoneInput) phoneInput.value = data.phone || "";
+            if (deptInput) deptInput.value = data.dept || "";
+            if (sexoInput) sexoInput.value = data.sexo || "";
+            if (rfcInput) rfcInput.value = data.rfc || "";
+            if (curpInput) curpInput.value = data.curp || "";
 
-        nombreInput.value = data.nombre || "";
-        aPaternoInput.value = data.aPaterno || "";
-        aMaternoInput.value = data.aMaterno || "";
-        emailInput.value = data.email || "";
-        phoneInput.value = data.phone || "";
-        deptInput.value = data.dept || "";
-        sexoInput.value = data.sexo || "";
-        passInput.value = data.password || "";
+            // Password: no se precarga
+            if (currentPasswordInput) currentPasswordInput.value = "";
+            if (newPasswordInput) newPasswordInput.value = "";
 
-        rfcInput.value = data.rfc || "";
+            if (ro_curp) ro_curp.textContent = data.curp || "-";
+            if (ro_nombre) ro_nombre.textContent = data.nombre || "-";
+            if (ro_aPaterno) ro_aPaterno.textContent = data.aPaterno || "-";
+            if (ro_aMaterno) ro_aMaterno.textContent = data.aMaterno || "-";
+            if (ro_sexo) ro_sexo.textContent = data.sexo || "-";
+            if (ro_email) ro_email.textContent = data.email || "-";
+            if (ro_phone) ro_phone.textContent = data.phone || "-";
+            if (ro_dept) ro_dept.textContent = data.dept || "-";
+            if (ro_rfc) ro_rfc.textContent = data.rfc || "-";
 
-        ro_curp.textContent = data.curpNombre || "No subido";
-        ro_nombre.textContent = data.nombre || "-";
-        ro_aPaterno.textContent = data.aPaterno || "-";
-        ro_aMaterno.textContent = data.aMaterno || "-";
-        ro_sexo.textContent = data.sexo || "-";
-        ro_email.textContent = data.email || "-";
-        ro_phone.textContent = data.phone || "-";
-        ro_dept.textContent = data.dept || "-";
-        ro_rfc.textContent = data.rfc || "-";
+            if (displayName) {
+                displayName.textContent = data.nombre
+                    ? `${data.nombre} ${data.aPaterno || ""}`.trim()
+                    : "Nombre Apellido";
+            }
+        }
 
-        displayName.textContent = data.nombre
-            ? `${data.nombre} ${data.aPaterno || ""}`.trim()
-            : "Nombre Apellido";
-    }
-    loadPerfil();
+        async function changePassword(currentPassword, newPassword) {
+            const token = getAccessToken();
+            if (!token) throw new Error('Sin token');
+            if (typeof AUTH_ENDPOINTS === 'undefined' || !AUTH_ENDPOINTS.CHANGE_PASSWORD) {
+                throw new Error('Falta configuraci\u00f3n: AUTH_ENDPOINTS.CHANGE_PASSWORD');
+            }
 
-    avatarInput.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+            const res = await fetch(AUTH_ENDPOINTS.CHANGE_PASSWORD, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    currentPassword: currentPassword,
+                    newPassword: newPassword,
+                }),
+            });
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            perfilAvatar.src = ev.target.result;
-            perfilAvatar.dataset.tmp = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-    });
+            let data = null;
+            try {
+                data = await res.json();
+            } catch {
+                data = null;
+            }
 
-    editBtn.addEventListener("click", () => {
-        perfilForm.classList.remove("hidden");
-        perfilReadOnly.classList.add("hidden");
-    });
+            if (!res.ok) {
+                const msg = data && data.message ? data.message : 'Error al cambiar la contrase\u00f1a';
+                throw new Error(msg);
+            }
+            return data;
+        }
 
-    cancelBtn.addEventListener("click", () => {
-        perfilForm.classList.add("hidden");
-        perfilReadOnly.classList.remove("hidden");
-        loadPerfil();
-        delete perfilAvatar.dataset.tmp;
-    });
-
-    perfilForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-
-        const curpFile = curpInput.files[0];
-
-        const perfilData = {
-            nombre: nombreInput.value.trim(),
-            aPaterno: aPaternoInput.value.trim(),
-            aMaterno: aMaternoInput.value.trim(),
-            email: emailInput.value.trim(),
-            phone: phoneInput.value.trim(),
-            dept: deptInput.value.trim(),
-            sexo: sexoInput.value,
-            password: passInput.value.trim(),
-
-            avatar: perfilAvatar.dataset.tmp || perfilAvatar.src,
-            rfc: rfcInput.value.trim(),
-            curpNombre: curpFile ? curpFile.name : ro_curp.textContent
-        };
-
-        localStorage.setItem("perfilData", JSON.stringify(perfilData));
-
-        delete perfilAvatar.dataset.tmp;
-
+        // 1) Pintar lo que haya local (fallback)
         loadPerfil();
 
-        perfilForm.classList.add("hidden");
-        perfilReadOnly.classList.remove("hidden");
+        // 2) Intentar cargar desde backend y sincronizar UI
+        (async () => {
+            try {
+                const meResponse = await fetchMe();
+                const apiUser = meResponse && meResponse.user ? meResponse.user : null;
+                if (!apiUser) return;
+
+                const perfilFromApi = mapApiProfesorToPerfilData(apiUser);
+                const merged = {
+                    ...JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {},
+                    ...perfilFromApi,
+                };
+                localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(merged));
+                loadPerfil();
+            } catch {
+                // Si falla, nos quedamos con el localStorage
+            }
+        })();
+
+        if (avatarInput && perfilAvatar) {
+            avatarInput.addEventListener("change", (e) => {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    perfilAvatar.src = ev.target.result;
+                    perfilAvatar.dataset.tmp = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        if (editBtn) {
+            editBtn.addEventListener("click", () => {
+                perfilForm.classList.remove("hidden");
+                perfilReadOnly.classList.add("hidden");
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", () => {
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+                loadPerfil();
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+            });
+        }
+
+        perfilForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const markInvalid = (el) => {
+                if (!el) return;
+                el.classList.add('input-invalid');
+                if (typeof el.focus === 'function') el.focus();
+            };
+            const clearInvalid = (el) => {
+                if (!el) return;
+                el.classList.remove('input-invalid');
+            };
+
+            // Limpia marcas previas
+            [nombreInput, aPaternoInput, aMaternoInput, emailInput, phoneInput, deptInput, sexoInput, rfcInput, curpInput]
+                .filter(Boolean)
+                .forEach(clearInvalid);
+
+            // Quitar marca al editar
+            [nombreInput, aPaternoInput, aMaternoInput, emailInput, phoneInput, deptInput, rfcInput, curpInput]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('input', () => clearInvalid(el), { once: true }));
+            [sexoInput]
+                .filter(Boolean)
+                .forEach((el) => el.addEventListener('change', () => clearInvalid(el), { once: true }));
+
+            // Validaciones alineadas con scripts_login.js
+            const expresiones = {
+                nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+                telefono: /^\d{7,10}$/,
+                curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
+                correoProfe: /^[a-zA-Z0-9_.+-]+@ipn\.mx$/,
+                rfc: /^[A-Z]{3,4}\d{6}[A-Z0-9]{3}$/i,
+            };
+
+            const nombresRaw = String((nombreInput && nombreInput.value) || '').trim();
+            const apellidoPaternoRaw = String((aPaternoInput && aPaternoInput.value) || '').trim();
+            const apellidoMaternoRaw = String((aMaternoInput && aMaternoInput.value) || '').trim();
+            const correoRaw = String((emailInput && emailInput.value) || '').trim();
+            const telefonoDigits = String((phoneInput && phoneInput.value) || '').replace(/\D/g, '');
+            const departamentoRaw = String((deptInput && deptInput.value) || '').trim();
+            const sexoRaw = String((sexoInput && sexoInput.value) || '').trim();
+            const rfcRaw = String((rfcInput && rfcInput.value) || '').trim().toUpperCase();
+            const curpRaw = String((curpInput && curpInput.value) || '').trim().toUpperCase();
+
+            if (!nombresRaw || !expresiones.nombre.test(nombresRaw)) {
+                markInvalid(nombreInput);
+                alert('Nombres inválidos');
+                return;
+            }
+            if (!apellidoPaternoRaw || !expresiones.nombre.test(apellidoPaternoRaw)) {
+                markInvalid(aPaternoInput);
+                alert('Apellido paterno inválido');
+                return;
+            }
+            if (!apellidoMaternoRaw || !expresiones.nombre.test(apellidoMaternoRaw)) {
+                markInvalid(aMaternoInput);
+                alert('Apellido materno inválido');
+                return;
+            }
+            if (!correoRaw || !expresiones.correoProfe.test(correoRaw)) {
+                markInvalid(emailInput);
+                alert('Correo inválido (usa @ipn.mx)');
+                return;
+            }
+            if (!telefonoDigits || !expresiones.telefono.test(telefonoDigits)) {
+                markInvalid(phoneInput);
+                alert('Teléfono inválido (7 a 10 dígitos)');
+                return;
+            }
+            if (!departamentoRaw) {
+                markInvalid(deptInput);
+                alert('Departamento requerido');
+                return;
+            }
+            if (!sexoRaw || (sexoRaw !== 'Masculino' && sexoRaw !== 'Femenino')) {
+                markInvalid(sexoInput);
+                alert('Selecciona un sexo válido');
+                return;
+            }
+            if (!rfcRaw || !expresiones.rfc.test(rfcRaw)) {
+                markInvalid(rfcInput);
+                alert('RFC inválido');
+                return;
+            }
+            if (!curpRaw || !expresiones.curp.test(curpRaw)) {
+                markInvalid(curpInput);
+                alert('CURP inválida');
+                return;
+            }
+
+            // Misma regla que en login/registro (scripts_login.js)
+            const STRONG_PASSWORD_REGEX = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{6,}$/;
+
+            const currentPassword = currentPasswordInput ? String(currentPasswordInput.value || '') : '';
+            const newPassword = newPasswordInput ? String(newPasswordInput.value || '') : '';
+
+            // Validar cambio de contraseña (opcional)
+            if (newPassword.trim()) {
+                if (!currentPassword.trim()) {
+                    alert('Para cambiar la contrase\u00f1a, ingresa tu contrase\u00f1a actual');
+                    return;
+                }
+                if (!STRONG_PASSWORD_REGEX.test(newPassword)) {
+                    alert('La nueva contrase\u00f1a debe tener al menos 6 caracteres, 1 may\u00fascula, 1 min\u00fascula, 1 n\u00famero y 1 s\u00edmbolo');
+                    return;
+                }
+            }
+
+            const payload = {
+                nombres: nombresRaw,
+                apellidoPaterno: apellidoPaternoRaw,
+                apellidoMaterno: apellidoMaternoRaw,
+                correo: correoRaw,
+                departamento: departamentoRaw,
+                sexo: sexoRaw,
+                rfc: rfcRaw,
+                curp: curpRaw,
+                telefono: Number(telefonoDigits),
+            };
+
+            // No enviar strings vacíos para no pisar datos existentes
+            Object.keys(payload).forEach((k) => {
+                if (payload[k] === '') delete payload[k];
+            });
+
+            const perfilData = {
+                nombre: nombresRaw,
+                aPaterno: apellidoPaternoRaw,
+                aMaterno: apellidoMaternoRaw,
+                email: correoRaw,
+                phone: telefonoDigits,
+                dept: departamentoRaw,
+                sexo: sexoRaw,
+                avatar: perfilAvatar ? (perfilAvatar.dataset.tmp || perfilAvatar.src) : '',
+                rfc: rfcRaw,
+                curp: curpRaw,
+            };
+
+            try {
+                // 1) Cambiar contraseña (si aplica)
+                if (newPassword.trim()) {
+                    await changePassword(currentPassword, newPassword);
+                    if (currentPasswordInput) currentPasswordInput.value = '';
+                    if (newPasswordInput) newPasswordInput.value = '';
+                }
+
+                // 2) Actualizar perfil
+                const updated = await updateProfesorPerfil(payload);
+                const apiProfesor = updated && updated.data ? updated.data : null;
+                if (apiProfesor) {
+                    const perfilFromApi = mapApiProfesorToPerfilData(apiProfesor);
+                    const merged = {
+                        ...JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {},
+                        ...perfilFromApi,
+                        avatar: perfilData.avatar,
+                    };
+                    localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(merged));
+                } else {
+                    localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
+                }
+
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+                loadPerfil();
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+            } catch (err) {
+                // Si falla el backend, al menos guardar local
+                localStorage.setItem(PROFESOR_PROFILE_KEY, JSON.stringify(perfilData));
+                if (perfilAvatar) delete perfilAvatar.dataset.tmp;
+                loadPerfil();
+                perfilForm.classList.add("hidden");
+                perfilReadOnly.classList.remove("hidden");
+                alert(err && err.message ? err.message : 'No se pudo actualizar el perfil');
+            }
+        });
     });
-});
 
 // SISTEMA DE PUBLICACIONES
 class SistemaPublicaciones {
     constructor() {
-        this.publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
+        // LocalStorage se usa como fallback y para estado local (activa/cerrada)
+        this.publicaciones = [];
+        this.localPublicaciones = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY)) || [];
         this.init();
     }
 
     init() {
         this.cargarElementos();
         this.agregarEventListeners();
+        this.configurarFechas();
+
+        // Pintar algo rápido con lo local y luego sincronizar con backend
+        this.publicaciones = Array.isArray(this.localPublicaciones) ? [...this.localPublicaciones] : [];
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
-        this.configurarFechas();
+
+        this.cargarDesdeBackend();
     }
 
     cargarElementos() {
@@ -308,9 +700,8 @@ class SistemaPublicaciones {
         this.vacantesPub = document.getElementById('vacantesPub');
         this.objetivosPub = document.getElementById('objetivosPub');
         this.actividadesPub = document.getElementById('actividadesPub');
+        this.requerimientosPub = document.getElementById('requerimientosPub');
         this.carrerasPub = document.getElementById('carrerasPub');
-        this.semestrePub = document.getElementById('semestrePub');
-        this.creditosPub = document.getElementById('creditosPub');
         this.conocimientosPub = document.getElementById('conocimientosPub');
         this.habilidadesPub = document.getElementById('habilidadesPub');
         this.modalidadPub = document.getElementById('modalidadPub');
@@ -324,8 +715,175 @@ class SistemaPublicaciones {
         this.otrosBeneficiosPub = document.getElementById('otrosBeneficiosPub');
 
         // Datos del profesor
-        this.perfilData = JSON.parse(localStorage.getItem('perfilData')) || {};
+        this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
         this.edicionId = null;
+    }
+
+    getPerfilData() {
+        this.perfilData = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+        return this.perfilData;
+    }
+
+    getMyVacanciesEndpoint() {
+        if (typeof PROFESSOR_ENDPOINTS !== 'undefined' && PROFESSOR_ENDPOINTS.MY_VACANCIES) {
+            return PROFESSOR_ENDPOINTS.MY_VACANCIES;
+        }
+        return null;
+    }
+
+    buildUrl(template, params) {
+        let url = String(template || '');
+        Object.keys(params || {}).forEach((k) => {
+            url = url.replace(`:${k}`, encodeURIComponent(String(params[k])));
+        });
+        return url;
+    }
+
+    async fetchJson(url, options) {
+        const res = await fetch(url, options);
+        let data = null;
+        try {
+            data = await res.json();
+        } catch {
+            data = null;
+        }
+        return { res, data };
+    }
+
+    mapModalidadToApi(value) {
+        const v = String(value || '').toLowerCase();
+        if (v === 'presencial') return 'Presencial';
+        if (v === 'remoto') return 'Remoto';
+        if (v === 'hibrido' || v === 'híbrido') return 'Híbrido';
+        return value;
+    }
+
+    mapBeneficiosToApi(beneficiosValues) {
+        const map = {
+            certificacion: 'Certificación al término',
+            cartarecomendacion: 'Carta de recomendación',
+            experiencialaboral: 'Experiencia laboral comprobable',
+        };
+        return (beneficiosValues || [])
+            .map((v) => map[String(v)] || String(v))
+            .filter(Boolean);
+    }
+
+    mapBeneficiosToCheckboxValues(beneficiosAlumno) {
+        const reverse = {
+            'Certificación al término': 'certificacion',
+            'Carta de recomendación': 'cartarecomendacion',
+            'Experiencia laboral comprobable': 'experiencialaboral',
+        };
+        return (beneficiosAlumno || [])
+            .map((b) => reverse[String(b)] || null)
+            .filter(Boolean);
+    }
+
+    toInputDate(value) {
+        if (!value) return '';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return '';
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    normalizePhoneDigits(value) {
+        return String(value || '').replace(/\D/g, '');
+    }
+
+    mapVacanteToPublicacion(vacante) {
+        const id = vacante && (vacante._id || vacante.id);
+        return {
+            id: id ? String(id) : String(Date.now()),
+            titulo: vacante && vacante.titulo ? String(vacante.titulo) : '',
+            area: vacante && vacante.area ? String(vacante.area) : '',
+            vacantes: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
+            vacantesDisponibles: vacante && vacante.numeroVacantes != null ? Number(vacante.numeroVacantes) : 1,
+            objetivos: vacante && vacante.objetivos ? String(vacante.objetivos) : '',
+            actividades: vacante && vacante.actividades ? String(vacante.actividades) : '',
+            requerimientos: vacante && vacante.requerimientos ? String(vacante.requerimientos) : '',
+            carreraRequerida: vacante && vacante.carreraRequerida ? String(vacante.carreraRequerida) : '',
+            conocimientos: vacante && vacante.conocimientosTecnicos ? String(vacante.conocimientosTecnicos) : '',
+            habilidades: vacante && vacante.habilidades ? String(vacante.habilidades) : '',
+            modalidad: vacante && vacante.modalidad ? String(vacante.modalidad) : '',
+            horas: vacante && vacante.horasSemanal != null ? Number(vacante.horasSemanal) : 10,
+            fechaInicio: this.toInputDate(vacante && vacante.fechaInicio),
+            fechaLimite: this.toInputDate(vacante && vacante.fechaLimite),
+            duracion: vacante && vacante.duracionMeses != null ? Number(vacante.duracionMeses) : 6,
+            beneficiosAlumno: Array.isArray(vacante && vacante.beneficiosAlumno) ? vacante.beneficiosAlumno : [],
+            otrosBeneficios: vacante && vacante.otrosBeneficios ? String(vacante.otrosBeneficios) : '',
+            infoAdicional: vacante && vacante.informacionAdicional ? String(vacante.informacionAdicional) : '',
+            contactoEmail: vacante && vacante.correoConsulta ? String(vacante.correoConsulta) : '',
+            contactoTelefono: vacante && vacante.telefonoConsulta != null ? String(vacante.telefonoConsulta) : '',
+            estado: 'activa',
+            fechaCreacion: vacante && (vacante.fechaPublicacion || vacante.createdAt) ? new Date(vacante.fechaPublicacion || vacante.createdAt).toISOString() : new Date().toISOString(),
+            postulantes: [],
+        };
+    }
+
+    mergeLocalState(publicacionesFromApi) {
+        const localArr = (() => {
+            try {
+                const raw = JSON.parse(localStorage.getItem(PROFESOR_PUBLICACIONES_KEY));
+                return Array.isArray(raw) ? raw : [];
+            } catch {
+                return [];
+            }
+        })();
+        const localById = new Map(
+            localArr
+                .filter((x) => x && (x.id || x._id))
+                .map((x) => [String(x.id || x._id), x])
+        );
+
+        return publicacionesFromApi.map((p) => {
+            const local = localById.get(String(p.id));
+            if (!local) return p;
+            return {
+                ...p,
+                estado: local.estado || p.estado,
+                postulantes: Array.isArray(local.postulantes) ? local.postulantes : p.postulantes,
+            };
+        });
+    }
+
+    async cargarDesdeBackend() {
+        const endpoint = this.getMyVacanciesEndpoint();
+        const token = getAccessToken();
+        if (!endpoint || !token) return;
+
+        try {
+            if (this.listaPublicaciones) {
+                this.listaPublicaciones.innerHTML = '<div class="no-publicaciones"><p>Cargando publicaciones...</p></div>';
+            }
+
+            const { res, data } = await this.fetchJson(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                return;
+            }
+
+            const vacantes = Array.isArray(data)
+                ? data
+                : (data && Array.isArray(data.data) ? data.data : []);
+
+            const publicacionesFromApi = vacantes.map((v) => this.mapVacanteToPublicacion(v));
+            this.publicaciones = this.mergeLocalState(publicacionesFromApi);
+            localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
+
+            this.mostrarPublicaciones();
+            this.actualizarEstadisticas();
+        } catch {
+            // noop
+        }
     }
 
     agregarEventListeners() {
@@ -386,57 +944,78 @@ class SistemaPublicaciones {
         this.modalPublicacion.classList.remove('hidden');
         this.configurarFechas();
 
-        // Rellenar datos del profesor
-        if (this.perfilData.email) {
-            this.contactoEmailPub.value = this.perfilData.email;
+        // Correo/teléfono siempre desde perfil (solo lectura)
+        const perfil = this.getPerfilData();
+        if (this.contactoEmailPub) {
+            this.contactoEmailPub.readOnly = true;
+            this.contactoEmailPub.value = perfil.email || '';
         }
-        if (this.perfilData.phone) {
-            this.contactoTelefonoPub.value = this.perfilData.phone;
+        if (this.contactoTelefonoPub) {
+            this.contactoTelefonoPub.readOnly = true;
+            this.contactoTelefonoPub.value = perfil.phone || '';
         }
+
     }
 
     abrirModalEditar(id) {
-    const publicacion = this.publicaciones.find(p => p.id === id);
+    const publicacion = this.publicaciones.find(p => String(p.id) === String(id));
     if (!publicacion) return;
 
     this.modalTitulo.textContent = 'Editar Publicación';
     this.edicionId = id;
 
     this.tituloPub.value = publicacion.titulo || '';
-    this.areaPub.value = publicacion.areaId || publicacion.area || ''; 
+    if (this.areaPub) {
+        if (publicacion.areaId) {
+            this.areaPub.value = publicacion.areaId;
+        } else {
+            const areaTexto = String(publicacion.area || '').trim();
+            const opt = Array.from(this.areaPub.options).find((o) => String(o.text || '').trim() === areaTexto);
+            this.areaPub.value = opt ? opt.value : '';
+        }
+    }
     this.vacantesPub.value = publicacion.vacantes || 1;
     this.objetivosPub.value = publicacion.objetivos || '';
     this.actividadesPub.value = publicacion.actividades || '';
+    if (this.requerimientosPub) this.requerimientosPub.value = publicacion.requerimientos || '';
 
-    if (publicacion.carreras || publicacion.carrerasIds) {
-        const carrerasSelect = this.carrerasPub;
-        Array.from(carrerasSelect.options).forEach(option => {
-            if (publicacion.carrerasIds && publicacion.carrerasIds.includes(option.value)) {
-                option.selected = true;
-            } else if (publicacion.carreras && publicacion.carreras.includes(option.text)) {
-                option.selected = true;
-            } else {
-                option.selected = false;
-            }
+    // carreraRequerida viene como string desde backend: intentamos seleccionar coincidencias por texto
+    if (this.carrerasPub) {
+        const carreraReq = String(publicacion.carreraRequerida || '');
+        Array.from(this.carrerasPub.options).forEach((option) => {
+            option.selected = carreraReq.includes(option.text);
         });
     }
 
-    this.semestrePub.value = publicacion.semestre || '';
-    this.creditosPub.value = publicacion.creditos || '';
     this.conocimientosPub.value = publicacion.conocimientos || '';
     this.habilidadesPub.value = publicacion.habilidades || '';
-    this.modalidadPub.value = publicacion.modalidad || '';
+    // modalidad: el backend guarda con mayúscula/acentos; el select usa values en minúscula
+    if (this.modalidadPub) {
+        const m = String(publicacion.modalidad || '');
+        this.modalidadPub.value = m.toLowerCase().includes('híbrido') || m.toLowerCase().includes('hibrido')
+            ? 'hibrido'
+            : m.toLowerCase();
+    }
     this.horasPub.value = publicacion.horas || 10;
     this.fechaInicioPub.value = publicacion.fechaInicio || '';
     this.fechaLimitePub.value = publicacion.fechaLimite || '';
     this.duracionPub.value = publicacion.duracion || 6;
-    this.contactoEmailPub.value = publicacion.contactoEmail || '';
-    this.contactoTelefonoPub.value = publicacion.contactoTelefono || '';
+    // Correo/teléfono siempre desde perfil (solo lectura)
+    const perfil = this.getPerfilData();
+    if (this.contactoEmailPub) {
+        this.contactoEmailPub.readOnly = true;
+        this.contactoEmailPub.value = perfil.email || publicacion.contactoEmail || '';
+    }
+    if (this.contactoTelefonoPub) {
+        this.contactoTelefonoPub.readOnly = true;
+        this.contactoTelefonoPub.value = perfil.phone || publicacion.contactoTelefono || '';
+    }
     this.infoAdicionalPub.value = publicacion.infoAdicional || '';
     this.otrosBeneficiosPub.value = publicacion.otrosBeneficios || '';
 
-    document.querySelectorAll('input[name="beneficios"]').forEach(checkbox => {
-        checkbox.checked = publicacion.beneficios && publicacion.beneficios.includes(checkbox.value);
+    const selectedCheckboxValues = this.mapBeneficiosToCheckboxValues(publicacion.beneficiosAlumno);
+    document.querySelectorAll('input[name="beneficios"]').forEach((checkbox) => {
+        checkbox.checked = selectedCheckboxValues.includes(checkbox.value);
     });
 
     this.modalPublicacion.classList.remove('hidden');
@@ -447,19 +1026,29 @@ class SistemaPublicaciones {
         this.edicionId = null;
     }
 
-guardarPublicacion(e) {
+async guardarPublicacion(e) {
     e.preventDefault();
 
-    const beneficios = [];
-    document.querySelectorAll('input[name="beneficios"]:checked').forEach(checkbox => {
-        beneficios.push(checkbox.value);
+    const beneficiosRaw = [];
+    document.querySelectorAll('input[name="beneficios"]:checked').forEach((checkbox) => {
+        beneficiosRaw.push(checkbox.value);
     });
+    const beneficios = this.mapBeneficiosToApi(beneficiosRaw);
 
     const areaSelect = this.areaPub;
-    const areaTexto = areaSelect.options[areaSelect.selectedIndex].text;
-    
-    const carreras = Array.from(this.carrerasPub.selectedOptions).map(o => o.text);
-    
+    const areaTexto = areaSelect && areaSelect.selectedIndex >= 0
+        ? areaSelect.options[areaSelect.selectedIndex].text
+        : '';
+
+    const carrerasSeleccionadas = this.carrerasPub
+        ? Array.from(this.carrerasPub.selectedOptions).map((o) => o.text)
+        : [];
+
+    if (!carrerasSeleccionadas.length) {
+        alert('Selecciona al menos una carrera requerida');
+        return;
+    }
+
     const nuevaVacantes = parseInt(this.vacantesPub.value);
     
     let vacantesDisponibles;
@@ -484,60 +1073,104 @@ guardarPublicacion(e) {
         postulantes = [];
     }
 
-    const publicacion = {
-        id: this.edicionId || Date.now(),
-        titulo: this.tituloPub.value,
-        area: areaTexto,
-        areaId: this.areaPub.value,
-        vacantes: nuevaVacantes,
-        vacantesDisponibles: vacantesDisponibles,
-        objetivos: this.objetivosPub.value,
-        actividades: this.actividadesPub.value,
-        carreras: carreras,
-        carrerasIds: Array.from(this.carrerasPub.selectedOptions).map(o => o.value),
-        semestre: this.semestrePub.value ? parseInt(this.semestrePub.value) : null,
-        creditos: this.creditosPub.value ? parseInt(this.creditosPub.value) : null,
-        conocimientos: this.conocimientosPub.value,
-        habilidades: this.habilidadesPub.value,
-        modalidad: this.modalidadPub.value,
-        horas: parseInt(this.horasPub.value),
-        fechaInicio: this.fechaInicioPub.value,
-        fechaLimite: this.fechaLimitePub.value,
-        duracion: parseInt(this.duracionPub.value),
-        beneficios: beneficios,
-        otrosBeneficios: this.otrosBeneficiosPub.value,
-        contactoEmail: this.contactoEmailPub.value,
-        contactoTelefono: this.contactoTelefonoPub.value,
-        infoAdicional: this.infoAdicionalPub.value,
-        estado: 'activa',
-        fechaCreacion: new Date().toISOString(),
-        profesor: {
-            nombre: this.perfilData.nombre || 'Profesor',
-            apellido: this.perfilData.aPaterno || '',
-            departamento: this.perfilData.dept || '',
-            email: this.perfilData.email || ''
-        },
-        postulantes: postulantes, 
-        fechaActualizacion: new Date().toISOString()
-    };
-
-    if (this.edicionId) {
-        const index = this.publicaciones.findIndex(p => p.id === this.edicionId);
-        if (index !== -1) {
-            publicacion.fechaCreacion = this.publicaciones[index].fechaCreacion;
-            this.publicaciones[index] = publicacion;
-        }
-    } else {
-        this.publicaciones.unshift(publicacion);
+    const perfil = this.getPerfilData();
+    const token = getAccessToken();
+    if (!token) {
+        alert('Sesión expirada. Vuelve a iniciar sesión.');
+        return;
+    }
+    if (!perfil.email || !perfil.phone) {
+        alert('Para publicar, primero completa tu correo y teléfono en tu perfil.');
+        return;
     }
 
-    localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
+    // Payload para el modelo Vacante del backend
+    const payload = {
+        titulo: this.tituloPub.value,
+        area: areaTexto,
+        numeroVacantes: nuevaVacantes,
+        objetivos: this.objetivosPub.value,
+        actividades: this.actividadesPub.value,
+        requerimientos: this.requerimientosPub ? this.requerimientosPub.value : '',
+        carreraRequerida: carrerasSeleccionadas.join(', '),
+        conocimientosTecnicos: this.conocimientosPub.value,
+        habilidades: this.habilidadesPub.value,
+        modalidad: this.mapModalidadToApi(this.modalidadPub.value),
+        horasSemanal: parseInt(this.horasPub.value),
+        fechaInicio: this.fechaInicioPub.value,
+        fechaLimite: this.fechaLimitePub.value,
+        duracionMeses: parseInt(this.duracionPub.value),
+        beneficiosAlumno: beneficios,
+        otrosBeneficios: this.otrosBeneficiosPub.value,
+        informacionAdicional: this.infoAdicionalPub.value,
+        correoConsulta: perfil.email,
+        telefonoConsulta: this.normalizePhoneDigits(perfil.phone),
+    };
 
-    this.mostrarPublicaciones();
-    this.actualizarEstadisticas();
-    this.cerrarModal();
+    // Validaciones mínimas para evitar 400 por campos requeridos del backend
+    const required = [
+        { k: 'titulo', v: payload.titulo },
+        { k: 'area', v: payload.area },
+        { k: 'objetivos', v: payload.objetivos },
+        { k: 'actividades', v: payload.actividades },
+        { k: 'requerimientos', v: payload.requerimientos },
+        { k: 'carreraRequerida', v: payload.carreraRequerida },
+        { k: 'conocimientosTecnicos', v: payload.conocimientosTecnicos },
+        { k: 'habilidades', v: payload.habilidades },
+        { k: 'modalidad', v: payload.modalidad },
+        { k: 'horasSemanal', v: payload.horasSemanal },
+        { k: 'fechaInicio', v: payload.fechaInicio },
+        { k: 'fechaLimite', v: payload.fechaLimite },
+        { k: 'duracionMeses', v: payload.duracionMeses },
+        { k: 'beneficiosAlumno', v: payload.beneficiosAlumno && payload.beneficiosAlumno.length },
+        { k: 'correoConsulta', v: payload.correoConsulta },
+        { k: 'telefonoConsulta', v: payload.telefonoConsulta },
+    ];
+    const missing = required.find((x) => !x.v);
+    if (missing) {
+        alert(`Completa el campo requerido: ${missing.k}`);
+        return;
+    }
 
-    alert(this.edicionId ? 'Publicación actualizada exitosamente' : 'Publicación creada exitosamente');
+    try {
+        let url = null;
+        let method = null;
+
+        if (this.edicionId) {
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.UPDATE_VACANCY) {
+                throw new Error('Falta configuración: VACANCY_ENDPOINTS.UPDATE_VACANCY');
+            }
+            url = this.buildUrl(VACANCY_ENDPOINTS.UPDATE_VACANCY, { id: this.edicionId });
+            method = 'PUT';
+        } else {
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.CREATE_VACANCY) {
+                throw new Error('Falta configuración: VACANCY_ENDPOINTS.CREATE_VACANCY');
+            }
+            url = VACANCY_ENDPOINTS.CREATE_VACANCY;
+            method = 'POST';
+        }
+
+        const { res, data } = await this.fetchJson(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const msg = data && data.message ? data.message : 'No se pudo guardar la publicación';
+            throw new Error(msg);
+        }
+
+        // Refrescar desde backend (fuente de verdad)
+        await this.cargarDesdeBackend();
+        this.cerrarModal();
+        alert(this.edicionId ? 'Publicación actualizada exitosamente' : 'Publicación creada exitosamente');
+    } catch (err) {
+        alert(err && err.message ? err.message : 'No se pudo guardar la publicación');
+    }
 }
 
     mostrarPublicaciones() {
@@ -612,8 +1245,8 @@ guardarPublicacion(e) {
         const target = e.target.closest('button');
         if (!target) return;
 
-        const id = parseInt(target.dataset.id);
-        const publicacion = this.publicaciones.find(p => p.id === id);
+        const id = String(target.dataset.id || '');
+        const publicacion = this.publicaciones.find(p => String(p.id) === id);
         if (!publicacion) return;
 
         if (target.classList.contains('editar-publicacion')) {
@@ -633,21 +1266,44 @@ guardarPublicacion(e) {
     }
 
     eliminarPublicacion(id) {
-        this.publicaciones = this.publicaciones.filter(p => p.id !== id);
-        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
-        this.mostrarPublicaciones();
-        this.actualizarEstadisticas();
-        alert('Publicación eliminada');
+        (async () => {
+            const token = getAccessToken();
+            if (!token) {
+                alert('Sesión expirada. Vuelve a iniciar sesión.');
+                return;
+            }
+            if (typeof VACANCY_ENDPOINTS === 'undefined' || !VACANCY_ENDPOINTS.DELETE_VACANCY) {
+                alert('Falta configuración: VACANCY_ENDPOINTS.DELETE_VACANCY');
+                return;
+            }
+            try {
+                const url = this.buildUrl(VACANCY_ENDPOINTS.DELETE_VACANCY, { id });
+                const { res, data } = await this.fetchJson(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+                if (!res.ok) {
+                    const msg = data && data.message ? data.message : 'No se pudo eliminar';
+                    throw new Error(msg);
+                }
+                await this.cargarDesdeBackend();
+                alert('Publicación eliminada');
+            } catch (err) {
+                alert(err && err.message ? err.message : 'No se pudo eliminar');
+            }
+        })();
     }
 
     cambiarEstadoPublicacion(id) {
-        const index = this.publicaciones.findIndex(p => p.id === id);
+        const index = this.publicaciones.findIndex(p => String(p.id) === String(id));
         if (index === -1) return;
 
         this.publicaciones[index].estado =
             this.publicaciones[index].estado === 'activa' ? 'cerrada' : 'activa';
 
-        localStorage.setItem('publicaciones', JSON.stringify(this.publicaciones));
+        localStorage.setItem(PROFESOR_PUBLICACIONES_KEY, JSON.stringify(this.publicaciones));
         this.mostrarPublicaciones();
         this.actualizarEstadisticas();
     }
@@ -690,8 +1346,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                 const publicacionesSection = document.getElementById('publicaciones-section');
                 if (publicacionesSection && !publicacionesSection.classList.contains('hidden')) {
-                    // Inicializar publicaciones 
-                    window.sistemaPublicaciones = new SistemaPublicaciones();
+                    // Evitar múltiples instancias (cada instancia agrega listeners y duplicaría requests)
+                    if (!window.sistemaPublicaciones) {
+                        window.sistemaPublicaciones = new SistemaPublicaciones();
+                    } else if (typeof window.sistemaPublicaciones.cargarDesdeBackend === 'function') {
+                        window.sistemaPublicaciones.cargarDesdeBackend();
+                    }
                 }
             }
         });
@@ -703,64 +1363,111 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (publicacionesSection && !publicacionesSection.classList.contains('hidden')) {
-        window.sistemaPublicaciones = new SistemaPublicaciones();
+        if (!window.sistemaPublicaciones) {
+            window.sistemaPublicaciones = new SistemaPublicaciones();
+        } else if (typeof window.sistemaPublicaciones.cargarDesdeBackend === 'function') {
+            window.sistemaPublicaciones.cargarDesdeBackend();
+        }
     }
 });
 
 
 
 //ALUMNOS
-document.querySelectorAll(".fila-alumno").forEach(fila => {
-    fila.addEventListener("click", () => {
+async function cargarAlumnos() {
+    const token = localStorage.getItem('token');
 
-        const nombre = fila.children[2].textContent;
-        const correo = fila.children[3].textContent;
-        const boleta = fila.children[1].textContent;
-
-        document.getElementById("m_nombre").textContent = nombre;
-        document.getElementById("m_correo").textContent = correo;
-        document.getElementById("m_boleta").textContent = boleta;
-
-        document.getElementById("m_telefono").textContent = "";
-        document.getElementById("m_carrera").textContent = "";
-        document.getElementById("m_creditos").textContent = "";
-        document.getElementById("m_publicacion").textContent = "";
-
-        document.getElementById("modalAlumno").classList.remove("hidden");
+    const res = await fetch('http://localhost:5000/api/profesor/alumnos', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
     });
-});
 
-//CIERRE DE MODALES EN GENERAL
-(function initModals() {
-    const modales = document.querySelectorAll('.modal');
+    if (!res.ok) {
+        console.error('Error al cargar alumnos');
+        return;
+    }
 
-    modales.forEach(modal => {
-        const closeBtn = modal.querySelector('.close');
+    const alumnos = await res.json();
+    const tbody = document.querySelector('#tablaAlumnos tbody');
 
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                modal.classList.add('hidden');
+    tbody.innerHTML = '';
+
+    alumnos.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${a.numero}</td>
+            <td>${a.boleta}</td>
+            <td>${a.nombreCompleto}</td>
+            <td>${a.correo}</td>
+            <td>${a.publicacion}</td>
+            <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">
+                ${a.estado}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+//CORREO REPORTE DE ALUMNOS
+function enviarReporteAlumnos() {
+    // 1. Obtener los datos almacenados en el navegador
+    const publicaciones = JSON.parse(localStorage.getItem('publicaciones')) || [];
+    const perfil = JSON.parse(localStorage.getItem('perfilData')) || {};
+
+    if (publicaciones.length === 0) {
+        alert("No hay proyectos registrados para generar una lista.");
+        return;
+    }
+
+    // 3. Preparar la firma del profesor con sus datos de perfil
+    const nombreProfe = `${perfil.nombre || 'Profesor'} ${perfil.aPaterno || ''} ${perfil.aMaterno || ''}`.trim();
+    const departamento = perfil.dept || "Departamento Académico";
+    
+    //Construir el cuerpo del correo
+    let cuerpoMensaje = `Estimados coordinadores de Servicio Social,\n\n`;
+    cuerpoMensaje += `Por medio de la presente, envío la lista de alumnos asignados a mis proyectos:\n\n`;
+
+    let totalAlumnos = 0;
+
+    publicaciones.forEach(pub => {
+        if (pub.postulantes && pub.postulantes.length > 0) {
+            cuerpoMensaje += `------------------------------------------\n`;
+            cuerpoMensaje += `PROYECTO: ${pub.titulo.toUpperCase()}\n`;
+            cuerpoMensaje += `ÁREA: ${pub.area || 'General'}\n`;
+            cuerpoMensaje += `------------------------------------------\n`;
+
+            pub.postulantes.forEach((alumno, index) => {
+                cuerpoMensaje += `${index + 1}. ${alumno.nombre} - (${alumno.correo || 'Sin correo registrado'})\n`;
+                totalAlumnos++;
             });
-        }
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-    });
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === "Escape") {
-            document.querySelectorAll('.modal:not(.hidden)').forEach(m => m.classList.add('hidden'));
+            cuerpoMensaje += `\n`;
         }
     });
-})();
 
+    if (totalAlumnos === 0) {
+        alert("Aún no tienes alumnos aceptados o postulados en tus proyectos.");
+        return;
+    }
 
+<<<<<<< HEAD
 // ============================================
 // GESTIÓN DE NOTIFICACIONES (MENSAJES)
 // ============================================
+=======
+    cuerpoMensaje += `Total de alumnos: ${totalAlumnos}\n\n`;
+    cuerpoMensaje += `Atentamente,\n`;
+    cuerpoMensaje += `${nombreProfe}\n`;
+    cuerpoMensaje += `${departamento}\n`;
+
+    const destinatario = ""; 
+    const asunto = `Reporte de Alumnos de Servicio Social - ${nombreProfe}`;
+    
+    const mailtoLink = `mailto:${destinatario}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpoMensaje)}`;
+
+    window.location.href = mailtoLink;
+}
+>>>>>>> 795554e226ae306df66176467e32d299b482cadb
 
 /**
  * Cargar notificaciones (mensajes recibidos de estudiantes)

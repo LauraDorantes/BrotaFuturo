@@ -49,16 +49,17 @@
         </div>
 
          <div class="contenedor-form acceder" id="loginForm">
-            <form>
+            <form id="formLogin">
                 <h1>Iniciar Sesión</h1>
 
                 <span>Ingresar con Correo y Contraseña</span><br>
 
-                <input type="email" placeholder="Ingrese su Correo">
-                <input type="text" placeholder="Ingrese su Contraseña">
+                <input id="loginCorreo" name="correo" type="email" placeholder="Ingrese su Correo" autocomplete="username">
+                <input id="loginPassword" name="password" type="password" placeholder="Ingrese su Contraseña" autocomplete="current-password">
+                <p id="loginError" class="text-danger mt-2" style="display:none;"></p>
                 <a href="#">Cambiar Contraseña</a>
 
-                <button>Iniciar Sesión</button>
+                <button type="submit">Iniciar Sesión</button>
 
                 <div class="btn-toogle-form">
                     <p>¿No tienes una cuenta?</p>
@@ -81,19 +82,34 @@
                             <p class="formulario__input-error">Verifique su boleta</p>
                         </div>
 
-                        <!-- Nombre -->
+                        <!-- Nombre(s) -->
                         <div class="formulario__grupo" id="grupo__nombreAlumno">
-                            <input type="text" class="form-control" id="nombreAlumno" name="nombre" placeholder="Nombre completo">
+                            <input type="text" class="form-control" id="nombreAlumno" name="nombre" placeholder="Nombre(s)">
                             <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoPaterno">
+                                    <input type="text" class="form-control" name="apellidoPaterno" placeholder="Apellido Paterno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoMaterno">
+                                    <input type="text" class="form-control" name="apellidoMaterno" placeholder="Apellido Materno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Sexo -->
                         <div class="formulario__grupo" id="grupo__sexoAlumno">
                             <select name="sexo" class="form-select">
                                 <option disabled selected>Sexo</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="femenino">Femenino</option>
-                                <option value="otro">Otro</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
                             </select>
                         </div>
 
@@ -109,23 +125,23 @@
                             <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
                         </div>
 
-                        <div class="row g-2 mb-3">
+                        <div class="row g-2 mb-2">
                             <div class="col-md-6">
-                                <select id="semestre" name="semestre" class="form-select">
-                                    <option disabled selected>Semestre</option>
-                                    <option value="cinco">5</option>
-                                    <option value="seis">6</option>
-                                    <option value="siete">7</option>
-                                    <option value="ocho">8</option>
-                                </select>
+                                <div class="formulario__grupo" id="grupo__creditos">
+                                    <input type="number" class="form-control" name="creditos" placeholder="Créditos" min="0" max="387">
+                                    <p class="formulario__input-error">Debe ser entre 0 y 387</p>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <select id="carreraAlumno" name="carrera" class="form-select">
-                                    <option disabled selected>Carrera</option>
-                                    <option value="ISC">ISC</option>
-                                    <option value="IIA">IIA</option>
-                                    <option value="LCD">LCD</option>
-                                </select>
+                                <div class="formulario__grupo" id="grupo__carreraAlumno">
+                                    <select id="carreraAlumno" name="carrera" class="form-select">
+                                        <option disabled selected>Carrera</option>
+                                        <option value="ISC">ISC</option>
+                                        <option value="IIA">IIA</option>
+                                        <option value="LCD">LCD</option>
+                                    </select>
+                                    <p class="formulario__input-error">Seleccione una carrera</p>
+                                </div>
                             </div>
                         </div>
 
@@ -181,19 +197,34 @@
                             <p class="formulario__input-error">Verifique su RFC</p>
                         </div>
 
-                        <!-- Nombre -->
+                        <!-- Nombre(s) -->
                         <div class="formulario__grupo" id="grupo__nombreProfe">
-                            <input type="text" class="form-control" id="nombreProfe" name="nombre" placeholder="Nombre completo">
+                            <input type="text" class="form-control" id="nombreProfe" name="nombre" placeholder="Nombre(s)">
                             <p class="formulario__input-error">El nombre solo puede tener letras</p>
+                        </div>
+
+                        <!-- Apellidos -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoPaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoPaterno" placeholder="Apellido Paterno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__apellidoMaternoProfe">
+                                    <input type="text" class="form-control" name="apellidoMaterno" placeholder="Apellido Materno">
+                                    <p class="formulario__input-error">Solo letras</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Sexo -->
                         <div class="formulario__grupo" id="grupo__sexoProfe">
                             <select name="sexo" class="form-select">
                                 <option disabled selected>Sexo</option>
-                                <option value="masculino">Masculino</option>
-                                <option value="femenino">Femenino</option>
-                                <option value="otro">Otro</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
                             </select>
                         </div>
 
@@ -293,22 +324,33 @@
                             <p class="formulario__input-error">Ingrese un nombre válido</p>
                         </div>
 
-                        <!-- RFC -->
-                        <div class="formulario__grupo" id="grupo__rfcInstitucion">
-                            <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
-                            <p class="formulario__input-error">Verifique su RFC</p>
-                        </div>
-
                         <!-- Representante Legal -->
-                        <div class="formulario__grupo" id="grupo__representante">
-                            <input type="text" class="form-control" name="representante" placeholder="Nombre del Representante Legal">
+                        <div class="formulario__grupo" id="grupo__representanteNombre">
+                            <input type="text" class="form-control" name="representanteNombre" placeholder="Nombre(s) del Representante">
                             <p class="formulario__input-error">El nombre solo puede contener letras</p>
                         </div>
 
-                        <!-- Teléfono -->
-                        <div class="formulario__grupo" id="grupo__telefonoInstitucion">
-                            <input type="tel" class="form-control" name="telefono" placeholder="Teléfono de contacto" maxlength="10">
-                            <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                        <div class="formulario__grupo" id="grupo__representanteApellidos">
+                            <input type="text" class="form-control" name="representanteApellidos" placeholder="Apellidos del Representante">
+                            <p class="formulario__input-error">Los apellidos solo pueden contener letras</p>
+                        </div>
+
+                        <div class="row g-2 mb-2">
+                            <!-- RFC -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__rfcInstitucion">
+                                    <input type="text" class="form-control" name="rfc" placeholder="RFC" maxlength="13">
+                                    <p class="formulario__input-error">Verifique su RFC</p>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__telefonoInstitucion">
+                                    <input type="tel" class="form-control" name="telefono" placeholder="Teléfono de contacto" maxlength="10">
+                                    <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Dirección -->
@@ -390,6 +432,7 @@
             <i class="fas fa-home"></i>
         </a>
     </div>
+    <script src="js/config.js"></script>
     <script src="js/scripts_login.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

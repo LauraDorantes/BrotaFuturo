@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modelo de Institución
+ * Representa una empresa o institución que puede publicar vacantes de servicio social
+ * 
+ * Campos:
+ * - nombre: Nombre de la institución (requerido)
+ * - nombreRepresentante: Nombre del representante de la institución (requerido)
+ * - apellidosRepresentante: Apellidos del representante (requerido)
+ * - correo: Email único de la institución (requerido, único)
+ * - password: Contraseña encriptada (requerido)
+ * - rfc: RFC único de la institución (requerido, único)
+ * - telefono: Número de teléfono (requerido, único)
+ * - direccion: Dirección única de la institución (requerido, único)
+ * - tipo: Tipo de institución (Publica/Privada) (requerido)
+ * - alumnosAsociados: Lista de alumnos que trabajan/trabajaron en la institución
+ */
 const institucionSchema = new mongoose.Schema({
     nombre: {
         type: String,
@@ -49,7 +65,6 @@ const institucionSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Índices para optimizar consultas
-institucionSchema.index({ correo: 1 }, { unique: true });
 institucionSchema.index({ createdAt: -1 });
 institucionSchema.index({ nombre: 'text', nombreRepresentante: 'text', apellidosRepresentante: 'text' });
 

@@ -1,5 +1,22 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modelo de Profesor
+ * Representa un profesor que puede publicar vacantes y supervisar alumnos en servicio social
+ * 
+ * Campos:
+ * - nombres: Nombre(s) del profesor (requerido)
+ * - apellidoPaterno: Apellido paterno del profesor (requerido)
+ * - apellidoMaterno: Apellido materno del profesor (requerido)
+ * - correo: Email único del profesor (requerido, único)
+ * - password: Contraseña encriptada del profesor (requerido)
+ * - departamento: Departamento al que pertenece el profesor (requerido)
+ * - rfc: RFC único del profesor (requerido, único)
+ * - telefono: Número de teléfono del profesor (requerido, único)
+ * - sexo: Sexo del profesor (Masculino/Femenino) (requerido)
+ * - alumnosAsociados: Lista de alumnos que el profesor supervisa o ha supervisado
+ */
+
 const profesorSchema = new mongoose.Schema({
     nombres: {
         type: String,
@@ -46,14 +63,26 @@ const profesorSchema = new mongoose.Schema({
         required: true,
         enum: ['Masculino', 'Femenino'],
     },
+    //Modifique aquí
     alumnosAsociados : [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Alumno',
-    }]
+        id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Alumno',
+        },
+        vacante:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:'Vacante',
+            required: true
+        },
+        estado: {
+            type: String,
+            enum: ['Activo', 'Finalizado'],
+            required: true,
+        }}
+    ],
 }, { timestamps: true });
 
 // Índices para optimizar consultas
-profesorSchema.index({ correo: 1 }, { unique: true });
 profesorSchema.index({ createdAt: -1 });
 profesorSchema.index({ nombres: 'text', apellidoPaterno: 'text', apellidoMaterno: 'text' });
 

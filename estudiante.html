@@ -49,7 +49,7 @@
                     </a>
                 </li>
 
-                <li>
+                <li class="nav-item" data-section="ayuda-section">
                     <a href="#">
                         <span class="icon"><ion-icon name="help-circle-outline"></ion-icon></span>
                         <span class="title">Ayuda</span>
@@ -147,7 +147,7 @@
 
                             <div class="row">
                                 <label>Boleta
-                                    <input id="boletaInput" type="text" placeholder="2024000000" readonly>
+                                    <input id="boletaInput" type="text" placeholder="2024000000">
                                 </label>
 
                                 <label>Sexo
@@ -176,7 +176,17 @@
 
                             <div class="row">
                                 <label>CURP
-                                    <input id="curpInput" type="text" placeholder="CURP" readonly>
+                                    <input id="curpInput" type="text" placeholder="CURP">
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <label>Contraseña actual
+                                    <input id="currentPasswordInput" type="password" placeholder="********">
+                                </label>
+
+                                <label>Nueva contraseña
+                                    <input id="newPasswordInput" type="password" placeholder="********">
                                 </label>
                             </div>
 
@@ -278,6 +288,13 @@
                     </main>
                 </div>
             </section>
+
+            <section id="ayuda-section" class="ayuda-section hidden">
+                <h2 class="titulo-seccion">¿Cuál es el proceso a seguir?</h2>
+                <div class="ayuda-contenido">
+                    <img src="./images/DFAlumno.png">
+                </div>
+            </section>
         </div>
     </div>
 
@@ -296,6 +313,15 @@
                     <button type="button" id="cancelarPostulacionBtn" class="btn outline">Cancelar</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: DETALLE DE VACANTE -->
+    <div id="modalDetalleVacante" class="modal hidden">
+        <div class="modal-content modal-lg">
+            <span id="cerrarModalDetalleVacante" class="close">&times;</span>
+            <h3>Detalle de Vacante</h3>
+            <div id="detalleVacanteContent"></div>
         </div>
     </div>
 
@@ -344,6 +370,7 @@
         </div>
     </div>
 
+    <script src="./js/config.js"></script>
     <script src="./js/scripts_estudiante.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>

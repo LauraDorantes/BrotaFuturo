@@ -1,27 +1,103 @@
 const mongoose = require('mongoose');
 
+/**
+ * Modelo de Vacante
+ * Representa una vacante de servicio social publicada por un profesor o institución
+ * 
+ * Campos:
+ * - titulo: Título de la vacante (requerido)
+ * - descripcion: Descripción detallada de la vacante (requerido)
+ * - requisitos: Lista de requisitos necesarios para la vacante (requerido)
+ * - fechaPublicacion: Fecha de publicación de la vacante (automático)
+ * - salario: Salario o compensación económica (opcional, por defecto 0)
+ * - propietarioTipo: Tipo de propietario (Institucion/Profesor) (requerido)
+ * - propietario: Referencia al profesor o institución que publica la vacante (requerido)
+ */
+
 const vacanteSchema = new mongoose.Schema({
     titulo: {
         type: String,
         required: true,
     },
-    descripcion: {
+    area: {
         type: String,
         required: true,
     },
-    requisitos: {
+    numeroVacantes: {
+        type: Number,
+        required: true,
+        default: 1,
+    },
+    objetivos: {
+        type: String,
+        required: true,
+    },
+    actividades: {
+        type: String,
+        required: true,
+    },
+    requerimientos: {
+        type: String,
+        required: true,
+    },
+    carreraRequerida: {
+        type: String,
+        required: true,
+    },
+    conocimientosTecnicos: {
+        type: String,
+        required: true,
+    },
+    habilidades: {
+        type: String,
+        required: true,
+    },
+    modalidad: {
+        type: String,
+        required: true,
+        enum: ['Presencial', 'Remoto', 'Híbrido'],
+    },
+    horasSemanal: {
+        type: Number,
+        required: true,
+    },
+    fechaInicio: {
+        type: Date,
+        required: true,
+    },
+    fechaLimite: {
+        type: Date,
+        required: true,
+    },
+    duracionMeses: {
+        type: Number,
+        required: true,
+    },
+    beneficiosAlumno:{
         type: [String],
+        required: true,
+        enum:["Certificación al término", "Carta de recomendación", "Experiencia laboral comprobable"]
+    },
+    otrosBeneficios: {
+        type: String,
+        required: false,
+    },
+    informacionAdicional: {
+        type: String,
+        required: false,
+    },
+    correoConsulta: {
+        type: String,
+        required: true,
+    },
+    telefonoConsulta: {
+        type: Number,
         required: true,
     },
     fechaPublicacion: {
         type: Date,
         default: Date.now,
         required: true,
-    },
-    salario: {
-        type: Number,
-        default: 0,
-        required: false,
     },
     propietarioTipo: {
         type: String,

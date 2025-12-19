@@ -6,10 +6,6 @@ const Postulacion = require('../models/Postulacion');
 const Vacante = require('../models/Vacante');
 
 /**
- * Controlador para gestionar mensajes entre usuarios del sistema
- */
-
-/**
  * Función auxiliar para obtener el nombre completo de un usuario según su tipo
  * @param {String} tipo - Tipo de usuario: 'Alumno', 'Profesor', 'Institucion'
  * @param {Object} usuario - Objeto del usuario de Mongoose

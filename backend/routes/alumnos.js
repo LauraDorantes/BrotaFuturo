@@ -46,7 +46,7 @@ router.put(
     @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
     @param {Object} req.body - Datos a actualizar (nombres, apellidoPaterno, apellidoMaterno, telefono, sexo, carrera, creditos)
     @return {Object} - Datos del alumno actualizados o error en caso de fallo.
-*/
+*/ 
 router.put(
     '/perfil',
     requireAuth,
