@@ -44,30 +44,142 @@ const obtenerModeloPorTipo = (tipo) => {
  * @param {String} req.body.destinatarioTipo - Tipo del destinatario: 'Alumno', 'Profesor', 'Institucion'
  * @param {String} req.body.asunto - Asunto del mensaje (requerido)
  * @param {String} req.body.contenido - Contenido del mensaje (requerido)
- * @param {String} req.body.relacionadoConTipo - Tipo de relación: 'Vacante', 'Postulacion' o null (opcional)
- * @param {String} req.body.relacionadoConId - ID de la vacante o postulación relacionada (opcional)
+ * @param {String} req.body.postulacionId - ID de la postulación relacionada (recomendado)
  * @param {Object} req.user - Usuario autenticado (remitente)
  * @return {Object} - Mensaje creado o error en caso de fallo
  */
 exports.enviarMensaje = async (req, res) => {
     try {
-        const { destinatarioId, destinatarioTipo, asunto, contenido, relacionadoConTipo, relacionadoConId } = req.body;
+        const { destinatarioId, destinatarioTipo, asunto, contenido, postulacionId } = req.body;
         const remitenteId = req.user.id;
         const remitenteTipo = req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1); // Capitalizar primera letra
 
         // Validar campos requeridos
-        if (!destinatarioId || !destinatarioTipo || !asunto || !contenido) {
-            return res.status(400).json({ message: 'Faltan campos requeridos: destinatarioId, destinatarioTipo, asunto, contenido' });
+        if (!asunto || !contenido) {
+            return res.status(400).json({ message: 'Faltan campos requeridos: asunto, contenido' });
         }
 
-        // Validar tipos válidos
-        if (!['Alumno', 'Profesor', 'Institucion'].includes(destinatarioTipo)) {
-            return res.status(400).json({ message: 'Tipo de destinatario no válido' });
+        // Restricción de negocio: solo mensajes Alumno <-> (Profesor|Institucion)
+        const remitenteEsAlumno = remitenteTipo === 'Alumno';
+
+        let postulacion = null;
+        let destinatarioIdFinal = null;
+        let destinatarioTipoFinal = null;
+
+        // Caso A: se manda explicitamente la postulación
+        if (postulacionId) {
+            postulacion = await Postulacion.findById(postulacionId)
+                .populate('alumno', 'nombres apellidoPaterno apellidoMaterno correo')
+                .populate({
+                    path: 'vacante',
+                    select: 'propietario propietarioTipo titulo',
+                });
+
+            if (!postulacion) {
+                return res.status(404).json({ message: 'Postulación no encontrada' });
+            }
+
+            // Determinar destinatario según quién envía
+            const alumnoId = postulacion.alumno?._id?.toString();
+            const propietarioId = postulacion.vacante?.propietario?.toString();
+            const propietarioTipo = postulacion.vacante?.propietarioTipo;
+
+            if (!alumnoId || !propietarioId || !propietarioTipo) {
+                return res.status(400).json({ message: 'La postulación no tiene alumno/vacante completos' });
+            }
+
+            // Validar que el remitente pertenezca a la postulación
+            const remitenteEsAlumnoDePost = remitenteTipo === 'Alumno' && alumnoId === String(remitenteId);
+            const remitenteEsPropietarioDePost = propietarioTipo === remitenteTipo && propietarioId === String(remitenteId);
+            if (!remitenteEsAlumnoDePost && !remitenteEsPropietarioDePost) {
+                return res.status(403).json({ message: 'No autorizado para enviar mensajes en esta postulación' });
+            }
+
+            if (remitenteTipo === 'Alumno') {
+                destinatarioIdFinal = propietarioId;
+                destinatarioTipoFinal = propietarioTipo;
+            } else {
+                // Profesor/Institucion
+                destinatarioIdFinal = alumnoId;
+                destinatarioTipoFinal = 'Alumno';
+            }
+        } else {
+            // Caso B (compat): se manda destinatarioId/destinatarioTipo; se resuelve la postulación más reciente
+            if (!destinatarioId || !destinatarioTipo) {
+                return res.status(400).json({ message: 'Falta postulacionId (recomendado) o destinatarioId/destinatarioTipo' });
+            }
+            if (!['Alumno', 'Profesor', 'Institucion'].includes(destinatarioTipo)) {
+                return res.status(400).json({ message: 'Tipo de destinatario no válido' });
+            }
+
+            // Solo permitimos Alumno <-> (Profesor|Institucion)
+            if (remitenteTipo !== 'Alumno' && destinatarioTipo !== 'Alumno') {
+                return res.status(400).json({ message: 'Los mensajes solo pueden ser entre Alumno y (Profesor o Institucion)' });
+            }
+
+            // Resolver postulación más reciente que conecte a ambos
+            const esAlumnoDestinatario = destinatarioTipo === 'Alumno';
+            const alumnoId = remitenteEsAlumno ? String(remitenteId) : String(destinatarioId);
+            const propietarioId = remitenteEsAlumno ? String(destinatarioId) : String(remitenteId);
+            const propietarioTipo = remitenteEsAlumno ? destinatarioTipo : remitenteTipo;
+
+            // Validar propietario tipo
+            if (!['Profesor', 'Institucion'].includes(propietarioTipo)) {
+                return res.status(400).json({ message: 'Tipo de propietario no válido' });
+            }
+
+            // Vacantes del propietario
+            const vacanteIds = await Vacante.find({ propietario: propietarioId, propietarioTipo })
+                .select('_id')
+                .lean();
+
+            const ids = (vacanteIds || []).map(v => v._id);
+            if (ids.length === 0) {
+                return res.status(400).json({ message: 'No existe una relación de postulación entre ambos usuarios' });
+            }
+
+            postulacion = await Postulacion.findOne({ alumno: alumnoId, vacante: { $in: ids } })
+                .sort({ createdAt: -1 })
+                .populate('alumno', 'nombres apellidoPaterno apellidoMaterno correo')
+                .populate({
+                    path: 'vacante',
+                    select: 'propietario propietarioTipo titulo',
+                });
+
+            if (!postulacion) {
+                return res.status(400).json({ message: 'No existe una postulación entre ambos usuarios' });
+            }
+
+            // Determinar destinatario final
+            if (remitenteEsAlumno) {
+                destinatarioIdFinal = propietarioId;
+                destinatarioTipoFinal = propietarioTipo;
+            } else {
+                destinatarioIdFinal = alumnoId;
+                destinatarioTipoFinal = 'Alumno';
+            }
         }
 
         // No permitir enviarse mensajes a sí mismo
-        if (destinatarioId === remitenteId && destinatarioTipo === remitenteTipo) {
+        if (String(destinatarioIdFinal) === String(remitenteId) && String(destinatarioTipoFinal) === String(remitenteTipo)) {
             return res.status(400).json({ message: 'No puedes enviarte mensajes a ti mismo' });
+        }
+
+        // Validar tipos válidos final
+        if (!['Alumno', 'Profesor', 'Institucion'].includes(destinatarioTipoFinal)) {
+            return res.status(400).json({ message: 'Tipo de destinatario no válido' });
+        }
+
+        // Aplicar regla Alumno <-> (Profesor|Institucion)
+        if (remitenteTipo !== 'Alumno' && destinatarioTipoFinal !== 'Alumno') {
+            return res.status(400).json({ message: 'Los mensajes solo pueden ser entre Alumno y (Profesor o Institucion)' });
+        }
+
+        // Obtener datos del destinatario
+        const ModeloDestinatario = obtenerModeloPorTipo(destinatarioTipoFinal);
+        const destinatario = await ModeloDestinatario.findById(destinatarioIdFinal);
+        if (!destinatario) {
+            return res.status(404).json({ message: 'Destinatario no encontrado' });
         }
 
         // Obtener datos del remitente
@@ -75,20 +187,6 @@ exports.enviarMensaje = async (req, res) => {
         const remitente = await ModeloRemitente.findById(remitenteId);
         if (!remitente) {
             return res.status(404).json({ message: 'Remitente no encontrado' });
-        }
-
-        // Obtener datos del destinatario
-        const ModeloDestinatario = obtenerModeloPorTipo(destinatarioTipo);
-        const destinatario = await ModeloDestinatario.findById(destinatarioId);
-        if (!destinatario) {
-            return res.status(404).json({ message: 'Destinatario no encontrado' });
-        }
-
-        // Validar relación si se proporciona
-        if (relacionadoConTipo && relacionadoConId) {
-            if (!['Vacante', 'Postulacion'].includes(relacionadoConTipo)) {
-                return res.status(400).json({ message: 'Tipo de relación no válido' });
-            }
         }
 
         // Crear el mensaje
@@ -99,16 +197,13 @@ exports.enviarMensaje = async (req, res) => {
                 nombre: obtenerNombreUsuario(remitenteTipo, remitente)
             },
             destinatario: {
-                id: destinatarioId,
-                tipo: destinatarioTipo,
-                nombre: obtenerNombreUsuario(destinatarioTipo, destinatario)
+                id: destinatarioIdFinal,
+                tipo: destinatarioTipoFinal,
+                nombre: obtenerNombreUsuario(destinatarioTipoFinal, destinatario)
             },
             asunto: asunto.trim(),
             contenido: contenido.trim(),
-            relacionadoCon: {
-                tipo: relacionadoConTipo || null,
-                id: relacionadoConId || null
-            },
+            postulacion: postulacion._id,
             leido: false
         });
 
@@ -230,11 +325,21 @@ exports.obtenerMensajePorId = async (req, res) => {
         // Si es el destinatario y no está leído, marcarlo como leído
         if (esDestinatario && !mensaje.leido) {
             mensaje.leido = true;
-            mensaje.fechaLeido = new Date();
             await mensaje.save();
         }
 
-        return res.json(mensaje);
+        // Re-consultar con populate para que el front pueda mostrar Proyecto (vacante.titulo)
+        const mensajeDetallado = await Mensaje.findById(mensaje._id)
+            .populate({
+                path: 'postulacion',
+                select: 'vacante',
+                populate: {
+                    path: 'vacante',
+                    select: 'titulo',
+                },
+            });
+
+        return res.json(mensajeDetallado || mensaje);
     } catch (error) {
         console.error('Error obteniendo mensaje:', error);
         return res.status(500).json({ message: 'Error al obtener el mensaje', error: error.message });
@@ -264,7 +369,6 @@ exports.marcarComoLeido = async (req, res) => {
 
         // Marcar como leído
         mensaje.leido = true;
-        mensaje.fechaLeido = new Date();
         await mensaje.save();
 
         return res.json(mensaje);

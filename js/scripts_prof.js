@@ -272,8 +272,8 @@ document.querySelectorAll(".nav-item").forEach(item => {
             cargarAlumnos();
         }
 
-        if (sectionClass === 'notificaciones-section') {
-            cargarNotificaciones();
+        if (sectionClass === 'mensajes-section') {
+            cargarMensajesRecibidosProf();
         }
     });
 });
@@ -303,6 +303,9 @@ document.addEventListener("DOMContentLoaded", () => {
     showSection(initialSection);
     if (initialSection === 'alumnos-section') {
         cargarAlumnos();
+    }
+    if (initialSection === 'mensajes-section') {
+        cargarMensajesRecibidosProf();
     }
 });
 
@@ -722,7 +725,7 @@ class SistemaPublicaciones {
         if (this.tbodyPostulantes) {
             this.tbodyPostulantes.innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align:center; padding: 16px;">Cargando postulantes...</td>
+                    <td colspan="10" style="text-align:center; padding: 16px;">Cargando postulantes...</td>
                 </tr>
             `;
         }
@@ -734,7 +737,7 @@ class SistemaPublicaciones {
         if (this.tbodyPostulantes) {
             this.tbodyPostulantes.innerHTML = `
                 <tr>
-                    <td colspan="9" style="text-align:center; padding: 16px;">No hay postulantes aún.</td>
+                    <td colspan="10" style="text-align:center; padding: 16px;">No hay postulantes aún.</td>
                 </tr>
             `;
         }
@@ -875,6 +878,28 @@ class SistemaPublicaciones {
                 c8.textContent = '-';
             }
 
+            // Mensaje
+            const c9 = document.createElement('td');
+            const postulacionId = p && p._id ? String(p._id) : '';
+            const destinatarioLabel = `${nombre || '-'} (Alumno)`;
+            const proyectoTitulo = titulo || '-';
+
+            const btnMsg = document.createElement('button');
+            btnMsg.className = 'btn btn-small outline';
+            btnMsg.type = 'button';
+            btnMsg.innerHTML = '<ion-icon name="mail-outline"></ion-icon> Enviar Mensaje';
+            if (!postulacionId) {
+                btnMsg.disabled = true;
+            }
+            btnMsg.addEventListener('click', () => {
+                if (!postulacionId) {
+                    showError('No se encontró la postulación asociada');
+                    return;
+                }
+                enviarMensajeDesdeAlumno(postulacionId, destinatarioLabel, proyectoTitulo);
+            });
+            c9.appendChild(btnMsg);
+
             tr.appendChild(c1);
             tr.appendChild(c2);
             tr.appendChild(c3);
@@ -884,6 +909,7 @@ class SistemaPublicaciones {
             tr.appendChild(c7cv);
             tr.appendChild(c7);
             tr.appendChild(c8);
+            tr.appendChild(c9);
 
             this.tbodyPostulantes.appendChild(tr);
         });
@@ -1652,16 +1678,34 @@ async function cargarAlumnos() {
     (Array.isArray(alumnos) ? alumnos : []).forEach(a => {
         const tr = document.createElement('tr');
         const tituloProyecto = (a && (a.tituloProyecto || a.publicacion)) ? String(a.tituloProyecto || a.publicacion) : '-';
+        const postulacionId = a && a.postulacionId ? String(a.postulacionId) : '';
+        const destinatarioLabel = `${a.nombreCompleto || '-'} (Alumno)`;
         tr.innerHTML = `
             <td>${a.numero}</td>
             <td>${a.boleta}</td>
             <td>${a.nombreCompleto}</td>
             <td>${a.correo}</td>
             <td>${tituloProyecto}</td>
-            <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">
-                ${a.estado}
+            <td class="${a.estado === 'Activo' ? 'activo' : 'finalizado'}">${a.estado || '-'}</td>
+            <td>
+                <button class="btn btn-small btn-enviar-mensaje-alumno" ${postulacionId ? '' : 'disabled'}
+                    data-postulacion-id="${postulacionId}"
+                    data-destinatario="${String(destinatarioLabel).replace(/"/g, '&quot;')}"
+                    data-proyecto="${String(tituloProyecto).replace(/"/g, '&quot;')}">
+                    <ion-icon name="mail-outline"></ion-icon> Enviar Mensaje
+                </button>
             </td>
         `;
+
+        tr.querySelector('.btn-enviar-mensaje-alumno')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            enviarMensajeDesdeAlumno(
+                btn?.dataset?.postulacionId || '',
+                btn?.dataset?.destinatario || '',
+                btn?.dataset?.proyecto || ''
+            );
+        });
         tbody.appendChild(tr);
     });
 }
@@ -1721,165 +1765,186 @@ function enviarReporteAlumnos() {
 }
 
 // ============================================
-// GESTIÓN DE NOTIFICACIONES (MENSAJES)
+// MENSAJES (panel estilo Alumno)
 // ============================================
 
-/**
- * Cargar notificaciones (mensajes recibidos de estudiantes)
- */
-async function cargarNotificaciones() {
-    const listaNotificaciones = document.getElementById('listaNotificaciones');
-    if (!listaNotificaciones) return;
+let mensajeActualProf = 'recibidos';
 
-    listaNotificaciones.innerHTML = '<div class="loading-message">Cargando notificaciones...</div>';
+async function cargarMensajesRecibidosProf() {
+    const lista = document.getElementById('listaMensajesProf');
+    if (!lista) return;
+
+    lista.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
 
     try {
-        // Obtener solo mensajes de estudiantes
         const data = await fetchAPI('/mensajes/recibidos?limit=50');
         const mensajes = data.mensajes || [];
-        
-        // Filtrar solo mensajes de estudiantes
-        const mensajesEstudiantes = mensajes.filter(m => m.remitente.tipo === 'Alumno');
 
-        if (mensajesEstudiantes.length === 0) {
-            listaNotificaciones.innerHTML = '<div class="loading-message">No hay notificaciones</div>';
+        if (mensajes.length === 0) {
+            lista.innerHTML = '<div class="loading-message">No hay mensajes recibidos</div>';
             return;
         }
 
-        listaNotificaciones.innerHTML = '';
-        mensajesEstudiantes.forEach(mensaje => {
-            listaNotificaciones.appendChild(crearCardNotificacion(mensaje));
-        });
+        lista.innerHTML = '';
+        mensajes.forEach(m => lista.appendChild(crearItemMensajeProf(m, 'recibido')));
     } catch (error) {
-        console.error('Error al cargar notificaciones:', error);
-        listaNotificaciones.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar las notificaciones</div>';
+        console.error('Error al cargar mensajes recibidos:', error);
+        lista.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar los mensajes</div>';
     }
 }
 
-/**
- * Crear tarjeta de notificación (mensaje)
- * @param {object} mensaje - Datos del mensaje
- * @returns {HTMLElement} - Elemento HTML de la tarjeta
- */
-function crearCardNotificacion(mensaje) {
-    const card = document.createElement('div');
-    card.className = `notificaciones-card ${mensaje.leido ? 'leido' : 'no-leido'}`;
-    card.dataset.mensajeId = mensaje._id;
+async function cargarMensajesEnviadosProf() {
+    const lista = document.getElementById('listaMensajesProf');
+    if (!lista) return;
 
-    card.innerHTML = `
-        <div class="notificacion-header">
-            <strong>${mensaje.remitente.nombre}</strong>
-            <span class="notificacion-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+    lista.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
+
+    try {
+        const data = await fetchAPI('/mensajes/enviados?limit=50');
+        const mensajes = data.mensajes || [];
+
+        if (mensajes.length === 0) {
+            lista.innerHTML = '<div class="loading-message">No hay mensajes enviados</div>';
+            return;
+        }
+
+        lista.innerHTML = '';
+        mensajes.forEach(m => lista.appendChild(crearItemMensajeProf(m, 'enviado')));
+    } catch (error) {
+        console.error('Error al cargar mensajes enviados:', error);
+        lista.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar los mensajes</div>';
+    }
+}
+
+function crearItemMensajeProf(mensaje, tipo) {
+    const item = document.createElement('div');
+    item.className = `mensaje-item ${mensaje.leido ? 'leido' : 'no-leido'}`;
+    item.dataset.mensajeId = mensaje._id;
+
+    const otraPersona = tipo === 'recibido' ? mensaje.remitente : mensaje.destinatario;
+
+    item.innerHTML = `
+        <div class="mensaje-item-header">
+            <span class="mensaje-item-asunto">${mensaje.asunto}</span>
+            <div class="mensaje-item-meta">
+                ${tipo === 'enviado'
+                    ? `<span class="mensaje-item-estado ${mensaje.leido ? 'leido' : 'no-leido'}">${mensaje.leido ? 'Leído' : 'No leído'}</span>`
+                    : ''}
+                <span class="mensaje-item-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+            </div>
         </div>
-        <div class="notificacion-asunto">${mensaje.asunto}</div>
-        <div class="notificacion-preview">${mensaje.contenido.substring(0, 100)}${mensaje.contenido.length > 100 ? '...' : ''}</div>
-        ${mensaje.relacionadoCon?.tipo ? 
-            `<div class="notificacion-relacionado">Relacionado con: ${mensaje.relacionadoCon.tipo}</div>` : ''}
-        ${!mensaje.leido ? '<span class="notificacion-nueva">Nuevo</span>' : ''}
+        <div class="mensaje-item-remitente">${tipo === 'recibido' ? 'De' : 'Para'}: ${otraPersona?.nombre || '-'}</div>
     `;
 
-    card.addEventListener('click', () => mostrarDetalleNotificacion(mensaje._id));
-
-    return card;
+    item.addEventListener('click', () => mostrarDetalleMensajeProf(mensaje._id));
+    return item;
 }
 
-/**
- * Mostrar detalle de una notificación (mensaje)
- * @param {string} mensajeId - ID del mensaje
- */
-async function mostrarDetalleNotificacion(mensajeId) {
+async function mostrarDetalleMensajeProf(mensajeId) {
     try {
+        const detalle = document.getElementById('mensajeDetalleProf');
+        if (!detalle) return;
+
         const mensaje = await fetchAPI(`/mensajes/${mensajeId}`);
-        const modal = document.getElementById('modalNotificacion');
-        const contenido = document.getElementById('modalNotificacionContenido');
-        const titulo = document.getElementById('modalNotificacionTitulo');
 
-        if (!modal || !contenido) return;
+        const remitente = mensaje.remitente;
+        const destinatario = mensaje.destinatario;
 
-        titulo.textContent = mensaje.asunto;
-        contenido.innerHTML = `
-            <div class="mensaje-detalle-info">
-                <p><strong>De:</strong> ${mensaje.remitente.nombre} (${mensaje.remitente.tipo})</p>
-                <p><strong>Fecha:</strong> ${new Date(mensaje.createdAt).toLocaleString('es-ES')}</p>
-                ${mensaje.relacionadoCon?.tipo ? 
-                    `<p><strong>Relacionado con:</strong> ${mensaje.relacionadoCon.tipo}</p>` : ''}
+        const postulacionObj = (mensaje && mensaje.postulacion && typeof mensaje.postulacion === 'object') ? mensaje.postulacion : null;
+        const postulacionId = postulacionObj && postulacionObj._id ? String(postulacionObj._id) : (mensaje && mensaje.postulacion ? String(mensaje.postulacion) : '');
+        const proyectoTitulo = postulacionObj && postulacionObj.vacante && postulacionObj.vacante.titulo ? String(postulacionObj.vacante.titulo) : '';
+        const destinatarioLabel = `${remitente?.nombre || '-'} (${remitente?.tipo || '-'})`;
+
+        detalle.innerHTML = `
+            <div class="mensaje-detalle-header">
+                <h3 class="mensaje-detalle-asunto">${mensaje.asunto}</h3>
+                <div class="mensaje-detalle-info">
+                    <span><strong>De:</strong> ${remitente?.nombre || '-'} (${remitente?.tipo || '-'})</span>
+                    <span><strong>Para:</strong> ${destinatario?.nombre || '-'} (${destinatario?.tipo || '-'})</span>
+                    <span><strong>Proyecto:</strong> ${proyectoTitulo || '-'}</span>
+                    <span><strong>Fecha:</strong> ${new Date(mensaje.createdAt).toLocaleString('es-ES')}</span>
+                </div>
             </div>
-            <div class="mensaje-detalle-contenido">
-                <p>${mensaje.contenido}</p>
-            </div>
+            <div class="mensaje-detalle-contenido">${mensaje.contenido}</div>
+            ${mensajeActualProf === 'recibidos'
+                ? `<div class="mensaje-detalle-actions">
+                        <button type="button" class="btn btn-small btn-primary" id="btnResponderMensajeProf">Responder</button>
+                   </div>`
+                : ''}
         `;
 
-        // Guardar datos del mensaje para responder
-        modal.dataset.mensajeId = mensaje._id;
-        modal.dataset.remitenteId = mensaje.remitente.id;
-        modal.dataset.remitenteTipo = mensaje.remitente.tipo;
+        if (mensajeActualProf === 'recibidos') {
+            const btn = document.getElementById('btnResponderMensajeProf');
+            btn?.addEventListener('click', () => {
+                if (!postulacionId) {
+                    showError('No se encontró la postulación asociada');
+                    return;
+                }
 
-        modal.classList.remove('hidden');
+                const form = document.getElementById('formNuevoMensajeProf');
+                if (form) {
+                    form.dataset.postulacionId = String(postulacionId);
+                    form.dataset.destinatarioLabel = String(destinatarioLabel || '-');
+                    form.dataset.proyectoTitulo = String(proyectoTitulo || '-');
 
-        // Configurar botón responder
-        const btnResponder = document.getElementById('btnResponderMensaje');
-        if (btnResponder) {
-            btnResponder.onclick = () => {
-                modal.classList.add('hidden');
-                abrirModalNuevoMensajeProf(mensaje.remitente.id, mensaje.remitente.tipo);
-            };
-        }
-
-        // Recargar notificaciones para actualizar estado de leído
-        cargarNotificaciones();
-    } catch (error) {
-        console.error('Error al cargar notificación:', error);
-        showError('Error al cargar la notificación');
-    }
-}
-
-/**
- * Cargar estudiantes postulados para el select de nuevo mensaje
- */
-async function cargarEstudiantesPostulados() {
-    try {
-        const data = await fetchAPI('/mensajes/estudiantes-postulados');
-        const select = document.getElementById('destinatarioEstudiante');
-
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
-
-        if (data.estudiantes && data.estudiantes.length > 0) {
-            data.estudiantes.forEach(estudiante => {
-                const option = document.createElement('option');
-                option.value = estudiante.id;
-                option.textContent = `${estudiante.nombre} (${estudiante.boleta}) - ${estudiante.carrera}`;
-                select.appendChild(option);
+                    const asuntoOriginal = String(mensaje.asunto || '').trim();
+                    const yaEsRespuesta = /^re\s*:/i.test(asuntoOriginal);
+                    form.dataset.asuntoPrefill = yaEsRespuesta ? asuntoOriginal : `Re: ${asuntoOriginal}`;
+                }
+                abrirModalNuevoMensajeProf();
             });
-        } else {
-            select.innerHTML = '<option value="">No hay estudiantes postulados</option>';
         }
     } catch (error) {
-        console.error('Error cargando estudiantes postulados:', error);
-        showError('Error al cargar estudiantes postulados');
+        console.error('Error al cargar mensaje:', error);
+        showError('Error al cargar el mensaje');
     }
 }
 
-/**
- * Abrir modal para crear nuevo mensaje a estudiante
- * @param {string} estudianteId - ID del estudiante (opcional, para prellenar)
- * @param {string} estudianteTipo - Tipo del estudiante (opcional)
- */
-async function abrirModalNuevoMensajeProf(estudianteId = null, estudianteTipo = null) {
+function enviarMensajeDesdeAlumno(postulacionId, destinatarioLabel, proyectoTitulo) {
+    if (!postulacionId) {
+        showError('No se encontró la postulación asociada');
+        return;
+    }
+
+    // Cambiar a sección de mensajes
+    document.querySelector('[data-section="mensajes-section"]')?.click();
+
+    setTimeout(() => {
+        const form = document.getElementById('formNuevoMensajeProf');
+        if (form) {
+            form.dataset.postulacionId = String(postulacionId);
+            form.dataset.destinatarioLabel = String(destinatarioLabel || '');
+            form.dataset.proyectoTitulo = String(proyectoTitulo || '');
+        }
+        abrirModalNuevoMensajeProf();
+    }, 300);
+}
+
+function abrirModalNuevoMensajeProf() {
     const modal = document.getElementById('modalNuevoMensajeProf');
     const form = document.getElementById('formNuevoMensajeProf');
-    const selectEstudiante = document.getElementById('destinatarioEstudiante');
-
     if (!modal || !form) return;
 
-    form.reset();
-    await cargarEstudiantesPostulados();
-
-    // Si se proporciona un estudiante, seleccionarlo
-    if (estudianteId && selectEstudiante) {
-        selectEstudiante.value = estudianteId;
+    const postulacionId = form.dataset.postulacionId || '';
+    if (!postulacionId) {
+        showError('Solo puedes enviar mensajes desde un alumno/proyecto');
+        return;
     }
+
+    const destinatarioLabel = form.dataset.destinatarioLabel || '';
+    const proyectoTitulo = form.dataset.proyectoTitulo || '';
+    const asuntoPrefill = form.dataset.asuntoPrefill || '';
+
+    form.reset();
+
+    const destinatarioInput = document.getElementById('mensajeDestinatarioProf');
+    if (destinatarioInput) destinatarioInput.value = destinatarioLabel || '-';
+
+    const proyectoInput = document.getElementById('mensajeProyectoProf');
+    if (proyectoInput) proyectoInput.value = proyectoTitulo || '-';
+
+    const asuntoInput = document.getElementById('mensajeAsuntoProf');
+    if (asuntoInput) asuntoInput.value = asuntoPrefill || '';
 
     modal.classList.remove('hidden');
 
@@ -1888,6 +1953,10 @@ async function abrirModalNuevoMensajeProf(estudianteId = null, estudianteTipo = 
 
     const cerrarModal = () => {
         modal.classList.add('hidden');
+        form.dataset.postulacionId = '';
+        form.dataset.destinatarioLabel = '';
+        form.dataset.proyectoTitulo = '';
+        form.dataset.asuntoPrefill = '';
     };
 
     if (cerrarBtn) cerrarBtn.onclick = cerrarModal;
@@ -1895,64 +1964,50 @@ async function abrirModalNuevoMensajeProf(estudianteId = null, estudianteTipo = 
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-
-        const destinatarioId = selectEstudiante.value;
-        const asunto = document.getElementById('mensajeAsuntoProf').value;
-        const contenido = document.getElementById('mensajeContenidoProf').value;
-
-        if (!destinatarioId) {
-            showError('Debes seleccionar un estudiante');
-            return;
-        }
+        const asunto = document.getElementById('mensajeAsuntoProf')?.value;
+        const contenido = document.getElementById('mensajeContenidoProf')?.value;
 
         try {
+            const postulacionIdInner = form.dataset.postulacionId || '';
+            if (!postulacionIdInner) {
+                showError('Falta la postulación asociada');
+                return;
+            }
+
             await fetchAPI('/mensajes', {
                 method: 'POST',
-                body: JSON.stringify({
-                    destinatarioId,
-                    destinatarioTipo: 'Alumno',
-                    asunto,
-                    contenido
-                })
+                body: JSON.stringify({ postulacionId: postulacionIdInner, asunto, contenido })
             });
 
             showSuccess('Mensaje enviado correctamente');
             cerrarModal();
-            cargarNotificaciones();
+
+            if (mensajeActualProf === 'enviados') {
+                cargarMensajesEnviadosProf();
+            } else {
+                cargarMensajesRecibidosProf();
+            }
         } catch (error) {
             showError(error.message || 'Error al enviar el mensaje');
         }
     };
 }
 
-// Configurar eventos cuando se carga la página
+// Configurar tabs de mensajes
 document.addEventListener('DOMContentLoaded', () => {
-    // Cargar notificaciones cuando se muestra la sección
-    const notificacionesSection = document.getElementById('notificaciones-section');
-    if (notificacionesSection) {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    if (!notificacionesSection.classList.contains('hidden')) {
-                        cargarNotificaciones();
-                    }
-                }
-            });
-        });
-        observer.observe(notificacionesSection, { attributes: true });
-    }
+    const tabButtons = document.querySelectorAll('#mensajes-section .tab-btn');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-    // Botón nuevo mensaje
-    const nuevoMensajeProfBtn = document.getElementById('nuevoMensajeProfBtn');
-    if (nuevoMensajeProfBtn) {
-        nuevoMensajeProfBtn.addEventListener('click', () => abrirModalNuevoMensajeProf());
-    }
-
-    // Botón cerrar mensaje
-    const btnCerrarMensaje = document.getElementById('btnCerrarMensaje');
-    if (btnCerrarMensaje) {
-        btnCerrarMensaje.addEventListener('click', () => {
-            document.getElementById('modalNotificacion').classList.add('hidden');
+            const tab = btn.dataset.tab;
+            mensajeActualProf = tab;
+            if (tab === 'recibidos') {
+                cargarMensajesRecibidosProf();
+            } else {
+                cargarMensajesEnviadosProf();
+            }
         });
-    }
+    });
 });

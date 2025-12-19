@@ -41,10 +41,10 @@
                     </a>
                 </li>
 
-                <li class="nav-item" data-section="notificaciones-section">
+                <li class="nav-item" data-section="mensajes-section">
                     <a href="#">
-                        <span class="icon"><ion-icon name="notifications-circle-outline"></ion-icon></span>
-                        <span class="title">Notificaciones</span>
+                        <span class="icon"><ion-icon name="mail-outline"></ion-icon></span>
+                        <span class="title">Mensajes</span>
                     </a>
                 </li>
 
@@ -209,6 +209,7 @@
                                 <th>Correo</th>
                                 <th>Título del proyecto</th>
                                 <th>Estado</th>
+                                <th>Mensaje</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyAlumnos"></tbody>
@@ -515,6 +516,7 @@
                                         <th>CV</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
+                                        <th>Mensaje</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyPostulantes"></tbody>
@@ -524,45 +526,43 @@
                 </div>
             </section>
 
-            <!--NOTIFICACIONES-->
-            <section id="notificaciones-section" class="notificaciones-section hidden">
-                <div class="notificaciones-header">
-                    <h2 class="titulo-seccion">Notificaciones</h2>
-                    <button id="nuevoMensajeProfBtn" class="btn btn-primary">
-                        <ion-icon name="add-circle-outline"></ion-icon> Nuevo Mensaje
-                    </button>
-                </div>
-                <div id="listaNotificaciones" class="notificaciones-lista">
-                    <div class="loading-message">Cargando notificaciones...</div>
+            <!-- MENSAJES -->
+            <section id="mensajes-section" class="mensajes-section hidden">
+                <div class="mensajes-header">
+                    <h2 class="titulo-seccion">Mensajes</h2>
                 </div>
 
-                <!-- Modal para ver mensaje -->
-                <div id="modalNotificacion" class="modal hidden">
-                    <div class="modal-content modal-lg">
-                        <span id="cerrarModalNoti" class="close">&times;</span>
-                        <h3 id="modalNotificacionTitulo">Mensaje</h3>
-                        <div id="modalNotificacionContenido" class="modal-datos">
-                            <!-- Contenido dinámico -->
+                <div class="mensajes-container">
+                    <aside class="mensajes-sidebar">
+                        <div class="mensajes-tabs">
+                            <button class="tab-btn active" data-tab="recibidos">Recibidos</button>
+                            <button class="tab-btn" data-tab="enviados">Enviados</button>
                         </div>
-                        <div class="modal-actions">
-                            <button id="btnResponderMensaje" class="btn btn-primary">Responder</button>
-                            <button id="btnCerrarMensaje" class="btn outline">Cerrar</button>
+                        <div class="mensajes-lista" id="listaMensajesProf">
+                            <div class="loading-message">Cargando mensajes...</div>
                         </div>
-                    </div>
+                    </aside>
+
+                    <main class="mensaje-detalle" id="mensajeDetalleProf">
+                        <div class="mensaje-vacio">
+                            <ion-icon name="mail-open-outline"></ion-icon>
+                            <p>Selecciona un mensaje para ver su contenido</p>
+                        </div>
+                    </main>
                 </div>
 
-                <!-- Modal para nuevo mensaje -->
+                <!-- Modal para nuevo mensaje (solo desde Alumnos/Postulantes) -->
                 <div id="modalNuevoMensajeProf" class="modal hidden">
                     <div class="modal-content modal-lg">
                         <span id="cerrarModalMensajeProf" class="close">&times;</span>
                         <h3>Nuevo Mensaje</h3>
                         <form id="formNuevoMensajeProf">
                             <div class="form-section">
-                                <label>Destinatario (Estudiante)
-                                    <select id="destinatarioEstudiante" required>
-                                        <option value="">Seleccionar estudiante...</option>
-                                    </select>
-                                    <small>Solo puedes enviar mensajes a estudiantes postulados a tus vacantes</small>
+                                <label>Destinatario
+                                    <input type="text" id="mensajeDestinatarioProf" placeholder="Destinatario" readonly>
+                                </label>
+                                <label>Proyecto
+                                    <input type="text" id="mensajeProyectoProf" placeholder="Proyecto" readonly>
                                 </label>
                                 <label>Asunto
                                     <input type="text" id="mensajeAsuntoProf" placeholder="Asunto del mensaje" required>

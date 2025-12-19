@@ -9,9 +9,10 @@ const mongoose = require('mongoose');
  * - destinatario: ID y tipo del usuario que recibe el mensaje (requerido)
  * - asunto: Asunto del mensaje (requerido)
  * - contenido: Contenido del mensaje (requerido)
- * - relacionadoCon: Referencia opcional a una vacante o postulación relacionada
+ * - postulacion: Referencia a la postulación relacionada (requerido)
  * - leido: Indica si el mensaje ha sido leído (por defecto false)
- * - fechaLeido: Fecha en que se leyó el mensaje (opcional)
+ *
+ * Nota: la fecha de envío se toma de createdAt (timestamps).
  */
 const mensajeSchema = new mongoose.Schema({
     remitente: {
@@ -54,25 +55,17 @@ const mensajeSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
-    relacionadoCon: {
-        tipo: {
-            type: String,
-            enum: ['Vacante', 'Postulacion', null],
-            default: null,
-        },
-        id: {
-            type: mongoose.Schema.Types.ObjectId,
-            default: null,
-        }
+    postulacion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Postulacion',
+        required: true,
     },
     leido: {
         type: Boolean,
         default: false,
+        required: true,
     },
-    fechaLeido: {
-        type: Date,
-        default: null,
-    }
+    
 }, { timestamps: true });
 
 // Índices para optimizar consultas
@@ -82,8 +75,8 @@ mensajeSchema.index({ 'destinatario.id': 1, leido: 1, createdAt: -1 });
 mensajeSchema.index({ 'remitente.id': 1, createdAt: -1 });
 // Índice para conversaciones entre dos usuarios
 mensajeSchema.index({ 'remitente.id': 1, 'destinatario.id': 1, createdAt: -1 });
-// Índice para mensajes relacionados con vacantes/postulaciones
-mensajeSchema.index({ 'relacionadoCon.tipo': 1, 'relacionadoCon.id': 1 });
+// Índice para mensajes asociados a una postulación
+mensajeSchema.index({ postulacion: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Mensaje', mensajeSchema, 'mensajes');
 
