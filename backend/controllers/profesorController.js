@@ -254,7 +254,7 @@ exports.obtenerPostulantesDeVacante = async (req, res) => {
                 path: 'alumno',
                 select: 'nombres apellidoPaterno apellidoMaterno correo boleta carrera creditos telefono cvID',
             })
-            .select('alumno estado mensaje createdAt fechaRespuesta comentariosRespuesta')
+            .select('alumno estado createdAt')
             .lean();
 
         return res.json({
@@ -316,10 +316,6 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
         }
 
         postulacion.estado = 'Aceptada';
-        postulacion.fechaRespuesta = new Date();
-        if (body.comentariosRespuesta !== undefined) {
-            postulacion.comentariosRespuesta = String(body.comentariosRespuesta || '').trim();
-        }
 
         await postulacion.save();
 
@@ -372,10 +368,6 @@ exports.rechazarPostulacionDeVacante = async (req, res) => {
         }
 
         postulacion.estado = 'Rechazada';
-        postulacion.fechaRespuesta = new Date();
-        if (body.comentariosRespuesta !== undefined) {
-            postulacion.comentariosRespuesta = String(body.comentariosRespuesta || '').trim();
-        }
 
         await postulacion.save();
         return res.json({ message: 'Postulación rechazada', data: { postulacionId: postulacion._id } });
