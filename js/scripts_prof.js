@@ -1720,6 +1720,10 @@ function enviarReporteAlumnos() {
     window.location.href = mailtoLink;
 }
 
+// ============================================
+// GESTIÓN DE NOTIFICACIONES (MENSAJES)
+// ============================================
+
 /**
  * Cargar notificaciones (mensajes recibidos de estudiantes)
  */
