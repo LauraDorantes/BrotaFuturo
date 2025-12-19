@@ -3,11 +3,6 @@
 // ============================================
 
 /**
- * URL base de la API
- */
-const API_BASE_URL = 'http://localhost:3000/api';
-
-/**
  * Almacenamiento del token de autenticación y datos del usuario
  */
 let authToken = localStorage.getItem('authToken');
@@ -230,37 +225,12 @@ toggle.onclick = function () {
     main.classList.toggle("active");
 }
 
-<<<<<<< HEAD
-// CAMBIAR SECCIONES 
-document.querySelectorAll(".nav-item").forEach(item => {
-    item.addEventListener("click", () => {
-        const sectionClass = item.getAttribute("data-section");
-        
-        document.querySelectorAll("section").forEach(sec => {
-            sec.classList.add("hidden");
-        });
-        
-        const sectionToShow = document.querySelector(`#${sectionClass}`) || document.querySelector(`.${sectionClass}`);
-        if (sectionToShow) {
-            sectionToShow.classList.remove("hidden");
-        }
-        
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.classList.add('hidden');
-        });
-
-        // Cargar datos según la sección
-        if (sectionClass === 'notificaciones-section') {
-            cargarNotificaciones();
-        }
-=======
 function showSection(sectionClass) {
     if (!sectionClass) return;
 
     // Solo ocultar los paneles principales (evitar ocultar secciones internas como #perfilReadOnly)
     document.querySelectorAll(".main > section").forEach(sec => {
         sec.classList.add("hidden");
->>>>>>> 795554e226ae306df66176467e32d299b482cadb
     });
 
     const sectionToShow = document.querySelector(`.${sectionClass}`);
@@ -300,6 +270,10 @@ document.querySelectorAll(".nav-item").forEach(item => {
         // Cargar alumnos asociados al abrir la sección
         if (sectionClass === 'alumnos-section') {
             cargarAlumnos();
+        }
+
+        if (sectionClass === 'notificaciones-section') {
+            cargarNotificaciones();
         }
     });
 });
@@ -1733,11 +1707,6 @@ function enviarReporteAlumnos() {
         return;
     }
 
-<<<<<<< HEAD
-// ============================================
-// GESTIÓN DE NOTIFICACIONES (MENSAJES)
-// ============================================
-=======
     cuerpoMensaje += `Total de alumnos: ${totalAlumnos}\n\n`;
     cuerpoMensaje += `Atentamente,\n`;
     cuerpoMensaje += `${nombreProfe}\n`;
@@ -1750,7 +1719,10 @@ function enviarReporteAlumnos() {
 
     window.location.href = mailtoLink;
 }
->>>>>>> 795554e226ae306df66176467e32d299b482cadb
+
+// ============================================
+// GESTIÓN DE NOTIFICACIONES (MENSAJES)
+// ============================================
 
 /**
  * Cargar notificaciones (mensajes recibidos de estudiantes)
