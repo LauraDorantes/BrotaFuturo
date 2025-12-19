@@ -1,7 +1,47 @@
+gsap.registerPlugin(ScrollTrigger);
 window.addEventListener('DOMContentLoaded', () => {
         const navHeight = document.querySelector('nav').offsetHeight;
         document.querySelector('.contenedorgeneral').style.marginTop = `${navHeight}px`;
 });
+
+/* Animacion de la landing */
+window.addEventListener("load", () => {
+    gsap
+        .timeline({
+            scrollTrigger:{
+                trigger: ".wrapper",
+                start: "top top",
+                end: "+=100%",
+                pin: true,
+                scrub: true,
+                // markers: true,
+            },
+        })
+        .to(".image-container-i", {
+            scale: 2,
+            z: 350,
+            transformOrigin: "center center",
+            ease: 'power1.inOut',
+        })
+        .to(
+            ".section.hero", {
+                scale: 1.3,
+                // opacity: 1,
+                boxShadow: `10000px 0 0 0 rgba(0, 0, 0, 0) inset`,
+                // height: "120vh",
+                transformOrigin: "center center",
+                ease: 'power1.inOut',
+            },
+            "<"
+        )
+        .to(
+          ".intro p:nth-child(2)", {
+            color: "#000"
+          },
+          "<"
+        )
+});
+/***************************/
 
 document.querySelectorAll('nav a[data-target]').forEach(link => {
   link.addEventListener('click', function(e) {

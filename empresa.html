@@ -41,10 +41,10 @@
                     </a>
                 </li>
 
-                <li class="nav-item" data-section="notificaciones-section">
+                <li class="nav-item" data-section="mensajes-section">
                     <a href="#">
-                        <span class="icon"><ion-icon name="notifications-circle-outline"></ion-icon></span>
-                        <span class="title">Notificaciones</span>
+                        <span class="icon"><ion-icon name="mail-outline"></ion-icon></span>
+                        <span class="title">Mensajes</span>
                     </a>
                 </li>
 
@@ -58,7 +58,7 @@
                 <li>
                     <a href="#">
                         <span class="icon"><ion-icon name="log-out-outline"></ion-icon></span>
-                        <span class="title">Log out</span>
+                        <span class="title">Cerrar Sesión</span>
                     </a>
                 </li>
             </ul>
@@ -204,6 +204,7 @@
                                 <th>Correo</th>
                                 <th>Título del proyecto</th>
                                 <th>Estado</th>
+                                <th>Mensaje</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyAlumnos">
@@ -517,6 +518,7 @@
                                         <th>CV</th>
                                         <th>Estado</th>
                                         <th>Acciones</th>
+                                        <th>Mensaje</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tbodyPostulantes"></tbody>
@@ -526,27 +528,56 @@
                 </div>
             </section>
 
-            <!--NOTIFICACIONES-->
-            <section class="notificaciones-section hidden">
-                <h2 class="titulo-seccion">Notificaciones</h2>
-                <div class="notificaciones-card" id="noti1" data-id="1">
-                    El Alumno <strong>_________</strong> está interesado en tu publicación <strong>________</strong>
+            <!-- MENSAJES -->
+            <section id="mensajes-section" class="mensajes-section hidden">
+                <div class="mensajes-header">
+                    <h2 class="titulo-seccion">Mensajes</h2>
                 </div>
 
-                <div id="modalNotificacion" class="modal hidden">
-                    <div class="modal-content">
-                        <span id="cerrarModalNoti" class="close">&times;</span>
-                        <h3>Datos del Alumno</h3>
-                        <div class="modal-datos">
-                            <p><strong>Nombre Completo:</strong> <span id="n_nombre"> </span></p>
-                            <p><strong>Créditos:</strong> <span id="n_creditos"> </span></p>
-                            <p><strong>Correo:</strong> <span id="n_correo"> </span></p>
-                            <p><strong>Carrera:</strong> <span id="n_carrera"> </span></p>
+                <div class="mensajes-container">
+                    <aside class="mensajes-sidebar">
+                        <div class="mensajes-tabs">
+                            <button class="tab-btn active" data-tab="recibidos">Recibidos</button>
+                            <button class="tab-btn" data-tab="enviados">Enviados</button>
                         </div>
-                        <div class="modal-actions">
-                            <button id="btnAceptar" class="btn aceptar">Aceptar</button>
-                            <button id="btnRechazar" class="btn rechazar">Rechazar</button>
+                        <div class="mensajes-lista" id="listaMensajesEmp">
+                            <div class="loading-message">Cargando mensajes...</div>
                         </div>
+                    </aside>
+
+                    <main class="mensaje-detalle" id="mensajeDetalleEmp">
+                        <div class="mensaje-vacio">
+                            <ion-icon name="mail-open-outline"></ion-icon>
+                            <p>Selecciona un mensaje para ver su contenido</p>
+                        </div>
+                    </main>
+                </div>
+
+                <!-- Modal para nuevo mensaje (solo desde Alumnos/Postulantes) -->
+                <div id="modalNuevoMensajeEmp" class="modal hidden">
+                    <div class="modal-content modal-lg">
+                        <span id="cerrarModalMensajeEmp" class="close">&times;</span>
+                        <h3>Nuevo Mensaje</h3>
+                        <form id="formNuevoMensajeEmp">
+                            <div class="form-section">
+                                <label>Destinatario
+                                    <input type="text" id="mensajeDestinatarioEmp" placeholder="Destinatario" readonly>
+                                </label>
+                                <label>Proyecto
+                                    <input type="text" id="mensajeProyectoEmp" placeholder="Proyecto" readonly>
+                                </label>
+                                <label>Asunto
+                                    <input type="text" id="mensajeAsuntoEmp" placeholder="Asunto del mensaje" required>
+                                </label>
+                                <label>Contenido
+                                    <textarea id="mensajeContenidoEmp" rows="6" placeholder="Escribe tu mensaje..." required></textarea>
+                                </label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Enviar Mensaje</button>
+                                <button type="button" id="cancelarMensajeEmpBtn" class="btn outline">Cancelar</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </section>

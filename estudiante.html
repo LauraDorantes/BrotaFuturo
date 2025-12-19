@@ -261,9 +261,6 @@
             <section id="mensajes-section" class="mensajes-section hidden">
                 <div class="mensajes-header">
                     <h2 class="titulo-seccion">Mensajes</h2>
-                    <button id="nuevoMensajeBtn" class="btn btn-primary">
-                        <ion-icon name="add-circle-outline"></ion-icon> Nuevo Mensaje
-                    </button>
                 </div>
 
                 <div class="mensajes-container">
@@ -329,19 +326,11 @@
             <h3>Nuevo Mensaje</h3>
             <form id="formNuevoMensaje">
                 <div class="form-section">
-                    <label>Tipo de Destinatario
-                        <select id="destinatarioTipo" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="Profesor">Profesor</option>
-                            <option value="Institucion">Empresa/Institución</option>
-                        </select>
-                        <small id="tipoDestinatarioHelp">Selecciona el tipo de destinatario</small>
-                    </label>
                     <label>Destinatario
-                        <select id="destinatarioId" required>
-                            <option value="">Seleccionar destinatario...</option>
-                        </select>
-                        <small id="destinatarioHelp">Selecciona un destinatario de la lista</small>
+                        <input type="text" id="mensajeDestinatario" placeholder="Destinatario" readonly>
+                    </label>
+                    <label>Proyecto
+                        <input type="text" id="mensajeVacanteTitulo" placeholder="Proyecto" readonly>
                     </label>
                     <label>Asunto
                         <input type="text" id="mensajeAsunto" placeholder="Asunto del mensaje" required>

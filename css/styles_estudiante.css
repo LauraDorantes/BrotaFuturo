@@ -838,6 +838,11 @@ h1.titulo-seccion {
     color: #2c3e50 !important;
 }
 
+.form-section label input[readonly] {
+    background: #f8f9fa !important;
+    cursor: not-allowed !important;
+}
+
 .form-section label input:focus,
 .form-section label select:focus,
 .form-section label textarea:focus {
@@ -1470,6 +1475,30 @@ label[required]::after {
     margin-bottom: 8px;
 }
 
+.mensaje-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mensaje-item-estado {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--gray);
+    color: var(--black2);
+    white-space: nowrap;
+}
+
+.mensaje-item-estado.leido {
+    border-color: rgba(199, 169, 244, 0.6);
+}
+
+.mensaje-item-estado.no-leido {
+    border-color: rgba(16, 185, 129, 0.6);
+}
+
 .mensaje-item-asunto {
     font-weight: 600;
     color: var(--black1);
@@ -1535,6 +1564,12 @@ label[required]::after {
     color: var(--black1);
     font-size: 1rem;
     white-space: pre-wrap;
+}
+
+.mensaje-detalle-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .vacante-info-modal {

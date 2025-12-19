@@ -412,15 +412,16 @@ body.modal-open .contenedor_menu .btn {
 .boton-casita {
   display: inline-flex;
   align-items: center;
-  background-color: #ffffff;
-  color: var(--secundario);
+  /* background-color: #9f50ef; */
+  background-color: var(--secundario);
   text-decoration: none;
   padding: 10px 16px;
   border-radius: 6px;
   font-size: 16px;
-  transition: background-color 0.3s ease;
+  transition: transform 0.3s ease;
+    /* background: #9f50ef; */
 }
 
 .boton-casita:hover {
-  transform: scale(1.5);
+  transform: scale(1.2);
 }

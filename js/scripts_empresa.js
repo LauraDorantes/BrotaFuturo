@@ -207,6 +207,14 @@ document.querySelectorAll('.nav-item').forEach((item) => {
                 await window.sistemaPublicaciones.cargarDesdeBackend();
             }
         }
+
+        if (sectionClass === 'mensajes-section') {
+            if (mensajeActualEmp === 'recibidos') {
+                await cargarMensajesRecibidosEmp();
+            } else {
+                await cargarMensajesEnviadosEmp();
+            }
+        }
     });
 });
 
@@ -403,6 +411,8 @@ function renderAlumnos(alumnos) {
     if (!tbody) return;
 
     const rows = Array.isArray(alumnos) ? alumnos : [];
+    const enc = (v) => encodeURIComponent(String(v == null ? '' : v));
+
     tbody.innerHTML = rows.length
         ? rows.map((a, idx) => {
             const numero = a && a.numero != null ? String(a.numero) : String(idx + 1);
@@ -412,6 +422,13 @@ function renderAlumnos(alumnos) {
             const proyecto = a && (a.tituloProyecto || a.publicacion) ? String(a.tituloProyecto || a.publicacion) : '-';
             const estado = a && a.estado ? String(a.estado) : '-';
             const estadoClass = String(estado).toLowerCase() === 'activo' ? 'activo' : 'finalizado';
+
+            const postulacionId = a && a.postulacionId ? String(a.postulacionId) : '';
+            const destinatarioLabel = `${nombre} (Alumno)`;
+
+            const disabledAttr = postulacionId ? '' : 'disabled';
+            const btnLabel = postulacionId ? 'Enviar Mensaje' : 'Sin postulación';
+
             return `
                 <tr>
                     <td>${numero}</td>
@@ -420,11 +437,36 @@ function renderAlumnos(alumnos) {
                     <td>${correo}</td>
                     <td>${proyecto}</td>
                     <td class="${estadoClass}">${estado}</td>
+                    <td>
+                        <button class="btn btn-small btn-primary btn-enviar-mensaje-emp" ${disabledAttr}
+                            data-postulacion-id="${enc(postulacionId)}"
+                            data-destinatario-label="${enc(destinatarioLabel)}"
+                            data-proyecto-titulo="${enc(proyecto)}">
+                            ${btnLabel}
+                        </button>
+                    </td>
                 </tr>
             `;
         }).join('')
-        : '<tr><td colspan="6">No hay alumnos asociados</td></tr>';
+        : '<tr><td colspan="7">No hay alumnos asociados</td></tr>';
 }
+
+// Delegación de eventos para botones de mensaje en la tabla de alumnos
+(function initAlumnosMensajeButtons() {
+    const tbody = document.getElementById('tbodyAlumnos');
+    if (!tbody) return;
+
+    tbody.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.btn-enviar-mensaje-emp') : null;
+        if (!btn) return;
+        if (btn.disabled) return;
+
+        const postulacionId = decodeURIComponent(btn.dataset.postulacionId || '');
+        const destinatarioLabel = decodeURIComponent(btn.dataset.destinatarioLabel || '');
+        const proyectoTitulo = decodeURIComponent(btn.dataset.proyectoTitulo || '');
+        enviarMensajeDesdePostulacionEmp(postulacionId, destinatarioLabel, proyectoTitulo);
+    });
+})();
 
 async function cargarAlumnosDesdeBackend() {
     if (typeof INSTITUCION_ENDPOINTS === 'undefined' || !INSTITUCION_ENDPOINTS.MY_STUDENTS) return;
@@ -1004,13 +1046,13 @@ class SistemaPublicaciones {
         this.currentVacanteId = vacanteId;
         if (this.postulantesVacante) this.postulantesVacante.textContent = titulo || '-';
         if (this.postulantesTotal) this.postulantesTotal.textContent = '0';
-        if (this.tbodyPostulantes) this.tbodyPostulantes.innerHTML = '<tr><td colspan="9">Cargando...</td></tr>';
+        if (this.tbodyPostulantes) this.tbodyPostulantes.innerHTML = '<tr><td colspan="10">Cargando...</td></tr>';
         this.modalPostulantes.classList.remove('hidden');
 
         const url = this.buildUrl(INSTITUCION_ENDPOINTS.VACANCY_APPLICANTS, { vacanteId });
         const { res, data } = await this.fetchJson(url, { method: 'GET' });
         if (!res.ok) {
-            if (this.tbodyPostulantes) this.tbodyPostulantes.innerHTML = '<tr><td colspan="9">No se pudieron cargar los postulantes</td></tr>';
+            if (this.tbodyPostulantes) this.tbodyPostulantes.innerHTML = '<tr><td colspan="10">No se pudieron cargar los postulantes</td></tr>';
             return;
         }
 
@@ -1046,7 +1088,7 @@ class SistemaPublicaciones {
         this.tbodyPostulantes.innerHTML = '';
 
         if (!postulaciones.length) {
-            this.tbodyPostulantes.innerHTML = '<tr><td colspan="9">Sin postulantes</td></tr>';
+            this.tbodyPostulantes.innerHTML = '<tr><td colspan="10">Sin postulantes</td></tr>';
             return;
         }
 
@@ -1072,6 +1114,7 @@ class SistemaPublicaciones {
             const c7cv = document.createElement('td');
             const c7 = document.createElement('td');
             const c8 = document.createElement('td');
+            const c9msg = document.createElement('td');
 
             c1.textContent = String(index + 1);
             c2.textContent = nombre;
@@ -1129,10 +1172,298 @@ class SistemaPublicaciones {
             tr.appendChild(c7cv);
             tr.appendChild(c7);
             tr.appendChild(c8);
+            // Mensaje (siempre disponible: backend valida por rol y relación)
+            const proyectoTitulo = this.postulantesVacante ? String(this.postulantesVacante.textContent || '-') : '-';
+            const postulacionId = p && p._id ? String(p._id) : '';
+            const destinatarioLabel = `${nombre} (Alumno)`;
+
+            const btnMsg = document.createElement('button');
+            btnMsg.className = 'btn btn-small btn-primary';
+            btnMsg.textContent = 'Enviar Mensaje';
+            btnMsg.addEventListener('click', () => {
+                if (!postulacionId) {
+                    showErrorEmp('No se encontró la postulación asociada');
+                    return;
+                }
+                enviarMensajeDesdePostulacionEmp(postulacionId, destinatarioLabel, proyectoTitulo);
+            });
+            c9msg.appendChild(btnMsg);
+            tr.appendChild(c9msg);
 
             this.tbodyPostulantes.appendChild(tr);
         });
     }
+}
+
+// ============================================
+// MENSAJES (Institución)
+// ============================================
+let mensajeActualEmp = 'recibidos';
+
+function showErrorEmp(message) {
+    alert(message || 'Ocurrió un error');
+}
+
+function showSuccessEmp(message) {
+    alert(message || 'Listo');
+}
+
+function buildUrl(template, params) {
+    let url = String(template || '');
+    Object.keys(params || {}).forEach((k) => {
+        url = url.replace(`:${k}`, encodeURIComponent(String(params[k])));
+    });
+    return url;
+}
+
+async function cargarMensajesRecibidosEmp() {
+    const lista = document.getElementById('listaMensajesEmp');
+    if (!lista) return;
+
+    lista.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
+
+    try {
+        if (typeof MESSAGE_ENDPOINTS === 'undefined' || !MESSAGE_ENDPOINTS.INBOX) {
+            throw new Error('Falta configuración: MESSAGE_ENDPOINTS.INBOX');
+        }
+
+        const { res, data } = await fetchJsonWithAuth(`${MESSAGE_ENDPOINTS.INBOX}?limit=50`, { method: 'GET' });
+        if (!res.ok) throw new Error((data && data.message) ? data.message : 'No se pudieron cargar los mensajes');
+
+        const mensajes = (data && Array.isArray(data.mensajes)) ? data.mensajes : [];
+        if (!mensajes.length) {
+            lista.innerHTML = '<div class="loading-message">No hay mensajes recibidos</div>';
+            return;
+        }
+
+        lista.innerHTML = '';
+        mensajes.forEach((m) => lista.appendChild(crearItemMensajeEmp(m, 'recibido')));
+    } catch (error) {
+        console.error('Error al cargar mensajes recibidos (empresa):', error);
+        lista.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar los mensajes</div>';
+    }
+}
+
+async function cargarMensajesEnviadosEmp() {
+    const lista = document.getElementById('listaMensajesEmp');
+    if (!lista) return;
+
+    lista.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
+
+    try {
+        if (typeof MESSAGE_ENDPOINTS === 'undefined' || !MESSAGE_ENDPOINTS.SENT) {
+            throw new Error('Falta configuración: MESSAGE_ENDPOINTS.SENT');
+        }
+
+        const { res, data } = await fetchJsonWithAuth(`${MESSAGE_ENDPOINTS.SENT}?limit=50`, { method: 'GET' });
+        if (!res.ok) throw new Error((data && data.message) ? data.message : 'No se pudieron cargar los mensajes');
+
+        const mensajes = (data && Array.isArray(data.mensajes)) ? data.mensajes : [];
+        if (!mensajes.length) {
+            lista.innerHTML = '<div class="loading-message">No hay mensajes enviados</div>';
+            return;
+        }
+
+        lista.innerHTML = '';
+        mensajes.forEach((m) => lista.appendChild(crearItemMensajeEmp(m, 'enviado')));
+    } catch (error) {
+        console.error('Error al cargar mensajes enviados (empresa):', error);
+        lista.innerHTML = '<div class="loading-message" style="color: var(--red);">Error al cargar los mensajes</div>';
+    }
+}
+
+function crearItemMensajeEmp(mensaje, tipo) {
+    const item = document.createElement('div');
+    item.className = `mensaje-item ${mensaje.leido ? 'leido' : 'no-leido'}`;
+    item.dataset.mensajeId = mensaje._id;
+
+    const otraPersona = tipo === 'recibido' ? mensaje.remitente : mensaje.destinatario;
+
+    item.innerHTML = `
+        <div class="mensaje-item-header">
+            <span class="mensaje-item-asunto">${mensaje.asunto}</span>
+            <div class="mensaje-item-meta">
+                ${tipo === 'enviado'
+                    ? `<span class="mensaje-item-estado ${mensaje.leido ? 'leido' : 'no-leido'}">${mensaje.leido ? 'Leído' : 'No leído'}</span>`
+                    : ''}
+                <span class="mensaje-item-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+            </div>
+        </div>
+        <div class="mensaje-item-remitente">${tipo === 'recibido' ? 'De' : 'Para'}: ${otraPersona?.nombre || '-'}</div>
+    `;
+
+    item.addEventListener('click', () => mostrarDetalleMensajeEmp(mensaje._id));
+    return item;
+}
+
+async function mostrarDetalleMensajeEmp(mensajeId) {
+    try {
+        const detalle = document.getElementById('mensajeDetalleEmp');
+        if (!detalle) return;
+
+        if (typeof MESSAGE_ENDPOINTS === 'undefined' || !MESSAGE_ENDPOINTS.GET_MESSAGE) {
+            throw new Error('Falta configuración: MESSAGE_ENDPOINTS.GET_MESSAGE');
+        }
+
+        const url = buildUrl(MESSAGE_ENDPOINTS.GET_MESSAGE, { id: mensajeId });
+        const { res, data: mensaje } = await fetchJsonWithAuth(url, { method: 'GET' });
+        if (!res.ok) throw new Error((mensaje && mensaje.message) ? mensaje.message : 'No se pudo cargar el mensaje');
+
+        const remitente = mensaje.remitente;
+        const destinatario = mensaje.destinatario;
+
+        const postulacionObj = (mensaje && mensaje.postulacion && typeof mensaje.postulacion === 'object') ? mensaje.postulacion : null;
+        const postulacionId = postulacionObj && postulacionObj._id ? String(postulacionObj._id) : (mensaje && mensaje.postulacion ? String(mensaje.postulacion) : '');
+        const proyectoTitulo = postulacionObj && postulacionObj.vacante && postulacionObj.vacante.titulo ? String(postulacionObj.vacante.titulo) : '';
+        const destinatarioLabel = `${remitente?.nombre || '-'} (${remitente?.tipo || '-'})`;
+
+        detalle.innerHTML = `
+            <div class="mensaje-detalle-header">
+                <h3 class="mensaje-detalle-asunto">${mensaje.asunto}</h3>
+                <div class="mensaje-detalle-info">
+                    <span><strong>De:</strong> ${remitente?.nombre || '-'} (${remitente?.tipo || '-'})</span>
+                    <span><strong>Para:</strong> ${destinatario?.nombre || '-'} (${destinatario?.tipo || '-'})</span>
+                    <span><strong>Proyecto:</strong> ${proyectoTitulo || '-'}</span>
+                    <span><strong>Fecha:</strong> ${new Date(mensaje.createdAt).toLocaleString('es-ES')}</span>
+                </div>
+            </div>
+            <div class="mensaje-detalle-contenido">${mensaje.contenido}</div>
+            ${mensajeActualEmp === 'recibidos'
+                ? `<div class="mensaje-detalle-actions">
+                        <button type="button" class="btn btn-small btn-primary" id="btnResponderMensajeEmp">Responder</button>
+                   </div>`
+                : ''}
+        `;
+
+        if (mensajeActualEmp === 'recibidos') {
+            const btn = document.getElementById('btnResponderMensajeEmp');
+            btn?.addEventListener('click', () => {
+                if (!postulacionId) {
+                    showErrorEmp('No se encontró la postulación asociada');
+                    return;
+                }
+
+                const form = document.getElementById('formNuevoMensajeEmp');
+                if (form) {
+                    form.dataset.postulacionId = String(postulacionId);
+                    form.dataset.destinatarioLabel = String(destinatarioLabel || '-');
+                    form.dataset.proyectoTitulo = String(proyectoTitulo || '-');
+
+                    const asuntoOriginal = String(mensaje.asunto || '').trim();
+                    const yaEsRespuesta = /^re\s*:/i.test(asuntoOriginal);
+                    form.dataset.asuntoPrefill = yaEsRespuesta ? asuntoOriginal : `Re: ${asuntoOriginal}`;
+                }
+                abrirModalNuevoMensajeEmp();
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar mensaje (empresa):', error);
+        showErrorEmp(error.message || 'Error al cargar el mensaje');
+    }
+}
+
+function enviarMensajeDesdePostulacionEmp(postulacionId, destinatarioLabel, proyectoTitulo) {
+    if (!postulacionId) {
+        showErrorEmp('No se encontró la postulación asociada');
+        return;
+    }
+
+    // Cambiar a sección de mensajes
+    document.querySelector('[data-section="mensajes-section"]')?.click();
+
+    setTimeout(() => {
+        const form = document.getElementById('formNuevoMensajeEmp');
+        if (form) {
+            form.dataset.postulacionId = String(postulacionId);
+            form.dataset.destinatarioLabel = String(destinatarioLabel || '');
+            form.dataset.proyectoTitulo = String(proyectoTitulo || '');
+        }
+        abrirModalNuevoMensajeEmp();
+    }, 300);
+}
+
+function abrirModalNuevoMensajeEmp() {
+    const modal = document.getElementById('modalNuevoMensajeEmp');
+    const form = document.getElementById('formNuevoMensajeEmp');
+    if (!modal || !form) return;
+
+    const postulacionId = form.dataset.postulacionId || '';
+    if (!postulacionId) {
+        showErrorEmp('Solo puedes enviar mensajes desde un alumno/proyecto');
+        return;
+    }
+
+    const destinatarioLabel = form.dataset.destinatarioLabel || '';
+    const proyectoTitulo = form.dataset.proyectoTitulo || '';
+    const asuntoPrefill = form.dataset.asuntoPrefill || '';
+
+    form.reset();
+
+    const destinatarioInput = document.getElementById('mensajeDestinatarioEmp');
+    if (destinatarioInput) destinatarioInput.value = destinatarioLabel || '-';
+
+    const proyectoInput = document.getElementById('mensajeProyectoEmp');
+    if (proyectoInput) proyectoInput.value = proyectoTitulo || '-';
+
+    const asuntoInput = document.getElementById('mensajeAsuntoEmp');
+    if (asuntoInput) asuntoInput.value = asuntoPrefill || '';
+
+    modal.classList.remove('hidden');
+
+    const cerrarBtn = document.getElementById('cerrarModalMensajeEmp');
+    const cancelarBtn = document.getElementById('cancelarMensajeEmpBtn');
+
+    const cerrarModal = () => {
+        modal.classList.add('hidden');
+        form.dataset.postulacionId = '';
+        form.dataset.destinatarioLabel = '';
+        form.dataset.proyectoTitulo = '';
+        form.dataset.asuntoPrefill = '';
+    };
+
+    if (cerrarBtn) cerrarBtn.onclick = cerrarModal;
+    if (cancelarBtn) cancelarBtn.onclick = cerrarModal;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const asunto = document.getElementById('mensajeAsuntoEmp')?.value;
+        const contenido = document.getElementById('mensajeContenidoEmp')?.value;
+
+        try {
+            if (typeof MESSAGE_ENDPOINTS === 'undefined' || !MESSAGE_ENDPOINTS.CREATE_MESSAGE) {
+                throw new Error('Falta configuración: MESSAGE_ENDPOINTS.CREATE_MESSAGE');
+            }
+
+            const postulacionIdInner = form.dataset.postulacionId || '';
+            if (!postulacionIdInner) {
+                showErrorEmp('Falta la postulación asociada');
+                return;
+            }
+
+            const { res, data } = await fetchJsonWithAuth(MESSAGE_ENDPOINTS.CREATE_MESSAGE, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ postulacionId: postulacionIdInner, asunto, contenido }),
+            });
+
+            if (!res.ok) {
+                const msg = data && data.message ? data.message : 'Error al enviar el mensaje';
+                throw new Error(msg);
+            }
+
+            showSuccessEmp('Mensaje enviado correctamente');
+            cerrarModal();
+
+            if (mensajeActualEmp === 'enviados') {
+                cargarMensajesEnviadosEmp();
+            } else {
+                cargarMensajesRecibidosEmp();
+            }
+        } catch (error) {
+            showErrorEmp(error.message || 'Error al enviar el mensaje');
+        }
+    };
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1163,6 +1494,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initPerfil();
     window.sistemaPublicaciones = new SistemaPublicaciones();
 
+    // Tabs de mensajes
+    const tabButtons = document.querySelectorAll('#mensajes-section .tab-btn');
+    tabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const tab = btn.dataset.tab;
+            mensajeActualEmp = tab;
+            if (tab === 'recibidos') {
+                cargarMensajesRecibidosEmp();
+            } else {
+                cargarMensajesEnviadosEmp();
+            }
+        });
+    });
+
     // Cierre de modales
     (function initModals() {
         const modales = document.querySelectorAll('.modal');
@@ -1182,38 +1530,3 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     })();
 });
-
-
-//NOTIFICACIONES
-const datosAlumnoEjemplo = {
-    nombre: "Alumno de Ejemplo",
-    creditos: "72.8%",
-    correo: "alumno@alumno.ipn.mx",
-    carrera: "ISC"
-};
-
-const noti1 = document.getElementById("noti1");
-if (noti1) {
-    noti1.addEventListener("click", () => {
-        document.getElementById("n_nombre").textContent = datosAlumnoEjemplo.nombre;
-        document.getElementById("n_creditos").textContent = datosAlumnoEjemplo.creditos;
-        document.getElementById("n_correo").textContent = datosAlumnoEjemplo.correo;
-        document.getElementById("n_carrera").textContent = datosAlumnoEjemplo.carrera;
-
-        document.getElementById("modalNotificacion").classList.remove("hidden");
-    });
-}
-
-const btnAceptar = document.getElementById("btnAceptar");
-if (btnAceptar) {
-    btnAceptar.addEventListener("click", () => {
-        alert("Alumno aceptado.");
-    });
-}
-
-const btnRechazar = document.getElementById("btnRechazar");
-if (btnRechazar) {
-    btnRechazar.addEventListener("click", () => {
-        alert("Alumno rechazado.");
-    });
-}

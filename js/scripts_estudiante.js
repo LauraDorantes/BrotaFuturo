@@ -1092,14 +1092,6 @@ function abrirModalPostulacion(vacante) {
 
     if (!modal || !vacanteInfo) return;
 
-    // Si existiera el campo legado de mensaje, ocultarlo
-    const mensajeField = document.getElementById('mensajePostulacion');
-    if (mensajeField) {
-        mensajeField.value = '';
-        const wrap = mensajeField.closest('label');
-        if (wrap) wrap.style.display = 'none';
-    }
-
     // Evitar doble postulación
     if (appliedVacanteIds.has(String(vacante._id))) {
         showError('Ya te postulaste a esta vacante');
@@ -1351,11 +1343,17 @@ function mostrarDetallePostulacion(postulacion) {
             <p><strong>Fecha de postulación:</strong> ${new Date(postulacion.createdAt).toLocaleString('es-ES')}</p>
         </div>
         <div style="margin-top: 20px;">
-            <button class="btn btn-primary" onclick="enviarMensajeDesdePostulacion('${vacante.propietario._id || ''}', '${vacante.propietarioTipo}', '${vacante._id}')">
+            <button class="btn btn-primary btn-enviar-mensaje-post">
                 <ion-icon name="mail-outline"></ion-icon> Enviar Mensaje
             </button>
         </div>
     `;
+
+    // Enviar mensaje ligado a la postulación y mostrando la vacante
+    content.querySelector('.btn-enviar-mensaje-post')?.addEventListener('click', () => {
+        const destinatarioLabel = `${propietarioNombre}${vacante.propietarioTipo ? ` (${vacante.propietarioTipo})` : ''}`.trim();
+        enviarMensajeDesdePostulacion(postulacion._id, vacante.titulo || 'Vacante', destinatarioLabel);
+    });
 
     modal.classList.remove('hidden');
 
@@ -1384,11 +1382,9 @@ async function cancelarPostulacion(postulacionId) {
 
 /**
  * Función global para enviar mensaje desde una postulación
- * @param {string} destinatarioId - ID del destinatario
- * @param {string} destinatarioTipo - Tipo del destinatario
- * @param {string} vacanteId - ID de la vacante relacionada
+ * @param {string} postulacionId - ID de la postulación
  */
-window.enviarMensajeDesdePostulacion = function(destinatarioId, destinatarioTipo, vacanteId) {
+window.enviarMensajeDesdePostulacion = function(postulacionId, vacanteTitulo = '', destinatarioLabel = '') {
     // Cerrar modal de postulación
     document.getElementById('modalDetallePostulacion')?.classList.add('hidden');
     
@@ -1397,19 +1393,13 @@ window.enviarMensajeDesdePostulacion = function(destinatarioId, destinatarioTipo
     
     // Abrir modal de nuevo mensaje con datos precargados
     setTimeout(() => {
-        const destinatarioTipoSelect = document.getElementById('destinatarioTipo');
-        const destinatarioIdInput = document.getElementById('destinatarioId');
-        
-        if (destinatarioTipoSelect) destinatarioTipoSelect.value = destinatarioTipo;
-        if (destinatarioIdInput) destinatarioIdInput.value = destinatarioId;
-        
-        // Guardar vacante relacionada (se usará al enviar el mensaje)
         const formNuevoMensaje = document.getElementById('formNuevoMensaje');
         if (formNuevoMensaje) {
-            formNuevoMensaje.dataset.relacionadoTipo = 'Vacante';
-            formNuevoMensaje.dataset.relacionadoId = vacanteId;
+            formNuevoMensaje.dataset.postulacionId = postulacionId;
+            formNuevoMensaje.dataset.vacanteTitulo = String(vacanteTitulo || '');
+            formNuevoMensaje.dataset.destinatarioLabel = String(destinatarioLabel || '');
         }
-        
+
         abrirModalNuevoMensaje();
     }, 300);
 };
@@ -1494,15 +1484,16 @@ function crearItemMensaje(mensaje, tipo) {
     item.innerHTML = `
         <div class="mensaje-item-header">
             <span class="mensaje-item-asunto">${mensaje.asunto}</span>
-            <span class="mensaje-item-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+            <div class="mensaje-item-meta">
+                ${tipo === 'enviado'
+                    ? `<span class="mensaje-item-estado ${mensaje.leido ? 'leido' : 'no-leido'}">${mensaje.leido ? 'Leído' : 'No leído'}</span>`
+                    : ''}
+                <span class="mensaje-item-fecha">${new Date(mensaje.createdAt).toLocaleDateString('es-ES')}</span>
+            </div>
         </div>
         <div class="mensaje-item-remitente">
             ${tipo === 'recibido' ? 'De' : 'Para'}: ${otraPersona?.nombre || '-'}
         </div>
-        ${mensaje.relacionadoCon?.tipo ? 
-            `<div style="font-size: 0.8rem; color: var(--blue); margin-top: 5px;">
-                Relacionado con: ${mensaje.relacionadoCon.tipo}
-            </div>` : ''}
     `;
 
     item.addEventListener('click', () => mostrarDetalleMensaje(mensaje._id));
@@ -1526,23 +1517,52 @@ async function mostrarDetalleMensaje(mensajeId) {
         const remitente = mensaje.remitente;
         const destinatario = mensaje.destinatario;
 
+        const postulacionObj = (mensaje && mensaje.postulacion && typeof mensaje.postulacion === 'object') ? mensaje.postulacion : null;
+        const postulacionId = postulacionObj && postulacionObj._id ? String(postulacionObj._id) : (mensaje && mensaje.postulacion ? String(mensaje.postulacion) : '');
+        const proyectoTitulo = postulacionObj && postulacionObj.vacante && postulacionObj.vacante.titulo ? String(postulacionObj.vacante.titulo) : '';
+        const destinatarioLabel = `${remitente?.nombre || '-'} (${remitente?.tipo || '-'})`;
+
         detalle.innerHTML = `
             <div class="mensaje-detalle-header">
                 <h3 class="mensaje-detalle-asunto">${mensaje.asunto}</h3>
                 <div class="mensaje-detalle-info">
                     <span><strong>De:</strong> ${remitente?.nombre || '-'} (${remitente?.tipo || '-'})</span>
                     <span><strong>Para:</strong> ${destinatario?.nombre || '-'} (${destinatario?.tipo || '-'})</span>
+                    <span><strong>Proyecto:</strong> ${proyectoTitulo || '-'}</span>
                     <span><strong>Fecha:</strong> ${new Date(mensaje.createdAt).toLocaleString('es-ES')}</span>
                 </div>
-                ${mensaje.relacionadoCon?.tipo ? 
-                    `<p style="margin-top: 10px; color: var(--blue);">
-                        <strong>Relacionado con:</strong> ${mensaje.relacionadoCon.tipo}
-                    </p>` : ''}
             </div>
             <div class="mensaje-detalle-contenido">
                 ${mensaje.contenido}
             </div>
+            ${mensajeActual === 'recibidos'
+                ? `<div class="mensaje-detalle-actions">
+                        <button type="button" class="btn btn-small btn-primary" id="btnResponderMensaje">Responder</button>
+                   </div>`
+                : ''}
         `;
+
+        if (mensajeActual === 'recibidos') {
+            const btn = document.getElementById('btnResponderMensaje');
+            btn?.addEventListener('click', () => {
+                if (!postulacionId) {
+                    showError('No se encontró la postulación asociada');
+                    return;
+                }
+
+                const form = document.getElementById('formNuevoMensaje');
+                if (form) {
+                    form.dataset.postulacionId = String(postulacionId);
+                    form.dataset.vacanteTitulo = String(proyectoTitulo || '-');
+                    form.dataset.destinatarioLabel = String(destinatarioLabel || '-');
+
+                    const asuntoOriginal = String(mensaje.asunto || '').trim();
+                    const yaEsRespuesta = /^re\s*:/i.test(asuntoOriginal);
+                    form.dataset.asuntoPrefill = yaEsRespuesta ? asuntoOriginal : `Re: ${asuntoOriginal}`;
+                }
+                abrirModalNuevoMensaje();
+            });
+        }
     } catch (error) {
         console.error('Error al cargar mensaje:', error);
         showError('Error al cargar el mensaje');
@@ -1573,69 +1593,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Botón nuevo mensaje (desde sección Mensajes)
-    const nuevoMensajeBtn = document.getElementById('nuevoMensajeBtn');
-    if (nuevoMensajeBtn) {
-        nuevoMensajeBtn.addEventListener('click', () => abrirModalNuevoMensaje(true));
-    }
+    // Nota: envío de mensajes solo desde postulaciones
 });
 
 /**
- * Abrir modal para crear nuevo mensaje
- * @param {boolean} desdeSeccionMensajes - Si es true, solo muestra destinatarios permitidos
+ * Abrir modal para crear nuevo mensaje (solo permitido desde una postulación)
  */
-async function abrirModalNuevoMensaje(desdeSeccionMensajes = false) {
+async function abrirModalNuevoMensaje() {
     const modal = document.getElementById('modalNuevoMensaje');
     const form = document.getElementById('formNuevoMensaje');
-    const destinatarioTipoSelect = document.getElementById('destinatarioTipo');
-    const destinatarioIdSelect = document.getElementById('destinatarioId');
-    const destinatarioHelp = document.getElementById('destinatarioHelp');
 
     if (!modal || !form) return;
 
-    form.reset();
-    modal.classList.remove('hidden');
-
-    // Si se abre desde la sección Mensajes, cargar solo destinatarios permitidos
-    if (desdeSeccionMensajes) {
-        await cargarDestinatariosPermitidos();
-        const tipoDestinatarioHelp = document.getElementById('tipoDestinatarioHelp');
-        if (tipoDestinatarioHelp) {
-            tipoDestinatarioHelp.textContent = 'Solo profesores/empresas con los que compartas postulaciones';
-        }
-        if (destinatarioHelp) {
-            destinatarioHelp.textContent = 'Solo puedes enviar mensajes a profesores/empresas con los que compartas postulaciones';
-        }
-    } else {
-        // Si se abre desde una postulación, restaurar opciones originales
-        const tipoDestinatarioHelp = document.getElementById('tipoDestinatarioHelp');
-        if (tipoDestinatarioHelp) {
-            tipoDestinatarioHelp.textContent = 'Selecciona desde una vacante o postulación para prellenar estos campos';
-        }
-        if (destinatarioTipoSelect) {
-            destinatarioTipoSelect.innerHTML = `
-                <option value="">Seleccionar tipo...</option>
-                <option value="Profesor">Profesor</option>
-                <option value="Institucion">Empresa/Institución</option>
-            `;
-        }
-        if (destinatarioIdSelect) {
-            destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
-        }
-        if (destinatarioHelp) {
-            destinatarioHelp.textContent = 'Este campo se completa automáticamente al seleccionar desde una vacante o postulación';
-        }
+    const postulacionId = form.dataset.postulacionId || '';
+    if (!postulacionId) {
+        showError('Solo puedes enviar mensajes desde una postulación');
+        return;
     }
+
+    const vacanteTitulo = form.dataset.vacanteTitulo || '';
+    const destinatarioLabel = form.dataset.destinatarioLabel || '';
+    const asuntoPrefill = form.dataset.asuntoPrefill || '';
+
+    form.reset();
+
+    // Precargar datos no editables
+    const destinatarioInput = document.getElementById('mensajeDestinatario');
+    if (destinatarioInput) destinatarioInput.value = destinatarioLabel || '-';
+
+    const vacanteInput = document.getElementById('mensajeVacanteTitulo');
+    if (vacanteInput) vacanteInput.value = vacanteTitulo || '-';
+
+    const asuntoInput = document.getElementById('mensajeAsunto');
+    if (asuntoInput) asuntoInput.value = asuntoPrefill || '';
+
+    modal.classList.remove('hidden');
 
     const cerrarBtn = document.getElementById('cerrarModalMensaje');
     const cancelarBtn = document.getElementById('cancelarMensajeBtn');
 
     const cerrarModal = () => {
         modal.classList.add('hidden');
-        form.dataset.relacionadoTipo = '';
-        form.dataset.relacionadoId = '';
-        form.dataset.profesores = '';
-        form.dataset.instituciones = '';
+        form.dataset.postulacionId = '';
+        form.dataset.vacanteTitulo = '';
+        form.dataset.destinatarioLabel = '';
+        form.dataset.asuntoPrefill = '';
     };
 
     if (cerrarBtn) cerrarBtn.onclick = cerrarModal;
@@ -1643,28 +1645,21 @@ async function abrirModalNuevoMensaje(desdeSeccionMensajes = false) {
 
     form.onsubmit = async (e) => {
         e.preventDefault();
-
-        const destinatarioId = destinatarioIdSelect ? destinatarioIdSelect.value : '';
-        const destinatarioTipo = destinatarioTipoSelect ? destinatarioTipoSelect.value : '';
         const asunto = document.getElementById('mensajeAsunto').value;
         const contenido = document.getElementById('mensajeContenido').value;
 
-        if (!destinatarioId || !destinatarioTipo) {
-            showError('Debes seleccionar un destinatario');
-            return;
-        }
-
         try {
-            const relacionadoConTipo = form.dataset.relacionadoTipo || null;
-            const relacionadoConId = form.dataset.relacionadoId || null;
+            const postulacionIdInner = form.dataset.postulacionId || '';
+
+            if (!postulacionIdInner) {
+                showError('Falta la postulación asociada');
+                return;
+            }
 
             await enviarMensaje({
-                destinatarioId,
-                destinatarioTipo,
                 asunto,
                 contenido,
-                relacionadoConTipo,
-                relacionadoConId
+                postulacionId: postulacionIdInner
             });
 
             showSuccess('Mensaje enviado correctamente');
@@ -1683,98 +1678,16 @@ async function abrirModalNuevoMensaje(desdeSeccionMensajes = false) {
 }
 
 /**
- * Cargar destinatarios permitidos (profesores/empresas con postulaciones compartidas)
- */
-async function cargarDestinatariosPermitidos() {
-    try {
-        const data = await fetchAPI('/mensajes/destinatarios-permitidos');
-        const destinatarioTipoSelect = document.getElementById('destinatarioTipo');
-        const destinatarioIdSelect = document.getElementById('destinatarioId');
-        const destinatarioHelp = document.getElementById('destinatarioHelp');
-
-        if (!destinatarioTipoSelect || !destinatarioIdSelect) return;
-
-        // Limpiar selects
-        destinatarioTipoSelect.innerHTML = '<option value="">Seleccionar tipo...</option>';
-        destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
-
-        // Agregar opciones de profesores
-        if (data.profesores && data.profesores.length > 0) {
-            const profesorOption = document.createElement('option');
-            profesorOption.value = 'Profesor';
-            profesorOption.textContent = `Profesor (${data.profesores.length})`;
-            destinatarioTipoSelect.appendChild(profesorOption);
-        }
-
-        // Agregar opciones de instituciones
-        if (data.instituciones && data.instituciones.length > 0) {
-            const institucionOption = document.createElement('option');
-            institucionOption.value = 'Institucion';
-            institucionOption.textContent = `Empresa/Institución (${data.instituciones.length})`;
-            destinatarioTipoSelect.appendChild(institucionOption);
-        }
-
-        if (data.total === 0) {
-            if (destinatarioHelp) {
-                destinatarioHelp.textContent = 'No tienes destinatarios disponibles. Debes tener al menos una postulación para enviar mensajes.';
-                destinatarioHelp.style.color = 'var(--red)';
-            }
-            return;
-        }
-
-        // Guardar datos en el formulario para usar cuando se seleccione el tipo
-        const form = document.getElementById('formNuevoMensaje');
-        if (form) {
-            form.dataset.profesores = JSON.stringify(data.profesores || []);
-            form.dataset.instituciones = JSON.stringify(data.instituciones || []);
-        }
-
-        // Event listener para cuando se seleccione el tipo
-        destinatarioTipoSelect.onchange = () => {
-            const tipo = destinatarioTipoSelect.value;
-            destinatarioIdSelect.innerHTML = '<option value="">Seleccionar destinatario...</option>';
-
-            if (tipo === 'Profesor') {
-                const profesores = JSON.parse(form.dataset.profesores || '[]');
-                profesores.forEach(profesor => {
-                    const option = document.createElement('option');
-                    option.value = profesor.id;
-                    option.textContent = `${profesor.nombre} (${profesor.correo})`;
-                    destinatarioIdSelect.appendChild(option);
-                });
-            } else if (tipo === 'Institucion') {
-                const instituciones = JSON.parse(form.dataset.instituciones || '[]');
-                instituciones.forEach(institucion => {
-                    const option = document.createElement('option');
-                    option.value = institucion.id;
-                    option.textContent = `${institucion.nombre} (${institucion.correo})`;
-                    destinatarioIdSelect.appendChild(option);
-                });
-            }
-        };
-    } catch (error) {
-        console.error('Error cargando destinatarios permitidos:', error);
-        showError('Error al cargar destinatarios. Solo puedes enviar mensajes a profesores/empresas con los que compartas postulaciones.');
-    }
-}
-
-/**
  * Enviar un mensaje
  * @param {object} datosMensaje - Datos del mensaje a enviar
  */
 async function enviarMensaje(datosMensaje) {
     try {
         const body = {
-            destinatarioId: datosMensaje.destinatarioId,
-            destinatarioTipo: datosMensaje.destinatarioTipo,
+            postulacionId: datosMensaje.postulacionId,
             asunto: datosMensaje.asunto,
             contenido: datosMensaje.contenido
         };
-
-        if (datosMensaje.relacionadoConTipo && datosMensaje.relacionadoConId) {
-            body.relacionadoConTipo = datosMensaje.relacionadoConTipo;
-            body.relacionadoConId = datosMensaje.relacionadoConId;
-        }
 
         const createUrl = requireConfigValue('MESSAGE_ENDPOINTS', (typeof MESSAGE_ENDPOINTS !== 'undefined' ? MESSAGE_ENDPOINTS : null), 'CREATE_MESSAGE');
         await fetchAPI(createUrl, {
