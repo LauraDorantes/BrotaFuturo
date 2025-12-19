@@ -23,7 +23,6 @@ const router = express.Router();
     Endpoint para que un estudiante se postule a una vacante
     @param {String} req.headers.authorization - Token de acceso JWT en el formato 'Bearer <token>'
     @param {String} req.body.vacanteId - ID de la vacante a la que se postula
-    @param {String} req.body.mensaje - Mensaje opcional del estudiante al postularse
     @return {Object} - Postulación creada o error en caso de fallo
 */
 router.post(

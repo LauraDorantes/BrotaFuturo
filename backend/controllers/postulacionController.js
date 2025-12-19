@@ -11,13 +11,12 @@ const Alumno = require('../models/Alumno');
  * Endpoint para que un estudiante se postule a una vacante
  * Solo los estudiantes pueden crear postulaciones
  * @param {Object} req.body.vacanteId - ID de la vacante a la que se postula
- * @param {String} req.body.mensaje - Mensaje opcional del estudiante
  * @param {Object} req.user - Usuario autenticado (debe ser alumno)
  * @return {Object} - Postulación creada o error en caso de fallo
  */
 exports.crearPostulacion = async (req, res) => {
     try {
-        const { vacanteId, mensaje } = req.body;
+        const { vacanteId } = req.body;
         const alumnoId = req.user.id;
 
         // Validar que se proporcione el ID de la vacante
@@ -61,7 +60,6 @@ exports.crearPostulacion = async (req, res) => {
         const postulacion = await Postulacion.create({
             alumno: alumnoId,
             vacante: vacanteId,
-            mensaje: mensaje || '',
             estado: 'Pendiente'
         });
 

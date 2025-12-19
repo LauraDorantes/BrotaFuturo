@@ -3,11 +3,6 @@
 // ============================================
 
 /**
- * URL base de la API
- */
-const API_BASE_URL = 'http://localhost:3000/api';
-
-/**
  * Almacenamiento del token de autenticación y datos del usuario
  */
 let authToken = localStorage.getItem('authToken');
@@ -275,6 +270,10 @@ document.querySelectorAll(".nav-item").forEach(item => {
         // Cargar alumnos asociados al abrir la sección
         if (sectionClass === 'alumnos-section') {
             cargarAlumnos();
+        }
+
+        if (sectionClass === 'notificaciones-section') {
+            cargarNotificaciones();
         }
     });
 });
@@ -1720,6 +1719,7 @@ function enviarReporteAlumnos() {
 
     window.location.href = mailtoLink;
 }
+>>>>>>> 795554e226ae306df66176467e32d299b482cadb
 
 /**
  * Cargar notificaciones (mensajes recibidos de estudiantes)

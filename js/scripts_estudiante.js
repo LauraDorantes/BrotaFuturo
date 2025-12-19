@@ -117,6 +117,73 @@ let refreshToken = getRefreshToken();
 let currentUser = null;
 
 // ============================================
+// ESTADO LOCAL: POSTULACIONES / VACANTES
+// ============================================
+
+let appliedVacanteIds = new Set();
+let appliedVacanteIdsPromise = null;
+
+function setAppliedVacanteIdsFromPostulaciones(postulaciones) {
+    const ids = new Set();
+    (Array.isArray(postulaciones) ? postulaciones : []).forEach((p) => {
+        const vacanteId = (p && p.vacante && p.vacante._id) ? p.vacante._id : (p ? p.vacante : null);
+        if (vacanteId) ids.add(String(vacanteId));
+    });
+    appliedVacanteIds = ids;
+}
+
+async function loadAppliedVacanteIds() {
+    if (appliedVacanteIdsPromise) return appliedVacanteIdsPromise;
+
+    appliedVacanteIdsPromise = (async () => {
+        try {
+            const baseUrl = requireConfigValue(
+                'APPLICATION_ENDPOINTS',
+                (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null),
+                'MY_APPLICATIONS'
+            );
+            const postulaciones = await fetchAPI(baseUrl);
+            setAppliedVacanteIdsFromPostulaciones(postulaciones);
+        } catch {
+            appliedVacanteIds = new Set();
+        }
+        return appliedVacanteIds;
+    })();
+
+    return appliedVacanteIdsPromise;
+}
+
+function getVacantesDisponiblesNumber(vacante) {
+    if (!vacante) return null;
+    if (vacante.vacantesDisponibles != null) {
+        const n = Number(vacante.vacantesDisponibles);
+        return Number.isFinite(n) ? n : null;
+    }
+    if (vacante.numeroVacantes != null) {
+        const n = Number(vacante.numeroVacantes);
+        return Number.isFinite(n) ? n : null;
+    }
+    return null;
+}
+
+function getVacantesDisponiblesBadgeClass(count) {
+    const n = Number(count);
+    if (!Number.isFinite(n)) return 'disponible';
+    if (n <= 0) return 'lleno';
+    if (n <= 2) return 'pocas';
+    return 'disponible';
+}
+
+function getPropietarioNombre(propietario, propietarioTipo) {
+    const p = propietario || {};
+    if (String(propietarioTipo || '').toLowerCase() === 'profesor') {
+        const full = `${p.nombres || ''} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.trim();
+        return full || '-';
+    }
+    return p.nombre || p.nombreRepresentante || '-';
+}
+
+// ============================================
 // UTILIDADES Y HELPERS
 // ============================================
 
@@ -767,6 +834,8 @@ async function cargarVacantes() {
     listaVacantes.innerHTML = '<div class="loading-message">Cargando vacantes...</div>';
 
     try {
+        await loadAppliedVacanteIds();
+
         const vacantesUrl = requireConfigValue('VACANCY_ENDPOINTS', (typeof VACANCY_ENDPOINTS !== 'undefined' ? VACANCY_ENDPOINTS : null), 'GET_VACANCIES');
         const vacantes = await fetchAPI(vacantesUrl);
 
@@ -818,10 +887,17 @@ function crearCardVacante(vacante) {
 
     const descripcionCorta = getVacanteDescripcion(vacante);
 
+    const vacantesDisponibles = getVacantesDisponiblesNumber(vacante);
+    const badgeClass = getVacantesDisponiblesBadgeClass(vacantesDisponibles);
+    const alreadyApplied = appliedVacanteIds.has(String(vacante._id));
+    const sinCupo = (vacantesDisponibles != null) ? Number(vacantesDisponibles) <= 0 : false;
+    const disablePostular = alreadyApplied || sinCupo;
+
     card.innerHTML = `
         <div class="vacante-tipo ${tipoClass}">${tipoLabel}</div>
         <div class="publicacion-header">
             <h3>${vacante.titulo || 'Sin título'}</h3>
+            <span class="vacantes ${badgeClass}">${vacantesDisponibles ?? '-'} disponibles</span>
         </div>
         <div class="publicacion-info">
             <p><strong>Descripción:</strong> ${descripcionCorta.substring(0, 100)}${descripcionCorta.length > 100 ? '...' : ''}</p>
@@ -833,15 +909,22 @@ function crearCardVacante(vacante) {
             <button class="btn btn-primary ver-vacante" data-vacante-id="${vacante._id}">
                 <ion-icon name="eye-outline"></ion-icon> Ver Detalles
             </button>
-            <button class="btn btn-small postularse-vacante" data-vacante-id="${vacante._id}">
-                <ion-icon name="send-outline"></ion-icon> Postularse
+            <button class="btn btn-small postularse-vacante" data-vacante-id="${vacante._id}" ${disablePostular ? 'disabled' : ''}>
+                <ion-icon name="send-outline"></ion-icon> ${alreadyApplied ? 'Postulado' : 'Postularse'}
             </button>
         </div>
     `;
 
     // Event listeners
     card.querySelector('.ver-vacante').addEventListener('click', () => mostrarDetalleVacante(vacante));
-    card.querySelector('.postularse-vacante').addEventListener('click', () => abrirModalPostulacion(vacante));
+
+    const btnPostular = card.querySelector('.postularse-vacante');
+    if (btnPostular) {
+        btnPostular.addEventListener('click', () => {
+            if (btnPostular.disabled) return;
+            abrirModalPostulacion(vacante);
+        });
+    }
 
     return card;
 }
@@ -1009,6 +1092,20 @@ function abrirModalPostulacion(vacante) {
 
     if (!modal || !vacanteInfo) return;
 
+    // Si existiera el campo legado de mensaje, ocultarlo
+    const mensajeField = document.getElementById('mensajePostulacion');
+    if (mensajeField) {
+        mensajeField.value = '';
+        const wrap = mensajeField.closest('label');
+        if (wrap) wrap.style.display = 'none';
+    }
+
+    // Evitar doble postulación
+    if (appliedVacanteIds.has(String(vacante._id))) {
+        showError('Ya te postulaste a esta vacante');
+        return;
+    }
+
     // Mostrar información de la vacante (compatible con modelos antiguos y el actual)
     const descripcion = getVacanteDescripcion(vacante);
     const requisitos = getVacanteRequisitosTexto(vacante);
@@ -1038,13 +1135,17 @@ function abrirModalPostulacion(vacante) {
     // Envío del formulario
     formPostulacion.onsubmit = async (e) => {
         e.preventDefault();
-        const mensaje = document.getElementById('mensajePostulacion').value;
-        
+
         try {
-            await crearPostulacion(vacante._id, mensaje);
+            await crearPostulacion(vacante._id);
+
+            appliedVacanteIds.add(String(vacante._id));
             cerrarModal();
             showSuccess('Postulación enviada correctamente');
             formPostulacion.reset();
+
+            // Refresca vacantes para deshabilitar botón/estado
+            cargarVacantes();
         } catch (error) {
             showError(error.message || 'Error al enviar la postulación');
         }
@@ -1101,16 +1202,14 @@ function getVacanteContactoTexto(v) {
 /**
  * Crear una nueva postulación
  * @param {string} vacanteId - ID de la vacante
- * @param {string} mensaje - Mensaje opcional del estudiante
  */
-async function crearPostulacion(vacanteId, mensaje = '') {
+async function crearPostulacion(vacanteId) {
     try {
         const createUrl = requireConfigValue('APPLICATION_ENDPOINTS', (typeof APPLICATION_ENDPOINTS !== 'undefined' ? APPLICATION_ENDPOINTS : null), 'CREATE_APPLICATION');
         const data = await fetchAPI(createUrl, {
             method: 'POST',
             body: JSON.stringify({
-                vacanteId,
-                mensaje
+                vacanteId
             })
         });
 
@@ -1140,6 +1239,10 @@ async function cargarPostulaciones() {
         const url = withQuery(baseUrl, { estado: estadoFiltro });
         
         const postulaciones = await fetchAPI(url);
+
+        // Mantener estado local para deshabilitar “Postularse” en vacantes
+        setAppliedVacanteIdsFromPostulaciones(postulaciones);
+        appliedVacanteIdsPromise = Promise.resolve(appliedVacanteIds);
 
         if (!postulaciones || postulaciones.length === 0) {
             listaPostulaciones.innerHTML = '<div class="no-publicaciones"><p>No tienes postulaciones</p></div>';
@@ -1188,14 +1291,7 @@ function crearCardPostulacion(postulacion) {
         <div class="publicacion-info">
             <p><strong>Tipo:</strong> ${postulacion.vacante?.propietarioTipo || '-'}</p>
             <p><strong>Fecha de postulación:</strong> ${new Date(postulacion.createdAt).toLocaleDateString('es-ES')}</p>
-            ${postulacion.fechaRespuesta ? 
-                `<p><strong>Fecha de respuesta:</strong> ${new Date(postulacion.fechaRespuesta).toLocaleDateString('es-ES')}</p>` : ''}
         </div>
-        ${postulacion.mensaje ? `<p style="margin-top: 10px; font-style: italic; color: var(--black2);">"${postulacion.mensaje}"</p>` : ''}
-        ${postulacion.comentariosRespuesta ? 
-            `<p style="margin-top: 10px; padding: 10px; background: var(--gray); border-radius: 8px;">
-                <strong>Comentarios:</strong> ${postulacion.comentariosRespuesta}
-            </p>` : ''}
         <div class="publicacion-actions">
             <button class="btn btn-small ver-detalle-postulacion" data-postulacion-id="${postulacion._id}">
                 <ion-icon name="eye-outline"></ion-icon> Ver Detalles
@@ -1239,30 +1335,21 @@ function mostrarDetallePostulacion(postulacion) {
 
     const vacante = postulacion.vacante || {};
     const propietario = vacante.propietario || {};
+    const estadoRaw = String((postulacion && postulacion.estado) || '').trim();
+    const estadoKey = estadoRaw.toLowerCase();
+    const propietarioNombre = getPropietarioNombre(propietario, vacante.propietarioTipo);
+    const vacantesDisponibles = getVacantesDisponiblesNumber(vacante);
 
     content.innerHTML = `
         <div class="vacante-info-modal">
             <h4>${vacante.titulo || 'Vacante'}</h4>
-            <p><strong>Estado:</strong> <span class="postulacion-estado ${postulacion.estado}">${postulacion.estado}</span></p>
-            <p><strong>Descripción:</strong> ${vacante.descripcion || '-'}</p>
-            <p><strong>Requisitos:</strong> ${vacante.requisitos?.join(', ') || '-'}</p>
-            <p><strong>Publicado por:</strong> ${propietario.nombres || propietario.nombre || '-'}</p>
+            <p><strong>Estado:</strong> <span class="postulacion-estado ${estadoKey}">${estadoRaw || '-'}</span></p>
+            <p><strong>Vacantes disponibles:</strong> ${vacantesDisponibles ?? 0}</p>
+            <p><strong>Descripción:</strong> ${getVacanteDescripcion(vacante) || '-'}</p>
+            <p><strong>Requisitos:</strong> ${getVacanteRequisitosTexto(vacante) || '-'}</p>
+            <p><strong>Publicado por:</strong> ${propietarioNombre}</p>
             <p><strong>Fecha de postulación:</strong> ${new Date(postulacion.createdAt).toLocaleString('es-ES')}</p>
-            ${postulacion.fechaRespuesta ? 
-                `<p><strong>Fecha de respuesta:</strong> ${new Date(postulacion.fechaRespuesta).toLocaleString('es-ES')}</p>` : ''}
         </div>
-        ${postulacion.mensaje ? `
-            <div style="margin-top: 20px;">
-                <h4>Tu mensaje:</h4>
-                <p style="padding: 10px; background: var(--gray); border-radius: 8px;">${postulacion.mensaje}</p>
-            </div>
-        ` : ''}
-        ${postulacion.comentariosRespuesta ? `
-            <div style="margin-top: 20px;">
-                <h4>Comentarios del ${vacante.propietarioTipo}:</h4>
-                <p style="padding: 10px; background: #e8f5e9; border-radius: 8px;">${postulacion.comentariosRespuesta}</p>
-            </div>
-        ` : ''}
         <div style="margin-top: 20px;">
             <button class="btn btn-primary" onclick="enviarMensajeDesdePostulacion('${vacante.propietario._id || ''}', '${vacante.propietarioTipo}', '${vacante._id}')">
                 <ion-icon name="mail-outline"></ion-icon> Enviar Mensaje
