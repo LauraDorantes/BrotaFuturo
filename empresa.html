@@ -585,12 +585,17 @@
             <section class="ayuda-section hidden">
                 <h2 class="titulo-seccion">¿Cuál es el proceso a seguir?</h2>
                 <div class="ayuda-contenido">
-                    <img src="./images/DFEmpresa.png">
+                    <img src="./images/DFEmpresav2.png" class="imagen-diagrama" style="cursor: pointer;" onclick="abrirImagen(this.src)">
                 </div>
             </section>
 
         </div>
 
+    </div>
+
+    <div id="modalImagen" class="modal hidden">
+        <span class="cerrar" onclick="cerrarImagen()">&times;</span>
+        <img class="imagen-modal" id="imagenGrande">
     </div>
 
     <script src="./js/config.js"></script>

@@ -467,6 +467,7 @@ function mostrarPerfil(usuario) {
     
     // Llenar vista de solo lectura
     document.getElementById('ro_nombre').textContent = nombreCompleto || '-';
+    document.getElementById('ro_edad').textContent = usuario.edad || '-';
     document.getElementById('ro_sexo').textContent = usuario.sexo || '-';
     document.getElementById('ro_curp').textContent = usuario.curp || '-';
     document.getElementById('ro_email').textContent = usuario.correo || '-';
@@ -481,6 +482,7 @@ function mostrarPerfil(usuario) {
     document.getElementById('emailInput').value = usuario.correo || '';
     document.getElementById('phoneInput').value = usuario.telefono || '';
     document.getElementById('boletaInput').value = usuario.boleta || '';
+    document.getElementById('edadInput').value = usuario.edad || '';
     document.getElementById('sexoInput').value = usuario.sexo || '';
     document.getElementById('carreraInput').value = usuario.carrera || '';
     document.getElementById('creditosInput').value = usuario.creditos || '';
@@ -554,18 +556,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const elCorreo = document.getElementById('emailInput');
             const elTelefono = document.getElementById('phoneInput');
             const elBoleta = document.getElementById('boletaInput');
+            const elEdad = document.getElementById('edadInput');
             const elSexo = document.getElementById('sexoInput');
             const elCarrera = document.getElementById('carreraInput');
             const elCreditos = document.getElementById('creditosInput');
             const elCurp = document.getElementById('curpInput');
 
             // Limpia marcas previas
-            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elSexo, elCarrera, elCreditos, elCurp]
+            [elNombre, elEdad, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elSexo, elCarrera, elCreditos, elCurp]
                 .filter(Boolean)
                 .forEach(clearInvalid);
 
             // Quitar marca al editar
-            [elNombre, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elCreditos, elCurp]
+            [elNombre, elEdad, elAPaterno, elAMaterno, elCorreo, elTelefono, elBoleta, elCreditos, elCurp]
                 .filter(Boolean)
                 .forEach((el) => el.addEventListener('input', () => clearInvalid(el), { once: true }));
             [elSexo, elCarrera]
@@ -576,6 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const expresiones = {
                 boleta: /^(\d{10})$/,
                 nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
+                edad: /^[0-9]{2}$/,
                 telefono: /^\d{7,10}$/,
                 curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
                 correoAlumno: /^[a-zA-Z0-9_.+-]+@alumno\.ipn\.mx$/,
@@ -587,6 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const correoRaw = String(document.getElementById('emailInput').value || '').trim();
             const telefonoDigits = String(document.getElementById('phoneInput').value || '').replace(/\D/g, '');
             const boletaDigits = String(document.getElementById('boletaInput').value || '').replace(/\D/g, '');
+            const edadDigits = String(document.getElementById('edadInput').value || '').replace(/\D/g, '');
             const sexoRaw = String(document.getElementById('sexoInput').value || '').trim();
             const carreraRaw = String(document.getElementById('carreraInput').value || '').trim();
             const creditosRaw = String(document.getElementById('creditosInput').value || '').trim();
@@ -624,6 +629,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError('Boleta inválida (10 dígitos)');
                 return;
             }
+            if (!edadDigits || !expresiones.edad.test(edadDigits)) {
+                markInvalid(elEdad);
+                showError('Edad inválida (2 dígitos)');
+                return;
+            }
             if (!sexoRaw || (sexoRaw !== 'Masculino' && sexoRaw !== 'Femenino')) {
                 markInvalid(elSexo);
                 showError('Selecciona un sexo válido');
@@ -654,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 correo: correoRaw,
                 telefono: Number(telefonoDigits),
                 boleta: Number(boletaDigits),
+                edad: Number(edadDigits),
                 sexo: sexoRaw,
                 carrera: carreraRaw,
                 creditos: Number(creditosNum),
@@ -1331,11 +1342,14 @@ function mostrarDetallePostulacion(postulacion) {
     const estadoKey = estadoRaw.toLowerCase();
     const propietarioNombre = getPropietarioNombre(propietario, vacante.propietarioTipo);
     const vacantesDisponibles = getVacantesDisponiblesNumber(vacante);
+    const vacantesTotales = vacante.numeroVacantes;
+    //console.log(vacante);
 
     content.innerHTML = `
         <div class="vacante-info-modal">
             <h4>${vacante.titulo || 'Vacante'}</h4>
             <p><strong>Estado:</strong> <span class="postulacion-estado ${estadoKey}">${estadoRaw || '-'}</span></p>
+            <p><strong>Vacantes totales:</strong> ${vacantesTotales ?? 0}</p>
             <p><strong>Vacantes disponibles:</strong> ${vacantesDisponibles ?? 0}</p>
             <p><strong>Descripción:</strong> ${getVacanteDescripcion(vacante) || '-'}</p>
             <p><strong>Requisitos:</strong> ${getVacanteRequisitosTexto(vacante) || '-'}</p>
@@ -1761,3 +1775,50 @@ function buscarEnMensajes(termino) {
     }
 }
 
+const imagenGrande = document.getElementById("imagenGrande");
+const modal = document.getElementById("modalImagen");
+
+// Funcion para abrir el modal
+function abrirImagen(src) {
+    imagenGrande.src = src;
+    imagenGrande.classList.remove("zoom-activo");
+    imagenGrande.style.transform = "scale(1)"; // Regresa el zoom a 1, lo reinicia
+    modal.style.setProperty('display', 'flex', 'important');
+}
+
+// Logica de Zoom y Lupa
+imagenGrande.onclick = function(e) {
+    console.log('clic en imagenGrande')
+    e.stopPropagation(); // Evita cerrar el modal al hacer clic en la imagen
+    this.classList.toggle("zoom-activo");
+    console.log(this.classList);
+
+    // Si quitamos el zoom, reseteamos el origen al centro o a la posicion inicial
+    if (!this.classList.contains("zoom-activo")) {
+        this.style.transformOrigin = "center center";
+    }
+};
+
+// Efecto Lupa: Mover el origen sigiendo el mouse
+imagenGrande.onmousemove = function(e) {
+    if (this.classList.contains("zoom-activo")) {
+        // Se calcula la posición del mouse dentro de la imagen en porcentaje
+        const rect = this.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Se mueve el origen del zoom a esa posición
+        this.style.transformOrigin = `${x}% ${y}%`;
+    }
+};
+
+// Cerrar al hacer clic en el fondo
+modal.onclick = function(event) {
+    if (event.target === this) {
+        cerrarImagen();
+    }
+};
+
+function cerrarImagen() {
+    modal.style.display = "none";
+}

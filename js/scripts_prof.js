@@ -346,6 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function loadPerfil() {
             const data = JSON.parse(localStorage.getItem(PROFESOR_PROFILE_KEY)) || {};
+            const nombreCompleto = `${data.nombre || ''} ${data.aPaterno || ''} ${data.aMaterno || ''}`;
 
             if (perfilAvatar && data.avatar) perfilAvatar.src = data.avatar;
 
@@ -364,7 +365,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (newPasswordInput) newPasswordInput.value = "";
 
             if (ro_curp) ro_curp.textContent = data.curp || "-";
-            if (ro_nombre) ro_nombre.textContent = data.nombre || "-";
+            // if (ro_nombre) ro_nombre.textContent = data.nombre || "-";
+            if (ro_nombre) ro_nombre.textContent = nombreCompleto || "-";
             if (ro_aPaterno) ro_aPaterno.textContent = data.aPaterno || "-";
             if (ro_aMaterno) ro_aMaterno.textContent = data.aMaterno || "-";
             if (ro_sexo) ro_sexo.textContent = data.sexo || "-";
@@ -846,37 +848,70 @@ class SistemaPublicaciones {
 
             // Acciones
             const c8 = document.createElement('td');
+
+            const accionBtn = document.createElement('button');
+            accionBtn.type = 'button';
             // Solo mostrar acciones si está Pendiente
-            if (estadoKey === 'pendiente') {
-                const aceptarBtn = document.createElement('button');
-                aceptarBtn.className = 'btn btn-small aceptar';
-                aceptarBtn.type = 'button';
-                aceptarBtn.textContent = 'Aceptar';
-
-                const rechazarBtn = document.createElement('button');
-                rechazarBtn.className = 'btn btn-small rechazar';
-                rechazarBtn.type = 'button';
-                rechazarBtn.textContent = 'Rechazar';
-
-                aceptarBtn.addEventListener('click', () => {
-                    const vid = this._currentVacanteId;
-                    if (!vid) return;
-                    if (!confirm('¿Aceptar esta postulación?')) return;
-                    this.responderPostulacion(vid, p._id, 'aceptar');
-                });
-
-                rechazarBtn.addEventListener('click', () => {
+            if (estadoKey === 'aceptada') {
+                accionBtn.className = 'btn btn-small rechazar';
+                accionBtn.textContent = 'Rechazar';
+                accionBtn.onclick = () => {
                     const vid = this._currentVacanteId;
                     if (!vid) return;
                     if (!confirm('¿Rechazar esta postulación?')) return;
                     this.responderPostulacion(vid, p._id, 'rechazar');
-                });
+                }
+                // const aceptarBtn = document.createElement('button');
+                // aceptarBtn.className = 'btn btn-small aceptar';
+                // aceptarBtn.type = 'button';
+                // aceptarBtn.textContent = 'Aceptar';
 
-                c8.appendChild(aceptarBtn);
-                c8.appendChild(rechazarBtn);
+                // const rechazarBtn = document.createElement('button');
+                // rechazarBtn.className = 'btn btn-small rechazar';
+                // rechazarBtn.type = 'button';
+                // rechazarBtn.textContent = 'Rechazar';
+
+                // aceptarBtn.addEventListener('click', () => {
+                //     const vid = this._currentVacanteId;
+                //     if (!vid) return;
+                //     if (!confirm('¿Aceptar esta postulación?')) return;
+                //     this.responderPostulacion(vid, p._id, 'aceptar');
+                // });
+
+                // rechazarBtn.addEventListener('click', () => {
+                //     const vid = this._currentVacanteId;
+                //     if (!vid) return;
+                //     if (!confirm('¿Rechazar esta postulación?')) return;
+                //     this.responderPostulacion(vid, p._id, 'rechazar');
+                // });
+
+                // c8.appendChild(aceptarBtn);
+                // c8.appendChild(rechazarBtn);
             } else {
-                c8.textContent = '-';
+                accionBtn.className = 'btn btn-small aceptar';
+                accionBtn.textContent = 'Aceptar';
+                accionBtn.onclick = () => {
+                    const vid = this._currentVacanteId;
+                    if (!vid) return;
+                    if (!confirm('¿Aceptar esta postulación?')) return;
+                    this.responderPostulacion(vid, p._id, 'aceptar');
+                }
+                // c8.textContent = '-';
+                // const rechazarBtn = document.createElement('button');
+                // rechazarBtn.className = 'btn btn-small rechazar';
+                // rechazarBtn.type = 'button';
+                // rechazarBtn.textContent = 'Rechazar';
+
+                // rechazarBtn.addEventListener('click', () => {
+                //     const vid = this._currentVacanteId;
+                //     if (!vid) return;
+                //     if (!confirm('¿Rechazar esta postulación?')) return;
+                //     this.responderPostulacion(vid, p._id, 'rechazar');
+                // });
+
+                // c8.appendChild(rechazarBtn);
             }
+            c8.appendChild(accionBtn);
 
             // Mensaje
             const c9 = document.createElement('td');
@@ -1428,7 +1463,7 @@ async guardarPublicacion(e) {
                 
                 <div class="publicacion-info">
                     <p><strong>Área:</strong> ${publicacion.area}</p>
-                    <p><strong>Vacantes:</strong> 
+                    <p><strong>Vacantes disponibles:</strong> 
                         <span class="vacantes ${estadoVacantes}">
                             ${publicacion.vacantesDisponibles}/${publicacion.vacantes}
                         </span>
@@ -2011,3 +2046,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+const imagenGrande = document.getElementById("imagenGrande");
+const modal = document.getElementById("modalImagen");
+
+// Funcion para abrir el modal
+function abrirImagen(src) {
+    imagenGrande.src = src;
+    imagenGrande.classList.remove("zoom-activo");
+    imagenGrande.style.transform = "scale(1)"; // Regresa el zoom a 1, lo reinicia
+    modal.style.setProperty('display', 'flex', 'important');
+}
+
+// Logica de Zoom y Lupa
+imagenGrande.onclick = function(e) {
+    console.log('clic en imagenGrande')
+    e.stopPropagation(); // Evita cerrar el modal al hacer clic en la imagen
+    this.classList.toggle("zoom-activo");
+    console.log(this.classList);
+
+    // Si quitamos el zoom, reseteamos el origen al centro o a la posicion inicial
+    if (!this.classList.contains("zoom-activo")) {
+        this.style.transformOrigin = "center center";
+    }
+};
+
+// Efecto Lupa: Mover el origen sigiendo el mouse
+imagenGrande.onmousemove = function(e) {
+    if (this.classList.contains("zoom-activo")) {
+        // Se calcula la posicion del mouse dentro de la imagen en porcentaje
+        const rect = this.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Se mueve el origen del zoom a esa posición
+        this.style.transformOrigin = `${x}% ${y}%`;
+    }
+};
+
+// Cerrar al hacer clic en el fondo
+modal.onclick = function(event) {
+    if (event.target === this) {
+        cerrarImagen();
+    }
+};
+
+function cerrarImagen() {
+    modal.style.display = "none";
+}

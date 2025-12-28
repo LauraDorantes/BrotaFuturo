@@ -62,6 +62,7 @@ function normalizeAlumnoPayload(formulario) {
         correo: String(fd.get('correo') || '').trim(),
         password: String(fd.get('contrasena') || ''),
         nombres: String(fd.get('nombre') || '').trim(),
+        edad:   Number(fd.get('edad')),
         apellidoPaterno: String(fd.get('apellidoPaterno') || '').trim(),
         apellidoMaterno: String(fd.get('apellidoMaterno') || '').trim(),
         boleta: Number(fd.get('boleta')),
@@ -143,6 +144,7 @@ async function postJson(url, body) {
 
 const campos = {
     boleta: false,
+    edad: false,
     nombre: false,
     apellidoPaterno: false,
     apellidoMaterno: false,
@@ -163,6 +165,7 @@ const campos = {
 
 const expresiones = {
     boleta: /^(\d{10}|(PE|PM)\d{8})$/,
+    edad: /^\d{2}$/,
     nombre: /^[a-zA-ZÀ-ÿ\s]{1,40}$/,
     telefono: /^\d{7,10}$/,
     curp: /^([A-Z][AEIOUX][A-Z]{2}\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])[HM](?:AS|B[CS]|C[CLMSH]|D[FG]|G[TR]|HG|JC|M[CNS]|N[ETL]|OC|PL|Q[TR]|S[PLR]|T[CSL]|VZ|YN|ZS)[B-DF-HJ-NP-TV-Z]{3}[A-Z\d])(\d)$/,
@@ -242,7 +245,7 @@ function mostrarFormularioInstitucion() {
 // Función para validar si todos los campos requeridos están completos
 function validarFormularioCompleto(tipo) {
     if (tipo === 'Alumno') {
-        return campos.boleta && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && 
+        return campos.boleta && campos.edad && campos.nombre && campos.apellidoPaterno && campos.apellidoMaterno && 
                campos.telefono && campos.curp && 
                campos.correo && campos.contrasena && campos.sexo && campos.carrera && campos.creditos;
     } else if (tipo === 'Profesor') {
@@ -480,6 +483,7 @@ function editarFormulario(tipo) {
 function resetearEstadoCampos(tipo) {
     if (tipo === 'Alumno') {
         campos.boleta = false;
+        campos.edad = false;
         campos.nombre = false;
         campos.apellidoPaterno = false;
         campos.apellidoMaterno = false;
@@ -535,6 +539,34 @@ function validarYConfirmar(tipo, formularioId, confirmacionId, datosId, errorId)
     // Confirmación
     document.getElementById(errorId).style.display = "none";
     mostrarModalConfirmacion(tipo, formulario);
+}
+
+//EmailJS
+// emailjs.init("zNZztQejzII9E9d1V");
+function enviarCorreoBienvenida(tipo, formulario){
+    let datos;
+
+    if(tipo === "Alumno"){
+        datos = normalizeAlumnoPayload(formulario);
+    }
+    else if(tipo === "Profesor"){
+        datos = normalizeProfesorPayload(formulario);
+    }
+    else{
+        datos = normalizeInstitucionPayload(formulario);
+    }
+
+    const datosEmail = {
+        nombre: datos.nombres || datos.nombre,
+        correo: datos.correo,
+        rol: tipo
+    };
+
+    console.log(`Hola ${datosEmail.nombre}, se ha registrado el correo ${datosEmail.correo} en la plataforma BrotaFuturo. El rol de tu cuenta es ${datosEmail.rol}`);
+
+    // emailjs.send("service_aqnbmhc", "TEMPLATE_PENDIENTE", datosEmail)
+    //     .then(() => console.log("Bienvenida enviada"))
+    //     .catch(err => console.error("Error EmailJS:", err));
 }
 
 // Función para mostrar modal de Bootstrap con los datos
@@ -593,12 +625,21 @@ function mostrarModalConfirmacion(tipo, formulario) {
         btnConfirmar.disabled = true;
         btnConfirmar.textContent = 'Enviando...';
         try {
+
+            try{
+                enviarCorreoBienvenida(tipo, formulario);
+                console.log("Correo enviado con éxito");
+            } catch(errorEmail){
+                console.log("Error al enviar el correo, pero el registro fue exitoso: ", errorEmail);
+            }
+
             await enviarFormulario(tipo, formulario);
             // Cerrar el modal
             const modalInstance = bootstrap.Modal.getInstance(modal);
             modalInstance.hide();
             // Mostrar mensaje de éxito
             mostrarMensajeExito(tipo);
+
         } catch (e) {
             const message = e?.message || 'No se pudo completar el registro';
             if (tipo === 'Alumno') {
@@ -641,6 +682,7 @@ function generarContenidoAlumno(formulario) {
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Boleta:</strong> ${formulario.boleta.value}</p>
+                <p><strong>Edad:</strong> ${formulario.edad.value}</p>
                 <p><strong>Nombre Completo:</strong> ${formulario.nombre.value} ${formulario.apellidoPaterno.value} ${formulario.apellidoMaterno.value}</p>
                 <p><strong>CURP:</strong> ${formulario.curp.value}</p>
                 <p><strong>Teléfono:</strong> ${formulario.telefono.value}</p>
@@ -897,6 +939,9 @@ const validarFormulario = (e) => {
             break;
         case "nombre":
             validarCampo(expresiones.nombre, e.target, 'nombre');
+            break;
+        case "edad":
+            validarCampo(expresiones.edad, e.target, 'edad');
             break;
         case "apellidoPaterno":
             validarCampo(expresiones.nombre, e.target, 'apellidoPaterno');

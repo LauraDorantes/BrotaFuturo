@@ -81,9 +81,19 @@
                         <p class="text-center mb-4">Por favor complete el siguiente formulario para Alumno</p>
 
                         <!-- Boleta -->
-                        <div class="formulario__grupo" id="grupo__boleta">
-                            <input type="text" class="form-control" name="boleta" placeholder="No. de Boleta" maxlength="10">
-                            <p class="formulario__input-error">Verifique su boleta</p>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__boleta">
+                                    <input type="text" class="form-control" name="boleta" placeholder="No. de Boleta" maxlength="10">
+                                    <p class="formulario__input-error">Verifique su boleta</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="formulario__grupo" id="grupo__edad">
+                                    <input type="text" class="form-control" name="edad" placeholder="Tu edad" maxlength="2">
+                                    <p class="formulario__input-error">Solo números</p>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Nombre(s) -->
@@ -129,16 +139,16 @@
                             <p class="formulario__input-error">El número de teléfono son 10 dígitos</p>
                         </div>
 
-                        <div class="row g-2 mb-2">
+                        <div class="row align-items-center g-2 mb-2">
                             <div class="col-md-6">
                                 <div class="formulario__grupo" id="grupo__creditos">
-                                    <input type="number" class="form-control" name="creditos" placeholder="Créditos" min="0" max="387">
+                                    <input type="number" class="form-control m-0" name="creditos" placeholder="Créditos" min="0" max="387">
                                     <p class="formulario__input-error">Debe ser entre 0 y 387</p>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="formulario__grupo" id="grupo__carreraAlumno">
-                                    <select id="carreraAlumno" name="carrera" class="form-select">
+                                    <select id="carreraAlumno" name="carrera" class="form-select m-0">
                                         <option disabled selected>Carrera</option>
                                         <option value="ISC">ISC</option>
                                         <option value="IIA">IIA</option>
