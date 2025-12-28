@@ -329,7 +329,7 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
         if (!postulacion) {
             return res.status(404).json({ message: 'Postulación no encontrada para esta vacante' });
         }
-        if (String(postulacion.estado || '').toLowerCase() !== 'pendiente') {
+        if (String(postulacion.estado || '').toLowerCase() === 'aceptada') {
             return res.status(400).json({ message: 'Solo se pueden aceptar postulaciones en estado Pendiente' });
         }
 
@@ -343,6 +343,10 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
             { _id: profesorId, alumnosAsociados: { $not: { $elemMatch: { id: alumnoId, vacante: vacanteObjectId } } } },
             { $push: { alumnosAsociados: { id: alumnoId, vacante: vacanteObjectId, estado: 'Activo' } } }
         );
+
+        //const profesorActualizado = await Profesor.findById(profesorId).select('alumnosAsociados');
+        //const totalAlumnos = profesorActualizado.alumnosAsociados.length;
+        //console.log(`Backend - Alumno aceptado. El profesor ${profesorId} ahora tiene ${totalAlumnos} alumnos asociados.`);
 
         return res.json({ message: 'Postulación aceptada', data: { postulacionId: postulacion._id } });
     } catch (err) {
@@ -381,13 +385,23 @@ exports.rechazarPostulacionDeVacante = async (req, res) => {
         if (!postulacion) {
             return res.status(404).json({ message: 'Postulación no encontrada para esta vacante' });
         }
-        if (String(postulacion.estado || '').toLowerCase() !== 'pendiente') {
+        if (String(postulacion.estado || '').toLowerCase() === 'rechazada') {
             return res.status(400).json({ message: 'Solo se pueden rechazar postulaciones en estado Pendiente' });
         }
 
         postulacion.estado = 'Rechazada';
 
         await postulacion.save();
+
+        await Profesor.updateOne(
+            { _id: profesorId },
+            { $pull: { alumnosAsociados: { id: postulacion.alumno, vacante: new mongoose.Types.ObjectId(vacanteId) } } }
+        );
+
+        //const profesorActualizado = await Profesor.findById(profesorId).select('alumnosAsociados');
+        //const totalAlumnos = profesorActualizado.alumnosAsociados;
+        //console.log(`Backend - Alumno rechazado. El profesor ${profesorId} ahora tiene ${totalAlumnos} alumnos asociados.`);
+
         return res.json({ message: 'Postulación rechazada', data: { postulacionId: postulacion._id } });
     } catch (err) {
         console.error('Error rechazando postulación:', err);

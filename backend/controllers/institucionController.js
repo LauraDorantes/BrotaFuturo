@@ -327,7 +327,7 @@ exports.aceptarPostulacionDeVacante = async (req, res) => {
         if (!postulacion) {
             return res.status(404).json({ message: 'Postulación no encontrada para esta vacante' });
         }
-        if (String(postulacion.estado || '').toLowerCase() !== 'pendiente') {
+        if (String(postulacion.estado || '').toLowerCase() === 'aceptada') {
             return res.status(400).json({ message: 'Solo se pueden aceptar postulaciones en estado Pendiente' });
         }
 
@@ -379,7 +379,7 @@ exports.rechazarPostulacionDeVacante = async (req, res) => {
         if (!postulacion) {
             return res.status(404).json({ message: 'Postulación no encontrada para esta vacante' });
         }
-        if (String(postulacion.estado || '').toLowerCase() !== 'pendiente') {
+        if (String(postulacion.estado || '').toLowerCase() === 'rechazada') {
             return res.status(400).json({ message: 'Solo se pueden rechazar postulaciones en estado Pendiente' });
         }
 

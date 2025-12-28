@@ -189,7 +189,8 @@ button:hover{
     margin: 2rem 1.5rem 2rem 1.5rem;
 }
 
-.NuestroLogo img {
+.NuestroLogo img,
+.NuestroLogo video {
   max-width: 400px;
   height: auto;
 }

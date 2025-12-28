@@ -176,8 +176,8 @@
                         <section id="perfilReadOnly" class="perfil-readonly">
                             <h3>Datos personales</h3>
                             <p><strong>Nombre:</strong> <span id="ro_nombre">-</span></p>
-                            <p><strong>Apellido Paterno:</strong> <span id="ro_aPaterno">-</span></p>
-                            <p><strong>Apellido Materno:</strong> <span id="ro_aMaterno">-</span></p>
+                            <!-- <p><strong>Apellido Paterno:</strong> <span id="ro_aPaterno">-</span></p>
+                            <p><strong>Apellido Materno:</strong> <span id="ro_aMaterno">-</span></p> -->
                             <p><strong>Sexo:</strong> <span id="ro_sexo">-</span></p>
 
                             <h3>Contacto</h3>
@@ -591,10 +591,11 @@
                         <h2>¿Cuál es el proceso a seguir?</h2>
                     </div>
                     <div class="ayuda-contenido" style="text-align: center; padding: 20px;">
-                        <img src="./images/DFProfe.png" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1);">
+                        <img src="./images/DFProfe.png" class="imagen-diagrama" alt="Diagrama de proceso" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 22px rgba(0,0,0,0.1); cursor: pointer;" onclick="abrirImagen(this.src)">
                     </div>
                 </div>
             </div>
+
 
             <div class="cardBox" style="grid-template-columns: repeat(1, 1fr); margin-bottom: 20px;">
                 <div class="card card-button-mail" onclick="enviarReporteAlumnos()">
@@ -633,7 +634,13 @@
 
     </div>
 
-    <script src="./js/config.js"></script>
+    <div id="modalImagen" class="modal">
+        <span class="cerrar" onclick="cerrarImagen()">&times;</span>
+        <img class="imagen-modal" id="imagenGrande">
+    </div>
+    
+
+    <script src="./js/config.js"></script> 
     <script src="./js/scripts_prof.js"></script>
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>

@@ -201,6 +201,7 @@ body.modal-open .contenedor_menu .btn {
 }
 
 .contenedor.activo .registro{
+    overflow: auto;
     transform: translateX(-100%); 
     z-index: 2;
 }
