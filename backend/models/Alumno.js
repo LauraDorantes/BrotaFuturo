@@ -24,6 +24,10 @@ const alumnoSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    edad: {
+        type: Number,
+        required: true,
+    },
     apellidoPaterno: {
         type: String,
         required: true,

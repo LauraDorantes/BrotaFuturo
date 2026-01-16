@@ -1,6 +1,7 @@
 const Postulacion = require('../models/Postulacion');
 const Vacante = require('../models/Vacante');
 const Alumno = require('../models/Alumno');
+const mongoose = require('mongoose');
 
 /**
  * Controlador para gestionar postulaciones de estudiantes a vacantes
@@ -105,23 +106,73 @@ exports.obtenerMisPostulaciones = async (req, res) => {
         };
 
         // Construir el filtro
-        const filtro = { alumno: alumnoId };
+        // const filtro = { alumno: alumnoId };
+        const filtro = { alumno: new mongoose.Types.ObjectId(alumnoId) };
         const estadoCanonico = normalizarEstado(estado);
         if (estadoCanonico) {
             filtro.estado = estadoCanonico;
         }
 
         // Obtener postulaciones con datos relacionados
-        const postulaciones = await Postulacion.find(filtro)
-            .populate({
-                path: 'vacante',
-                select: 'titulo area numeroVacantes objetivos actividades requerimientos carreraRequerida conocimientosTecnicos habilidades modalidad horasSemanal fechaInicio fechaLimite duracionMeses beneficiosAlumno otrosBeneficios informacionAdicional correoConsulta telefonoConsulta propietarioTipo propietario fechaPublicacion',
-                populate: {
-                    path: 'propietario',
-                    select: 'nombres apellidoPaterno apellidoMaterno correo departamento telefono nombre nombreRepresentante apellidosRepresentante direccion',
-                },
-            })
-            .sort({ createdAt: -1 });
+const postulaciones = await Postulacion.aggregate([
+            { $match: filtro },
+            // Datos de la vacante
+            {
+                $lookup: {
+                    from: 'vacantes',
+                    localField: 'vacante',
+                    foreignField: '_id',
+                    as: 'vacante'
+                }
+            },
+            { $unwind: '$vacante' },
+            // Se obtienen TODAS las postulaciones de esa vacante para calcular el cupo
+            {
+                $lookup: {
+                    from: 'postulaciones',
+                    localField: 'vacante._id',
+                    foreignField: 'vacante',
+                    as: '__todasLasPostulaciones'
+                }
+            },
+            // Se calcula vacantesDisponibles
+            {
+                $addFields: {
+                    "vacante.vacantesDisponibles": {
+                        $max: [
+                            {
+                                $subtract: [
+                                    { $ifNull: ['$vacante.numeroVacantes', 1] },
+                                    {
+                                        $size: {
+                                            $filter: {
+                                                input: '$__todasLasPostulaciones',
+                                                as: 'p',
+                                                cond: { $eq: ['$$p.estado', 'Aceptada'] }
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            0
+                        ]
+                    }
+                }
+            },
+            // Se traen los datos del propietario (Profesor/Empresa)
+            {
+                $lookup: {
+                    from: 'profesores', // La coleccion es profesores
+                    localField: 'vacante.propietario',
+                    foreignField: '_id',
+                    as: 'vacante.propietario'
+                }
+            },
+            { $unwind: { path: '$vacante.propietario', preserveNullAndEmptyArrays: true } },
+            { $sort: { createdAt: -1 } },
+            // Se limpian campos temporales
+            { $project: { __todasLasPostulaciones: 0 } }
+        ]);
 
         return res.json(postulaciones);
     } catch (error) {

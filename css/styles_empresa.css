@@ -1376,3 +1376,50 @@ label[required]::after {
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
     object-fit: contain;
 }
+
+/**/
+/* Modal imagen */
+/* .modal { */
+    /* display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 1000; */
+    /* cursor: pointer; */
+/* } */
+
+/* Imagen ampliada */
+.imagen-modal {
+    max-width: 90%;
+    max-height: 90%;
+    cursor: zoom-in;
+    transition: transform 0.4s ease-in; /* Animacion cuando se le da clic a la imagen */
+    transform-origin: center center; /* Punto inicial */
+    object-fit: contain;
+}
+
+.imagen-modal.zoom-activo {
+    transform: scale(2.5) !important; /* Zoom para que parezca una lupa */
+    cursor: zoom-out;
+    transition: 0.5s ease-out; /* Se le pone animacion para tratar que no maree tanto cuando se mueve */
+}
+
+/* Boton cerrar */
+.cerrar {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.imagen-diagrama{
+    transition: 0.3s;
+}
+
+.imagen-diagrama:hover{
+    scale: 1.1;
+    transition: 0.3s ease;
+}

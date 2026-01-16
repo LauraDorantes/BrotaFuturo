@@ -68,7 +68,6 @@ document.querySelectorAll('nav a[data-target]').forEach(link => {
   });
 });
 
-
 //EmailJS
 emailjs.init("zNZztQejzII9E9d1V");
 document.getElementById("formContacto").addEventListener("submit", function(e){

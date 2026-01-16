@@ -141,6 +141,9 @@ exports.actualizarPerfil = async (req, res) => {
         const boleta = body.boleta !== undefined && body.boleta !== null && String(body.boleta).trim() !== ''
             ? Number(body.boleta)
             : null;
+        const edad = body.edad !== undefined && body.edad !== null && String(body.edad).trim() !== ''
+            ? Number(body.edad)
+            : null;
         const curp = body.curp ? String(body.curp).trim().toUpperCase() : null;
         const telefono = body.telefono !== undefined && body.telefono !== null && String(body.telefono).trim() !== ''
             ? Number(body.telefono)
@@ -192,6 +195,7 @@ exports.actualizarPerfil = async (req, res) => {
 
         // Campos no únicos
         if (body.nombres) alumno.nombres = String(body.nombres).trim();
+        if (body.edad !== null && Number.isFinite(edad)) alumno.edad = edad;
         if (body.apellidoPaterno) alumno.apellidoPaterno = String(body.apellidoPaterno).trim();
         if (body.apellidoMaterno) alumno.apellidoMaterno = String(body.apellidoMaterno).trim();
         if (body.sexo) alumno.sexo = String(body.sexo).trim();

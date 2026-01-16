@@ -1138,30 +1138,50 @@ class SistemaPublicaciones {
 
             c7.textContent = estado;
 
-            if (estado === 'Pendiente') {
-                const aceptarBtn = document.createElement('button');
-                aceptarBtn.className = 'btn btn-small aceptar';
-                aceptarBtn.textContent = 'Aceptar';
-                aceptarBtn.addEventListener('click', () => {
+            const accionBtn = document.createElement('button');
+            accionBtn.type = 'button';
+            console.log(estado);
+
+            if (estado === 'Aceptada') {
+                accionBtn.className = 'btn btn-small rechazar';
+                accionBtn.textContent = 'Rechazar';
+                accionBtn.onclick = () => {
+                    if (!this.currentVacanteId) return;
+                    if (!confirm('Rechazar esta postulación?')) return;
+                    this.responderPostulacion(this.currentVacanteId, p._id, 'rechazar');
+                }
+                // const aceptarBtn = document.createElement('button');
+                // aceptarBtn.className = 'btn btn-small aceptar';
+                // aceptarBtn.textContent = 'Aceptar';
+                // aceptarBtn.addEventListener('click', () => {
+                //     if (!this.currentVacanteId) return;
+                //     if (!confirm('¿Aceptar esta postulación?')) return;
+                //     this.responderPostulacion(this.currentVacanteId, p._id, 'aceptar');
+                // });
+
+                // const rechazarBtn = document.createElement('button');
+                // rechazarBtn.className = 'btn btn-small rechazar';
+                // rechazarBtn.textContent = 'Rechazar';
+                // rechazarBtn.addEventListener('click', () => {
+                //     if (!this.currentVacanteId) return;
+                //     if (!confirm('¿Rechazar esta postulación?')) return;
+                //     this.responderPostulacion(this.currentVacanteId, p._id, 'rechazar');
+                // });
+
+                // c8.appendChild(aceptarBtn);
+                // c8.appendChild(rechazarBtn);
+            } else {
+                // c8.textContent = '-';
+                accionBtn.className = 'btn btn-small aceptar';
+                accionBtn.textContent = 'Aceptar';
+                accionBtn.onclick = () => {
                     if (!this.currentVacanteId) return;
                     if (!confirm('¿Aceptar esta postulación?')) return;
                     this.responderPostulacion(this.currentVacanteId, p._id, 'aceptar');
-                });
-
-                const rechazarBtn = document.createElement('button');
-                rechazarBtn.className = 'btn btn-small rechazar';
-                rechazarBtn.textContent = 'Rechazar';
-                rechazarBtn.addEventListener('click', () => {
-                    if (!this.currentVacanteId) return;
-                    if (!confirm('¿Rechazar esta postulación?')) return;
-                    this.responderPostulacion(this.currentVacanteId, p._id, 'rechazar');
-                });
-
-                c8.appendChild(aceptarBtn);
-                c8.appendChild(rechazarBtn);
-            } else {
-                c8.textContent = '-';
+                }
             }
+
+            c8.appendChild(accionBtn);
 
             tr.appendChild(c1);
             tr.appendChild(c2);
@@ -1530,3 +1550,51 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     })();
 });
+
+const imagenGrande = document.getElementById("imagenGrande");
+const modal = document.getElementById("modalImagen");
+
+// Funcion para abrir el modal
+function abrirImagen(src) {
+    imagenGrande.src = src;
+    imagenGrande.classList.remove("zoom-activo");
+    imagenGrande.style.transform = "scale(1)"; // Regresa el zoom a 1, lo reinicia
+    modal.style.setProperty('display', 'flex', 'important');
+}
+
+// Logica de Zoom y Lupa
+imagenGrande.onclick = function(e) {
+    console.log('clic en imagenGrande')
+    e.stopPropagation(); // Evita cerrar el modal al hacer clic en la imagen
+    this.classList.toggle("zoom-activo");
+    console.log(this.classList);
+
+    // Si quitamos el zoom, reseteamos el origen al centro o a la posicion inicial
+    if (!this.classList.contains("zoom-activo")) {
+        this.style.transformOrigin = "center center";
+    }
+};
+
+// Efecto Lupa: Mover el origen sigiendo el mouse
+imagenGrande.onmousemove = function(e) {
+    if (this.classList.contains("zoom-activo")) {
+        // Se calcula la posición del mouse dentro de la imagen en porcentaje
+        const rect = this.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+        // Se mueve el origen del zoom a esa posición
+        this.style.transformOrigin = `${x}% ${y}%`;
+    }
+};
+
+// Cerrar al hacer clic en el fondo
+modal.onclick = function(event) {
+    if (event.target === this) {
+        cerrarImagen();
+    }
+};
+
+function cerrarImagen() {
+    modal.style.display = "none";
+}

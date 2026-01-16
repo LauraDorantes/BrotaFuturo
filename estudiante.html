@@ -91,6 +91,10 @@
                     <aside class="perfil-card">
                         <div class="avatar-wrapper">
                             <img id="perfilAvatar" src="./images/userejemplo.png" alt="Avatar" width="50px">
+                            <!-- <label class="avatar-edit">
+                                <input id="avatarInput" type="file" accept="image/*">
+                                <ion-icon name="pencil-outline"></ion-icon>
+                            </label> -->
                         </div>
 
                         <h2 id="displayName">Nombre Apellido</h2>
@@ -150,6 +154,10 @@
                                     <input id="boletaInput" type="text" placeholder="2024000000">
                                 </label>
 
+                                <label>Edad
+                                    <input id="edadInput" type="text" placeholder="20">
+                                </label>
+
                                 <label>Sexo
                                     <select id="sexoInput">
                                         <option value="">Seleccione...</option>
@@ -200,6 +208,7 @@
                         <section id="perfilReadOnly" class="perfil-readonly">
                             <h3>Datos Personales</h3>
                             <p><strong>Nombre completo:</strong> <span id="ro_nombre">-</span></p>
+                            <p><strong>Edad:</strong> <span id="ro_edad">-</span></p>
                             <p><strong>Sexo:</strong> <span id="ro_sexo">-</span></p>
                             <p><strong>CURP:</strong> <span id="ro_curp">-</span></p>
 
@@ -289,7 +298,7 @@
             <section id="ayuda-section" class="ayuda-section hidden">
                 <h2 class="titulo-seccion">¿Cuál es el proceso a seguir?</h2>
                 <div class="ayuda-contenido">
-                    <img src="./images/DFAlumno.png">
+                    <img src="./images/DFAlumnov2.png" class="imagen-diagrama" style="cursor: pointer;" onclick="abrirImagen(this.src)">
                 </div>
             </section>
         </div>
@@ -354,6 +363,11 @@
             <h3>Detalle de Postulación</h3>
             <div id="detallePostulacionContent"></div>
         </div>
+    </div>
+
+    <div id="modalImagen" class="modal hidden">
+        <span class="cerrar" onclick="cerrarImagen()">&times;</span>
+        <img class="imagen-modal" id="imagenGrande">
     </div>
 
     <script src="./js/config.js"></script>
